@@ -7,10 +7,3 @@ package-lock.json
 .idea/
 vite.config.*s.*
 
-
-main-pos-dashboard
-menu-management
-order-history
-payment-processing
-staff-management
-table-management
