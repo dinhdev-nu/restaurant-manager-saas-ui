@@ -1,0 +1,17 @@
+.DS_Store
+node_modules
+.idea
+package-lock.json
+/build
+.vscode/
+.idea/
+vite.config.*s.*
+
+
+auth
+main-pos-dashboard
+menu-management
+order-history
+payment-processing
+staff-management
+table-management
