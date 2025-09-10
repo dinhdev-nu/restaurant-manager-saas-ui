@@ -8,7 +8,6 @@ package-lock.json
 vite.config.*s.*
 
 
-auth
 main-pos-dashboard
 menu-management
 order-history
