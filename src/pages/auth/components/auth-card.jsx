@@ -1,117 +1,293 @@
 import { useEffect, useState } from "react"
 import Input from "../../../components/ui/Input"
-import { X, Mail, ChevronDown, Eye, EyeOff } from "lucide-react"
+import { X, Mail, Eye, EyeOff } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import { googleAuthApi, registerApi, sendOtpApi, signin, signup, verifyOtpApi } from "api/auth"
+import { useToast } from "hooks/use-toast"
+import { isPhoneNumber, validateEmailOrPhone } from "../../../utils/validators"
 
 export function AuthCard({
     rememberMe,
     setRememberMe,
-    onSignIn,
-    onSignUp,
-    onSocialLogin,
     onForgotPassword,
 }) {
     const [isLoading, setIsLoading] = useState(false)
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
-
     const [activeTab, setActiveTab] = useState("signup")
-    const [firstName, setFirstName] = useState("")
-    const [lastName, setLastName] = useState("")
-    // const [phoneNumber, setPhoneNumber] = useState("(775) 351-6501")
+
+    const [form, setForm] = useState({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phoneNumber: "",
+        password: "",
+        confirmPassword: "",
+        otp: "",
+    })
+
+
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-    const [confirmPassword, setConfirmPassword] = useState("")
 
-    const [otp, setOtp] = useState("")
     const [otpSent, setOtpSent] = useState(false)
-    const [showSentOtp, setShowSentOtp] = useState(false)
+    const [otpCountdown, setOtpCountdown] = useState(0) // Đếm ngược OTP
+    const [isSendingOtp, setIsSendingOtp] = useState(false) // Loading state cho gửi OTP
 
     const [showMethodModal, setShowMethodModal] = useState(false)
 
+    const { toast } = useToast()
 
     const navigate = useNavigate()
 
-    const handleSubmit = (e) => {
-        e.preventDefault()
-
-        // validation data 
-        if (activeTab === "signup") {
-            if (!firstName || !lastName || !email || !password || !confirmPassword || !otp) {
-                const msg = "Please fill in " + (!firstName ? "first name, " : "")
-                    + (!lastName ? "last name, " : "")
-                    + (!email ? "email, " : "")
-                    + (!password ? "password, " : "")
-                    + (!confirmPassword ? "confirm password, " : "")
-                    + (!otp ? "OTP" : "")
-                alert(msg.replace(/, $/, ""))
-                return
-            }
-
-            // check otp 
-            if (otp.length !== 6) {
-                alert("Please enter a valid 6-digit OTP")
-                return
-            }
-
-            // check password match
-            if (password !== confirmPassword) {
-                alert("Passwords do not match")
-                return
-            }
-
-            setIsLoading(true)
-
-            // Simulate registration
-            setTimeout(() => {
-                setIsLoading(false)
-                setActiveTab("signin")
-            }, 1500)
-
+    // Hàm xử lý thay đổi cho trường email/phone
+    const handleEmailOrPhoneChange = (value) => {
+        if (isPhoneNumber(value)) {
+            // Nếu là số điện thoại, lưu vào phoneNumber và xóa email
+            setForm((prev) => ({ ...prev, phoneNumber: value, email: "" }))
         } else {
-            if (!email || !password) {
-                const msg = "Please fill in " + (!email ? "email, " : "") + (!password ? "password" : "")
-                alert(msg.replace(/, $/, ""))
-                return
-            }
-            setIsLoading(true)
-            // Simulate authentication
-            setTimeout(() => {
-                setIsLoading(false)
-                alert("Signed in successfully!")
-            }, 1500)
+            // Nếu không phải số điện thoại, lưu vào email và xóa phoneNumber
+            setForm((prev) => ({ ...prev, email: value, phoneNumber: "" }))
+        }
+    }
 
+    const handleChange = (field, value) => {
+        setForm((prev) => ({ ...prev, [field]: value }))
+    }
+
+    const resetForm = () => {
+        setForm({
+            firstName: "",
+            lastName: "",
+            email: "",
+            phoneNumber: "",
+            password: "",
+            confirmPassword: "",
+            otp: "",
+        })
+        setOtpCountdown(0) // Reset countdown
+        setOtpSent(false)
+    }
+
+    const validateSignUp = () => {
+        const { firstName, lastName, email, phoneNumber, password, confirmPassword, otp } = form
+        const identifier = email || phoneNumber
+
+        if (!firstName || !lastName || !identifier || !password || !confirmPassword || !otp) {
+            const msg = "Please fill in " + (!firstName ? "first name, " : "")
+                + (!lastName ? "last name, " : "")
+                + (!identifier ? "email or phone number, " : "")
+                + (!password ? "password, " : "")
+                + (!confirmPassword ? "confirm password, " : "")
+                + (!otp ? "OTP" : "")
+            return msg.replace(/, $/, "")
+        }
+        if (otp.length !== 6) return "Please enter a valid 6-digit OTP"
+        if (password !== confirmPassword) return "Passwords do not match"
+        return null
+    }
+    const validateSignIn = () => {
+        const { email, phoneNumber, password } = form
+        const identifier = email || phoneNumber
+
+        if (!identifier || !password)
+            return ("Please fill in " + (!identifier ? "email or phone number, " : "") + (!password ? "password" : "")).replace(/, $/, "")
+        return null
+    }
+    const validateEmail = (emailOrPhone) => {
+        return validateEmailOrPhone(emailOrPhone)
+    }
+
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        setIsLoading(true)
+
+        try {
+            if (activeTab === "signup") {
+                const error = validateSignUp()
+
+                if (error) throw new Error(error)
+                if (!otpSent) throw new Error("Please request and enter the OTP sent to your email or phone.")
+
+                // Sử dụng email hoặc phoneNumber tùy theo input
+                const identifier = form.email || form.phoneNumber
+                const identifierType = form.email ? 'email' : 'phoneNumber'
+
+                console.log("Identifier:", identifier, "Type:", identifierType, form)
+                // api 
+                await registerApi({ [identifierType]: identifier }) // check not registered
+                await verifyOtpApi({ [identifierType]: identifier, otp: form.otp }) // verify otp
+                await signup({ [identifierType]: identifier, password: form.password })
+
+                toast({
+                    title: "Account created successfully 🎉!",
+                    description: "You can now sign in with your credentials.",
+                    duration: 5000,
+                })
+                setActiveTab("signin")
+                resetForm()
+
+            } else {
+                const error = validateSignIn()
+                if (error) throw new Error(error)
+
+                const identifier = form.email || form.phoneNumber
+                const identifierType = form.email ? 'email' : 'phoneNumber'
+
+                const res = await signin({ [identifierType]: identifier, password: form.password })
+                // set data to local storage
+                localStorage.setItem("token", res.metadata.token)
+                localStorage.setItem("user", JSON.stringify(res.metadata.user))
+
+                toast({
+                    title: "Signed in successfully 🎉!",
+                    description: `Welcome back, ${res.metadata.user.email || res.metadata.user.phoneNumber}!`,
+                    duration: 5000,
+                })
+
+                // redirect to home page
+                navigate("/")
+            }
+
+
+        } catch (error) {
+            console.error("Auth error:", error)
+            toast({
+                title: "Something went wrong.",
+                description: error.message || "Please try again.",
+                variant: "destructive",
+                duration: 4000,
+            })
+
+        } finally {
+            setIsLoading(false)
         }
 
     }
 
     const handleClose = () => {
-        navigate(-1)
+        navigate("/")
     }
 
     const getAvailableMethods = () => {
         const methods = []
-        if (email && email.trim() !== "") {
-            methods.push({ id: "email", label: "Gmail", icon: "📧" })
+        const identifier = form.email || form.phoneNumber
+        const error = validateEmail(identifier)
+
+        if (error === null) {
+            if (form.email) {
+                methods.push({ id: "email", label: "Gmail", icon: "📧" })
+            }
+            if (form.phoneNumber) {
+                methods.push(
+                    { id: "sms", label: "SMS", icon: "💬" },
+                    { id: "telegram", label: "Telegram", icon: "✈️" }
+                )
+            }
         }
-        // if (phoneNumber && phoneNumber.trim() !== "") {
-        //     methods.push({ id: "sms", label: "SMS", icon: "💬" }, { id: "telegram", label: "Telegram", icon: "✈️" })
-        // }
         return methods
     }
 
     const handleSendOtp = (e) => {
+        const identifier = form.email || form.phoneNumber
 
-        // check email valid
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(email)) {
-            alert("Please enter a valid email address")
+        // check email or phone valid
+        const error = validateEmail(identifier)
+        if (error) {
+            toast({
+                title: "Invalid input",
+                description: error,
+                variant: "info",
+                duration: 4000,
+            })
             return
         }
 
         setShowMethodModal(true)
     }
 
+    useEffect(() => {
+        handleChange("otp", "")
+        setOtpSent(false)
+        setOtpCountdown(0) // Reset countdown khi thay đổi email/phone
+    }, [form.email, form.phoneNumber])
+
+    // Effect để đếm ngược OTP
+    useEffect(() => {
+        if (otpCountdown > 0) {
+            const timer = setTimeout(() => {
+                setOtpCountdown(otpCountdown - 1)
+            }, 1000)
+            return () => clearTimeout(timer)
+        }
+    }, [otpCountdown])
+
+    const handleMethodSelect = async (method) => {
+        // Prevent double submission
+        if (isSendingOtp) {
+            return
+        }
+
+        const identifier = form.email || form.phoneNumber
+
+        setIsSendingOtp(true) // Bắt đầu loading
+
+        if (method === "email") {
+            try {
+                await registerApi({ email: form.email }) // api check email not registered
+                await sendOtpApi({ email: form.email })
+                setOtpSent(true)
+                setOtpCountdown(60) // Bắt đầu đếm ngược 60 giây
+                toast({
+                    title: "OTP Sent",
+                    description: `An OTP has been sent to ${form.email}. Please check your inbox.`,
+                    duration: 5000
+                })
+            } catch (error) {
+                console.error("Send OTP error:", error)
+                toast({
+                    title: "Failed to send OTP",
+                    description: error.message || "Please try again.",
+                    variant: "destructive",
+                    duration: 4000,
+                })
+            } finally {
+                setIsSendingOtp(false) // Kết thúc loading
+            }
+        } else if (method === "sms" || method === "telegram") {
+            // TODO: Implement SMS/Telegram OTP sending
+            setIsSendingOtp(false) // Reset loading
+            toast({
+                title: "Coming Soon",
+                description: `${method === "sms" ? "SMS" : "Telegram"} OTP will be available soon.`,
+                variant: "info",
+                duration: 4000,
+            })
+        } else {
+            setIsSendingOtp(false) // Reset loading
+            toast({
+                title: "Method not supported",
+                description: "Please select a valid method.",
+                variant: "info",
+                duration: 4000,
+            })
+        }
+        setShowMethodModal(false)
+    }
+
+
+    const loginWithGoogle = async () => {
+        try {
+            window.location.href = import.meta.env.VITE_SERVER_BASE_URL + '/auths/google'
+            // Handle successful login
+        } catch (error) {
+            console.error("Google Auth error:", error);
+            toast({
+                title: "Something went wrong.",
+                description: error.message || "Please try again.",
+                variant: "destructive",
+                duration: 4000,
+            });
+        }
+    }
 
     return (
         <div className="w-full max-w-md mx-auto">
@@ -168,8 +344,8 @@ export function AuthCard({
                                 <div className="relative">
                                     <Input
                                         type="text"
-                                        value={firstName}
-                                        onChange={(e) => setFirstName(e.target.value)}
+                                        value={form.firstName}
+                                        onChange={(e) => handleChange("firstName", e.target.value)}
                                         className="bg-gray-50 border border-gray-200 rounded-2xl h-14 text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:ring-0 text-base transition-all duration-200 hover:bg-gray-100 focus:bg-white"
                                         placeholder="First name"
                                     />
@@ -177,56 +353,42 @@ export function AuthCard({
                                 <div className="relative">
                                     <Input
                                         type="text"
-                                        value={lastName}
-                                        onChange={(e) => setLastName(e.target.value)}
+                                        value={form.lastName}
+                                        onChange={(e) => handleChange("lastName", e.target.value)}
                                         className="bg-gray-50 border border-gray-200 rounded-2xl h-14 text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:ring-0 text-base transition-all duration-200 hover:bg-gray-100 focus:bg-white"
                                         placeholder="Last name"
                                     />
                                 </div>
                             </div>
 
-                            {/* Account name field */}
+                            {/* Email or Phone field */}
                             <div className="relative">
                                 <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 transition-colors duration-200" />
                                 <Input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    type="text"
+                                    value={form.email || form.phoneNumber}
+                                    onChange={(e) => handleEmailOrPhoneChange(e.target.value)}
                                     className="bg-gray-50 border border-gray-200 rounded-2xl h-14 text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:ring-0 pl-12 text-base transition-all duration-200 hover:bg-gray-100 focus:bg-white"
-                                    placeholder="Enter your email"
-
+                                    placeholder="Enter your email or phone number"
                                 />
+                                {form.email && (
+                                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">Email</span>
+                                )}
+                                {form.phoneNumber && (
+                                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">Phone</span>
+                                )}
                             </div>
-
-                            {/* Phone field */}
-                            {/* <div className="relative">
-                                <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-                                    <div className="w-6 h-4 bg-red-500 relative overflow-hidden rounded-sm">
-                                        <div className="absolute inset-0 bg-red-500"></div>
-                                        <div className="absolute top-0 left-0 w-2 h-full bg-blue-600"></div>
-                                        <div className="absolute top-1 left-1 w-1 h-0.5 bg-white"></div>
-                                    </div>
-                                    <ChevronDown className="w-4 h-4 text-gray-400" />
-                                </div>
-                                <Input
-                                    type="tel"
-                                    value={phoneNumber}
-                                    onChange={(e) => setPhoneNumber(e.target.value)}
-                                    className="bg-gray-50 border border-gray-200 rounded-2xl h-14 text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:ring-0 pl-20 text-base transition-all duration-200 hover:bg-gray-100 focus:bg-white"
-                                    placeholder="Phone number"
-                                />
-                            </div> */}
 
                             <div className="relative">
                                 <div className="flex gap-2">
                                     <div className="flex-1">
                                         <Input
                                             type="text"
-                                            value={otp}
+                                            value={form.otp}
                                             onChange={(e) => {
                                                 const value = e.target.value.replace(/\D/g, "").slice(0, 6)
-                                                setOtp(value)
-                                                if (value.length === 0) setOtpSent(false)
+                                                handleChange("otp", value)
+                                                if (value.length === 0 || value.length < 6) setOtpSent(false)
                                             }}
                                             className="bg-gray-50 border border-gray-200 rounded-2xl h-14 text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:ring-0 text-base transition-all duration-200 hover:bg-gray-100 focus:bg-white text-center tracking-widest"
                                             placeholder="Enter 6-digit OTP"
@@ -237,9 +399,13 @@ export function AuthCard({
                                     <button
                                         type="button"
                                         onClick={handleSendOtp}
-                                        className="px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-2xl text-sm font-medium text-gray-700 transition-all duration-200 whitespace-nowrap"
+                                        disabled={otpCountdown > 0 || isSendingOtp}
+                                        className={`px-4 py-2 border border-gray-200 rounded-2xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${otpCountdown > 0 || isSendingOtp
+                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                                            }`}
                                     >
-                                        Gửi OTP
+                                        {otpCountdown > 0 ? `Gửi lại (${otpCountdown}s)` : isSendingOtp ? 'Đang gửi...' : 'Gửi OTP'}
                                     </button>
                                 </div>
                             </div>
@@ -249,8 +415,8 @@ export function AuthCard({
                             <div className="relative">
                                 <Input
                                     type={showPassword ? "text" : "password"}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    value={form.password}
+                                    onChange={(e) => handleChange("password", e.target.value)}
                                     className="bg-gray-50 border border-gray-200 rounded-2xl h-14 text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:ring-0 pr-12 text-base transition-all duration-200 hover:bg-gray-100 focus:bg-white"
                                     placeholder="Create password"
                                     autoComplete="new-password"
@@ -291,8 +457,8 @@ export function AuthCard({
                             <div className="relative">
                                 <Input
                                     type={showConfirmPassword ? "text" : "password"}
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    value={form.confirmPassword}
+                                    onChange={(e) => handleChange("confirmPassword", e.target.value)}
                                     className="bg-gray-50 border border-gray-200 rounded-2xl h-14 text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:ring-0 pr-12 text-base transition-all duration-200 hover:bg-gray-100 focus:bg-white"
                                     placeholder="Confirm password"
                                     autoComplete="new-password"
@@ -353,25 +519,31 @@ export function AuthCard({
                             onSubmit={handleSubmit}
                             className="space-y-4"
                         >
-                            {/* Email field */}
+                            {/* Email or Phone field */}
                             <div className="relative">
                                 <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 transition-colors duration-200" />
                                 <Input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    type="text"
+                                    value={form.email || form.phoneNumber}
+                                    onChange={(e) => handleEmailOrPhoneChange(e.target.value)}
                                     className="bg-gray-50 border border-gray-200 rounded-2xl h-14 text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:ring-0 pl-12 text-base transition-all duration-200 hover:bg-gray-100 focus:bg-white"
-                                    placeholder="Enter your email"
-                                    autoComplete="email"
+                                    placeholder="Enter your email or phone number"
+                                    autoComplete="username"
                                 />
+                                {form.email && (
+                                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">Email</span>
+                                )}
+                                {form.phoneNumber && (
+                                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">Phone</span>
+                                )}
                             </div>
 
                             {/* Password field */}
                             <div className="relative">
                                 <Input
                                     type={showPassword ? "text" : "password"}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    value={form.password}
+                                    onChange={(e) => handleChange("password", e.target.value)}
                                     className="bg-gray-50 border border-gray-200 rounded-2xl h-14 text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:ring-0 pr-12 text-base transition-all duration-200 hover:bg-gray-100 focus:bg-white"
                                     placeholder="Enter your password"
                                     autoComplete="current-password"
@@ -432,6 +604,7 @@ export function AuthCard({
 
                 <div className="grid grid-cols-2 gap-4">
                     <button
+                        onClick={() => loginWithGoogle()}
                         // onClick={handleRedirect}
                         className="bg-gray-50 border border-gray-200 rounded-2xl h-14 flex items-center justify-center hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 min-w-0"
                     >
@@ -470,27 +643,39 @@ export function AuthCard({
                                 <button
                                     key={method.id}
                                     onClick={() => handleMethodSelect(method.id)}
-                                    className="w-full flex items-center gap-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-all duration-200 border border-gray-200 hover:border-gray-300"
+                                    disabled={isSendingOtp}
+                                    className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all duration-200 border ${isSendingOtp
+                                        ? 'bg-gray-100 border-gray-200 cursor-not-allowed opacity-50'
+                                        : 'bg-gray-50 hover:bg-gray-100 border-gray-200 hover:border-gray-300'
+                                        }`}
                                 >
                                     <span className="text-2xl">{method.icon}</span>
                                     <div className="flex-1 text-left">
                                         <div className="font-medium text-gray-900">{method.label}</div>
                                         <div className="text-sm text-gray-600">
-                                            {method.id === "email" && `Send to ${email}`}
-                                            {method.id === "sms" && `Send to ${countryCode} ${phoneNumber}`}
-                                            {method.id === "telegram" && `Send to ${countryCode} ${phoneNumber}`}
+                                            {method.id === "email" && `Send to ${form.email}`}
+                                            {method.id === "sms" && `Send to ${form.phoneNumber}`}
+                                            {method.id === "telegram" && `Send to ${form.phoneNumber}`}
                                         </div>
                                     </div>
-                                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                    </svg>
+                                    {isSendingOtp ? (
+                                        <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                                    ) : (
+                                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    )}
                                 </button>
                             ))}
                         </div>
 
                         <button
                             onClick={() => setShowMethodModal(false)}
-                            className="w-full mt-4 py-3 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+                            disabled={isSendingOtp}
+                            className={`w-full mt-4 py-3 font-medium transition-colors ${isSendingOtp
+                                ? 'text-gray-400 cursor-not-allowed'
+                                : 'text-gray-600 hover:text-gray-800'
+                                }`}
                         >
                             Cancel
                         </button>

@@ -1,77 +1,67 @@
-// import { useState } from "react"
-// import AuthCard from "../auth/components/auth-card"
-
+import { useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import { AuthCard } from "./components/auth-card"
+import { useToast } from "hooks/use-toast"
 
-// const AuthPage = () => {
-//   const [isLoading, setIsLoading] = useState(false)
-//   const [password, setPassword] = useState("")
-//   const [email, setEmail] = useState("")
-//   const [rememberMe, setRememberMe] = useState(false)
-
-//   const validateEmail = (email) => {
-//     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-//   }
-
-//   const handleSignIn = async (e) => {
-//     e.preventDefault()
-
-//     if (!validateEmail(email)) {
-//       return
-//     }
-
-//     setIsLoading(true)
-
-//     // Simulate authentication
-//     setTimeout(() => {
-//       setIsLoading(false)
-
-//     }, 1500)
-//   }
-
-//   const handleSignUp = async (e) => {
-//     e.preventDefault()
-
-//     if (password.length < 6) {
-
-//       return
-//     }
-
-//     setIsLoading(true)
-
-//     // Simulate registration
-//     setTimeout(() => {
-//       setIsLoading(false)
-//     }, 1500)
-//   }
-
-//   const handleSocialLogin = (provider) => {
-
-//   }
-
-//   const handleForgotPassword = () => {
-//   }
-
-//   return (
-//     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-white">
-//       <AuthCard
-//         isLoading={isLoading}
-//         email={email}
-//         setEmail={setEmail}
-//         password={password}
-//         setPassword={setPassword}
-//         rememberMe={rememberMe}
-//         setRememberMe={setRememberMe}
-//         onSignIn={handleSignIn}
-//         onSignUp={handleSignUp}
-//         onSocialLogin={handleSocialLogin}
-//         onForgotPassword={handleForgotPassword}
-//       />
-//     </div>
-//   )
-// }
 
 const AuthPage = () => {
+  const navigate = useNavigate()
+  const { toast } = useToast()
+
+  useEffect(() => {
+    // Helper function để đọc cookie
+    const getCookie = (name) => {
+      const value = `; ${document.cookie}`
+      const parts = value.split(`; ${name}=`)
+      if (parts.length === 2) return parts.pop().split(';').shift()
+      return null
+    }
+
+    // Lấy provider từ query params
+    const params = new URLSearchParams(window.location.search)
+    const provider = params.get("provider")
+
+    if (provider === "google") {
+      const sessionCookie = getCookie('SS')
+
+      if (sessionCookie) {
+        try {
+          const session = JSON.parse(decodeURIComponent(sessionCookie))
+
+          if (session.accessToken) {
+            localStorage.setItem("token", session.accessToken)
+          }
+
+          if (session.user) {
+            localStorage.setItem("user", JSON.stringify(session.user))
+          }
+
+          // Xóa cookie SS sau khi đã lưu
+          document.cookie = 'SS=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+
+          toast({
+            title: "Signed in successfully 🎉!",
+            description: `Welcome back, ${session.user?.email || 'User'}!`,
+            duration: 3000,
+          })
+
+          // Redirect về trang chủ
+          setTimeout(() => {
+            navigate("/", { replace: true })
+          }, 1000)
+        } catch (error) {
+          console.error("❌ Error:", error)
+          toast({
+            title: "Authentication error",
+            description: "Failed to process login. Please try again.",
+            variant: "destructive",
+            duration: 4000,
+          })
+        }
+      }
+    }
+  }, [navigate, toast])
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-white">
       <AuthCard />
