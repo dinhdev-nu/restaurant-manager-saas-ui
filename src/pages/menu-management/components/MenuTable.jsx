@@ -3,14 +3,14 @@ import Image from '../../../components/AppImage';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 
-const MenuTable = ({ 
-  items, 
-  selectedItems, 
-  onSelectItem, 
-  onSelectAll, 
-  onEdit, 
-  onDelete, 
-  onToggleAvailability 
+const MenuTable = ({
+  items,
+  selectedItems,
+  onSelectItem,
+  onSelectAll,
+  onEdit,
+  onDelete,
+  onToggleAvailability
 }) => {
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -79,8 +79,8 @@ const MenuTable = ({
           </thead>
           <tbody>
             {items?.map((item, index) => (
-              <tr 
-                key={item?.id} 
+              <tr
+                key={item?.id}
                 className={`
                   border-b border-border hover:bg-muted/30 transition-smooth
                   ${selectedItems?.includes(item?.id) ? 'bg-primary/5' : ''}
@@ -94,7 +94,7 @@ const MenuTable = ({
                     className="w-4 h-4 text-primary border-border rounded focus:ring-primary"
                   />
                 </td>
-                
+
                 <td className="p-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
@@ -114,21 +114,21 @@ const MenuTable = ({
                     </div>
                   </div>
                 </td>
-                
+
                 <td className="p-4">
                   <span className="text-sm text-foreground">{item?.category}</span>
                 </td>
-                
+
                 <td className="p-4">
                   <span className="font-semibold text-primary text-sm">
                     {formatPrice(item?.price)}
                   </span>
                 </td>
-                
+
                 <td className="p-4">
                   {getStatusBadge(item?.status)}
                 </td>
-                
+
                 <td className="p-4">
                   <div className="text-sm text-foreground">
                     {item?.stock_quantity !== null && item?.stock_quantity !== undefined ? (
@@ -140,13 +140,13 @@ const MenuTable = ({
                     )}
                   </div>
                 </td>
-                
+
                 <td className="p-4">
                   <span className="text-sm text-muted-foreground">
                     {new Date(item.updated_at)?.toLocaleDateString('vi-VN')}
                   </span>
                 </td>
-                
+
                 <td className="p-4">
                   <div className="flex items-center justify-center space-x-1">
                     <Button
@@ -156,12 +156,12 @@ const MenuTable = ({
                       className="w-8 h-8"
                       title={item?.status === 'available' ? 'Tạm ngưng' : 'Kích hoạt'}
                     >
-                      <Icon 
-                        name={item?.status === 'available' ? 'EyeOff' : 'Eye'} 
-                        size={14} 
+                      <Icon
+                        name={item?.status === 'available' ? 'EyeOff' : 'Eye'}
+                        size={14}
                       />
                     </Button>
-                    
+
                     <Button
                       variant="ghost"
                       size="icon"
@@ -171,7 +171,7 @@ const MenuTable = ({
                     >
                       <Icon name="Edit" size={14} />
                     </Button>
-                    
+
                     <Button
                       variant="ghost"
                       size="icon"
