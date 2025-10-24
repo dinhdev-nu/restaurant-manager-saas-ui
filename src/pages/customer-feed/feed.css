@@ -132,3 +132,37 @@ html {
     padding-right: max(0px, env(safe-area-inset-right));
   }
 }
+
+/* Attention Modal Animations */
+@keyframes modalSlideOut {
+  0% {
+    opacity: 1;
+    transform: scale(1) translate(0, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.75) translate(24rem, 24rem);
+  }
+}
+
+.modal-slide-out {
+  animation: modalSlideOut 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+
+
+/* Subtle entrance for attention modal */
+@keyframes modalEntranceAttention {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(1rem);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-entrance-attention {
+  animation: modalEntranceAttention 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
