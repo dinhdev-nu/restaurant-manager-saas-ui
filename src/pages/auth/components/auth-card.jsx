@@ -38,6 +38,11 @@ export function AuthCard({
 
     const navigate = useNavigate()
 
+    // Reset form khi chuyển tab
+    useEffect(() => {
+        resetForm()
+    }, [activeTab])
+
     // Hàm xử lý thay đổi cho trường email/phone
     const handleEmailOrPhoneChange = (value) => {
         if (isPhoneNumber(value)) {
@@ -291,41 +296,39 @@ export function AuthCard({
 
     return (
         <div className="w-full max-w-md mx-auto">
-            <div className="bg-white/95 backdrop-blur-xl border border-gray-200 rounded-[32px] p-8 shadow-2xl transform transition-all duration-300 hover:scale-[1.02] hover:shadow-3xl">
+            <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-lg transition-all duration-300">
                 {/* Header with tabs and close button */}
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex bg-gray-100 backdrop-blur-sm rounded-full p-1 border border-gray-200 min-w-0 flex-1 mr-4">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex bg-gray-100 rounded-lg p-1 min-w-0 flex-1 mr-3">
                         <button
                             onClick={() => setActiveTab("signup")}
-                            className={`flex-1 min-w-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 transform hover:scale-105 ${activeTab === "signup"
-                                ? "bg-white backdrop-blur-sm border border-gray-300 shadow-lg"
-                                : "hover:bg-gray-50"
+                            className={`flex-1 min-w-0 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === "signup"
+                                ? "bg-white text-gray-900 shadow-sm"
+                                : "text-gray-600 hover:text-gray-900"
                                 }`}
-                            style={{ color: activeTab === "signup" ? "#111827" : "#4B5563" }}
                         >
                             <span className="truncate">Sign up</span>
                         </button>
                         <button
                             onClick={() => setActiveTab("signin")}
-                            className={`flex-1 min-w-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 transform hover:scale-105 ${activeTab === "signin"
-                                ? "bg-white backdrop-blur-sm border border-gray-300 shadow-lg"
-                                : "hover:bg-gray-50"
+                            className={`flex-1 min-w-0 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === "signin"
+                                ? "bg-white text-gray-900 shadow-sm"
+                                : "text-gray-600 hover:text-gray-900"
                                 }`}
-                            style={{ color: activeTab === "signin" ? "#111827" : "#4B5563" }}
                         >
                             <span className="truncate">Sign in</span>
                         </button>
                     </div>
                     <button
-                        className="flex-shrink-0 w-10 h-10 bg-gray-100 backdrop-blur-sm rounded-full flex items-center justify-center border border-gray-200 hover:bg-gray-200 transition-all duration-200 hover:scale-110 hover:rotate-90"
+                        className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors"
                         onClick={handleClose}
                         aria-label="Close"
                     >
-                        <X className="w-5 h-5 text-gray-600" />
+                        <X className="w-5 h-5 text-gray-400" />
                     </button>
                 </div>
 
-                <h1 className="text-3xl font-normal text-gray-900 mb-8 transition-all duration-300">
+                <h1 className="text-2xl font-semibold text-gray-900 mb-6">
                     {activeTab === "signup" ? "Create an account" : "Welcome back"}
                 </h1>
 
@@ -338,16 +341,18 @@ export function AuthCard({
                         <form
                             onSubmit={handleSubmit}
                             className="space-y-4"
+                            autoComplete="off"
                         >
                             {/* Name fields */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-3">
                                 <div className="relative">
                                     <Input
                                         type="text"
                                         value={form.firstName}
                                         onChange={(e) => handleChange("firstName", e.target.value)}
-                                        className="bg-gray-50 border border-gray-200 rounded-2xl h-14 text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:ring-0 text-base transition-all duration-200 hover:bg-gray-100 focus:bg-white"
+                                        className="bg-white border border-gray-300 rounded-lg h-11 text-sm text-gray-900 placeholder:text-gray-400 focus:border-black focus:ring-2 focus:ring-black/5 transition-all"
                                         placeholder="First name"
+                                        autoComplete="off"
                                     />
                                 </div>
                                 <div className="relative">
@@ -355,27 +360,29 @@ export function AuthCard({
                                         type="text"
                                         value={form.lastName}
                                         onChange={(e) => handleChange("lastName", e.target.value)}
-                                        className="bg-gray-50 border border-gray-200 rounded-2xl h-14 text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:ring-0 text-base transition-all duration-200 hover:bg-gray-100 focus:bg-white"
+                                        className="bg-white border border-gray-300 rounded-lg h-11 text-sm text-gray-900 placeholder:text-gray-400 focus:border-black focus:ring-2 focus:ring-black/5 transition-all"
                                         placeholder="Last name"
+                                        autoComplete="off"
                                     />
                                 </div>
                             </div>
 
                             {/* Email or Phone field */}
                             <div className="relative">
-                                <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 transition-colors duration-200" />
+                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <Input
                                     type="text"
                                     value={form.email || form.phoneNumber}
                                     onChange={(e) => handleEmailOrPhoneChange(e.target.value)}
-                                    className="bg-gray-50 border border-gray-200 rounded-2xl h-14 text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:ring-0 pl-12 text-base transition-all duration-200 hover:bg-gray-100 focus:bg-white"
-                                    placeholder="Enter your email or phone number"
+                                    className="bg-white border border-gray-300 rounded-lg h-11 text-sm text-gray-900 placeholder:text-gray-400 focus:border-black focus:ring-2 focus:ring-black/5 pl-10 pr-16 transition-all"
+                                    placeholder="Email or phone number"
+                                    autoComplete="off"
                                 />
                                 {form.email && (
-                                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">Email</span>
+                                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Email</span>
                                 )}
                                 {form.phoneNumber && (
-                                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">Phone</span>
+                                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Phone</span>
                                 )}
                             </div>
 
@@ -390,22 +397,22 @@ export function AuthCard({
                                                 handleChange("otp", value)
                                                 if (value.length === 0 || value.length < 6) setOtpSent(false)
                                             }}
-                                            className="bg-gray-50 border border-gray-200 rounded-2xl h-14 text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:ring-0 text-base transition-all duration-200 hover:bg-gray-100 focus:bg-white text-center tracking-widest"
-                                            placeholder="Enter 6-digit OTP"
+                                            className="bg-white border border-gray-300 rounded-lg h-11 text-sm text-gray-900 placeholder:text-gray-400 focus:border-black focus:ring-2 focus:ring-black/5 text-center tracking-widest transition-all"
+                                            placeholder="OTP code"
                                             maxLength={6}
-                                            autoComplete="one-time-code"
+                                            autoComplete="off"
                                         />
                                     </div>
                                     <button
                                         type="button"
                                         onClick={handleSendOtp}
                                         disabled={otpCountdown > 0 || isSendingOtp}
-                                        className={`px-4 py-2 border border-gray-200 rounded-2xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${otpCountdown > 0 || isSendingOtp
-                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                                        className={`px-4 py-2 border rounded-lg text-sm font-medium transition-all whitespace-nowrap ${otpCountdown > 0 || isSendingOtp
+                                            ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                                            : 'bg-white border-gray-300 text-gray-900 hover:bg-gray-50'
                                             }`}
                                     >
-                                        {otpCountdown > 0 ? `Gửi lại (${otpCountdown}s)` : isSendingOtp ? 'Đang gửi...' : 'Gửi OTP'}
+                                        {otpCountdown > 0 ? `${otpCountdown}s` : isSendingOtp ? 'Sending...' : 'Send OTP'}
                                     </button>
                                 </div>
                             </div>
@@ -417,38 +424,23 @@ export function AuthCard({
                                     type={showPassword ? "text" : "password"}
                                     value={form.password}
                                     onChange={(e) => handleChange("password", e.target.value)}
-                                    className="bg-gray-50 border border-gray-200 rounded-2xl h-14 text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:ring-0 pr-12 text-base transition-all duration-200 hover:bg-gray-100 focus:bg-white"
-                                    placeholder="Create password"
-                                    autoComplete="new-password"
+                                    className="bg-white border border-gray-300 rounded-lg h-11 text-sm text-gray-900 placeholder:text-gray-400 focus:border-black focus:ring-2 focus:ring-black/5 pr-10 transition-all"
+                                    placeholder="Password"
+                                    autoComplete="off"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                                 >
                                     {showPassword ? (
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
-                                            />
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
                                         </svg>
                                     ) : (
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                            />
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                            />
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                         </svg>
                                     )}
                                 </button>
@@ -459,38 +451,23 @@ export function AuthCard({
                                     type={showConfirmPassword ? "text" : "password"}
                                     value={form.confirmPassword}
                                     onChange={(e) => handleChange("confirmPassword", e.target.value)}
-                                    className="bg-gray-50 border border-gray-200 rounded-2xl h-14 text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:ring-0 pr-12 text-base transition-all duration-200 hover:bg-gray-100 focus:bg-white"
+                                    className="bg-white border border-gray-300 rounded-lg h-11 text-sm text-gray-900 placeholder:text-gray-400 focus:border-black focus:ring-2 focus:ring-black/5 pr-10 transition-all"
                                     placeholder="Confirm password"
-                                    autoComplete="new-password"
+                                    autoComplete="off"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                                 >
                                     {showConfirmPassword ? (
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
-                                            />
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
                                         </svg>
                                     ) : (
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                            />
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                            />
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                         </svg>
                                     )}
                                 </button>
@@ -499,14 +476,9 @@ export function AuthCard({
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full h-14 mt-8 rounded-2xl font-medium text-base transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-                                style={{
-                                    backgroundColor: "#111827",
-                                    color: "#ffffff",
-                                    border: "none",
-                                }}
+                                className="w-full h-11 mt-6 rounded-lg bg-black text-white text-sm font-medium hover:bg-gray-800 active:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {isLoading ? "Creating account..." : "Create an account"}
+                                {isLoading ? "Creating account..." : "Create account"}
                             </button>
                         </form>
                     </div>
@@ -518,23 +490,24 @@ export function AuthCard({
                         <form
                             onSubmit={handleSubmit}
                             className="space-y-4"
+                            autoComplete="off"
                         >
                             {/* Email or Phone field */}
                             <div className="relative">
-                                <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 transition-colors duration-200" />
+                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <Input
                                     type="text"
                                     value={form.email || form.phoneNumber}
                                     onChange={(e) => handleEmailOrPhoneChange(e.target.value)}
-                                    className="bg-gray-50 border border-gray-200 rounded-2xl h-14 text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:ring-0 pl-12 text-base transition-all duration-200 hover:bg-gray-100 focus:bg-white"
-                                    placeholder="Enter your email or phone number"
-                                    autoComplete="username"
+                                    className="bg-white border border-gray-300 rounded-lg h-11 text-sm text-gray-900 placeholder:text-gray-400 focus:border-black focus:ring-2 focus:ring-black/5 pl-10 pr-16 transition-all"
+                                    placeholder="Email or phone number"
+                                    autoComplete="off"
                                 />
                                 {form.email && (
-                                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">Email</span>
+                                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Email</span>
                                 )}
                                 {form.phoneNumber && (
-                                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">Phone</span>
+                                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Phone</span>
                                 )}
                             </div>
 
@@ -544,34 +517,34 @@ export function AuthCard({
                                     type={showPassword ? "text" : "password"}
                                     value={form.password}
                                     onChange={(e) => handleChange("password", e.target.value)}
-                                    className="bg-gray-50 border border-gray-200 rounded-2xl h-14 text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:ring-0 pr-12 text-base transition-all duration-200 hover:bg-gray-100 focus:bg-white"
-                                    placeholder="Enter your password"
-                                    autoComplete="current-password"
+                                    className="bg-white border border-gray-300 rounded-lg h-11 text-sm text-gray-900 placeholder:text-gray-400 focus:border-black focus:ring-2 focus:ring-black/5 pr-10 transition-all"
+                                    placeholder="Password"
+                                    autoComplete="off"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                                 >
-                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                 </button>
                             </div>
 
                             {/* Remember me and forgot password */}
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between text-sm">
                                 <label className="flex items-center space-x-2 cursor-pointer">
                                     <input
                                         type="checkbox"
                                         checked={rememberMe}
                                         onChange={(e) => setRememberMe(e.target.checked)}
-                                        className="w-4 h-4 rounded border border-gray-300 bg-gray-50 text-gray-900 focus:ring-gray-400 focus:ring-2"
+                                        className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black focus:ring-offset-0"
                                     />
-                                    <span className="text-gray-600 text-sm">Remember me</span>
+                                    <span className="text-gray-600">Remember me</span>
                                 </label>
                                 <button
                                     type="button"
                                     onClick={onForgotPassword}
-                                    className="text-gray-600 hover:text-gray-900 text-sm transition-colors duration-200"
+                                    className="text-gray-600 hover:text-gray-900 transition-colors"
                                 >
                                     Forgot password?
                                 </button>
@@ -580,12 +553,7 @@ export function AuthCard({
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full h-14 mt-8 rounded-2xl font-medium text-base transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-                                style={{
-                                    backgroundColor: "#111827",
-                                    color: "#ffffff",
-                                    border: "none",
-                                }}
+                                className="w-full h-11 mt-6 rounded-lg bg-black text-white text-sm font-medium hover:bg-gray-800 active:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isLoading ? "Signing in..." : "Sign in"}
                             </button>
@@ -594,29 +562,27 @@ export function AuthCard({
                 </div>
 
                 {/* Divider */}
-                <div className="flex items-center my-8">
+                <div className="flex items-center my-6">
                     <div className="flex-1 h-px bg-gray-200"></div>
-                    <span className="px-4 text-gray-500 text-sm font-medium">
-                        {activeTab === "signup" ? "OR SIGN IN WITH" : "OR CONTINUE WITH"}
+                    <span className="px-3 text-gray-500 text-xs font-medium">
+                        {activeTab === "signup" ? "OR CONTINUE WITH" : "OR"}
                     </span>
                     <div className="flex-1 h-px bg-gray-200"></div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                     <button
                         onClick={() => loginWithGoogle()}
-                        // onClick={handleRedirect}
-                        className="bg-gray-50 border border-gray-200 rounded-2xl h-14 flex items-center justify-center hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 min-w-0"
+                        className="border border-gray-300 rounded-lg h-11 flex items-center justify-center hover:bg-gray-50 transition-colors"
                     >
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/2048px-Google_%22G%22_logo.svg.png" alt="" />
+                        <div className="w-5 h-5 flex-shrink-0">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/2048px-Google_%22G%22_logo.svg.png" alt="Google" />
                         </div>
                     </button>
                     <button
-                        // onClick={handleRedirect}
-                        className="bg-gray-50 border border-gray-200 rounded-2xl h-14 flex items-center justify-center hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 min-w-0"
+                        className="border border-gray-300 rounded-lg h-11 flex items-center justify-center hover:bg-gray-50 transition-colors"
                     >
-                        <div className="w-6 h-6 text-gray-900 flex-shrink-0">
+                        <div className="w-5 h-5 text-gray-900 flex-shrink-0">
                             <svg viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
                             </svg>
@@ -624,18 +590,18 @@ export function AuthCard({
                     </button>
                 </div>
 
-                <p className="text-center text-gray-500 text-sm mt-8">
+                <p className="text-center text-gray-500 text-xs mt-6">
                     {activeTab === "signup"
-                        ? "By creating an account, you agree to our Terms & Service"
-                        : "By signing in, you agree to our Terms & Service"}
+                        ? "By creating an account, you agree to our Terms of Service"
+                        : "By signing in, you agree to our Terms of Service"}
                 </p>
             </div>
             {showMethodModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="bg-white rounded-3xl p-6 mx-4 w-full max-w-sm shadow-2xl">
+                    <div className="bg-white rounded-2xl p-6 mx-4 w-full max-w-sm shadow-xl border border-gray-200">
                         <div className="text-center mb-6">
-                            <h3 className="text-xl font-semibold text-gray-900 mb-2">Select OTP Method</h3>
-                            <p className="text-gray-600 text-sm">Choose how you'd like to receive your verification code</p>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">Select OTP Method</h3>
+                            <p className="text-sm text-gray-600">Choose how you'd like to receive your code</p>
                         </div>
 
                         <div className="space-y-3">
@@ -644,24 +610,24 @@ export function AuthCard({
                                     key={method.id}
                                     onClick={() => handleMethodSelect(method.id)}
                                     disabled={isSendingOtp}
-                                    className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all duration-200 border ${isSendingOtp
-                                        ? 'bg-gray-100 border-gray-200 cursor-not-allowed opacity-50'
-                                        : 'bg-gray-50 hover:bg-gray-100 border-gray-200 hover:border-gray-300'
+                                    className={`w-full flex items-center gap-3 p-4 rounded-lg transition-all border ${isSendingOtp
+                                        ? 'bg-gray-50 border-gray-200 cursor-not-allowed opacity-50'
+                                        : 'bg-white hover:bg-gray-50 border-gray-300 hover:border-gray-400'
                                         }`}
                                 >
                                     <span className="text-2xl">{method.icon}</span>
                                     <div className="flex-1 text-left">
-                                        <div className="font-medium text-gray-900">{method.label}</div>
-                                        <div className="text-sm text-gray-600">
+                                        <div className="font-medium text-sm text-gray-900">{method.label}</div>
+                                        <div className="text-xs text-gray-500">
                                             {method.id === "email" && `Send to ${form.email}`}
                                             {method.id === "sms" && `Send to ${form.phoneNumber}`}
                                             {method.id === "telegram" && `Send to ${form.phoneNumber}`}
                                         </div>
                                     </div>
                                     {isSendingOtp ? (
-                                        <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                                        <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
                                     ) : (
-                                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                         </svg>
                                     )}
@@ -672,9 +638,9 @@ export function AuthCard({
                         <button
                             onClick={() => setShowMethodModal(false)}
                             disabled={isSendingOtp}
-                            className={`w-full mt-4 py-3 font-medium transition-colors ${isSendingOtp
+                            className={`w-full mt-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${isSendingOtp
                                 ? 'text-gray-400 cursor-not-allowed'
-                                : 'text-gray-600 hover:text-gray-800'
+                                : 'text-gray-600 hover:bg-gray-100'
                                 }`}
                         >
                             Cancel

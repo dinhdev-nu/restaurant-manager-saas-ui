@@ -63,7 +63,7 @@ const AuthPage = () => {
   }, [navigate, toast])
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
       <AuthCard />
     </div>
   )
