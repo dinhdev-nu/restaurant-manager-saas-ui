@@ -9,14 +9,29 @@ import {
     BookmarkIcon
 } from '@heroicons/react/24/outline';
 import LocationSelector from './LocationSelector';
+import { useAuthStore } from '../../../stores';
+import { logoutApi } from '../../../api/auth';
 
 const FeedHeader = ({ user, onLocationChange }) => {
     const navigate = useNavigate();
+    const { logout } = useAuthStore();
 
-    const handleLogout = () => {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        navigate('/auth');
+    const handleLogout = async () => {
+        try {
+            // Call API logout
+            await logoutApi();
+
+            // Clear Zustand store
+            logout(false); // Keep saved credentials
+
+            // Navigate to auth page
+            navigate('/auth');
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Even if API fails, still logout locally
+            logout(false);
+            navigate('/auth');
+        }
     };
 
     return (
@@ -63,13 +78,21 @@ const FeedHeader = ({ user, onLocationChange }) => {
                         {user && (
                             <Menu as="div" className="relative">
                                 <Menu.Button className="flex items-center space-x-2 px-3 py-1.5 rounded-full hover:bg-gray-50 transition-colors">
-                                    <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center">
-                                        <span className="text-white text-sm font-medium">
-                                            {user.email?.[0]?.toUpperCase() || 'U'}
-                                        </span>
+                                    <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center overflow-hidden">
+                                        {user?.avatar || user?.profileImage ? (
+                                            <img
+                                                src={user?.avatar || user?.profileImage}
+                                                alt={user?.user_name || 'User'}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <span className="text-white text-sm font-medium">
+                                                {user?.email?.[0]?.toUpperCase() || user?.user_name?.[0]?.toUpperCase() || 'U'}
+                                            </span>
+                                        )}
                                     </div>
                                     <span className="hidden md:block text-sm font-medium text-gray-900 max-w-[100px] truncate">
-                                        {user.firstName || user.email?.split('@')[0] || 'User'}
+                                        {user?.user_name || 'User'}
                                     </span>
                                 </Menu.Button>
 
@@ -84,8 +107,8 @@ const FeedHeader = ({ user, onLocationChange }) => {
                                 >
                                     <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right bg-white rounded-2xl shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none overflow-hidden">
                                         <div className="p-4 border-b border-gray-100">
-                                            <p className="text-sm font-semibold text-gray-900">{user.firstName || 'User'}</p>
-                                            <p className="text-xs text-gray-500 truncate">{user.email || user.phoneNumber}</p>
+                                            <p className="text-sm font-semibold text-gray-900">{user?.user_name || 'User'}</p>
+                                            <p className="text-xs text-gray-500 truncate">{user?.email || 'No email'}</p>
                                         </div>
                                         <div className="py-2">
                                             <Menu.Item>

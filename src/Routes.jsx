@@ -11,19 +11,32 @@ import MainPOSDashboard from './pages/main-pos-dashboard';
 import PaymentProcessing from './pages/payment-processing';
 import AuthPage from "./pages/auth/index";
 import CustomerFeed from './pages/customer-feed';
+import RestaurantSelector from './pages/restaurant-selector';
+import { useAuthStore } from './stores';
 
-// Home component với role-based redirect
-const Home = () => {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const role = user?.role || 'customer';
+// Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const { token } = useAuthStore();
+  if (!token) {
+    return <Navigate to="/auth" replace />;
+  }
+  return children;
+};
 
-  // Redirect dựa trên role
-  if (role === 'customer') {
-    return <Navigate to="/feed" replace />;
+// Restaurant Selection Required Route
+const RestaurantRoute = ({ children }) => {
+  const { token } = useAuthStore();
+  const selectedRestaurant = localStorage.getItem('selectedRestaurant');
+
+  if (!token) {
+    return <Navigate to="/auth" replace />;
   }
 
-  // Owner, manager, staff -> POS Dashboard
-  return <Navigate to="/main-pos-dashboard" replace />;
+  if (!selectedRestaurant) {
+    return <Navigate to="/restaurant-selector" replace />;
+  }
+
+  return children;
 };
 
 const Routes = () => {
@@ -32,22 +45,80 @@ const Routes = () => {
       <ErrorBoundary>
         <ScrollToTop />
         <RouterRoutes>
-          {/* Home - Role-based redirect */}
-          <Route path="/" element={<Home />} />
-
           {/* Auth */}
           <Route path="/auth" element={<AuthPage />} />
 
-          {/* Customer Routes */}
-          <Route path="/feed" element={<CustomerFeed />} />
+          {/* Restaurant Selector - After Login */}
+          <Route
+            path="/restaurant-selector"
+            element={<RestaurantSelector />}
+          />          {/* Customer Feed */}
+          <Route
+            path="/feed"
+            element={
+              <ProtectedRoute>
+                <CustomerFeed />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* Staff/Manager/Owner Routes */}
-          <Route path="/main-pos-dashboard" element={<MainPOSDashboard />} />
-          <Route path="/order-history" element={<OrderHistory />} />
-          <Route path="/menu-management" element={<MenuManagement />} />
-          <Route path="/table-management" element={<TableManagement />} />
-          <Route path="/staff-management" element={<StaffManagement />} />
-          <Route path="/payment-processing" element={<PaymentProcessing />} />
+          {/* Protected Routes - Require Restaurant Selection */}
+          <Route
+            path="/"
+            element={
+              <RestaurantRoute>
+                <MainPOSDashboard />
+              </RestaurantRoute>
+            }
+          />
+          <Route
+            path="/main-pos-dashboard"
+            element={
+              <RestaurantRoute>
+                <MainPOSDashboard />
+              </RestaurantRoute>
+            }
+          />
+          <Route
+            path="/menu-management"
+            element={
+              <RestaurantRoute>
+                <MenuManagement />
+              </RestaurantRoute>
+            }
+          />
+          <Route
+            path="/order-history"
+            element={
+              <RestaurantRoute>
+                <OrderHistory />
+              </RestaurantRoute>
+            }
+          />
+          <Route
+            path="/staff-management"
+            element={
+              <RestaurantRoute>
+                <StaffManagement />
+              </RestaurantRoute>
+            }
+          />
+          <Route
+            path="/table-management"
+            element={
+              <RestaurantRoute>
+                <TableManagement />
+              </RestaurantRoute>
+            }
+          />
+          <Route
+            path="/payment-processing"
+            element={
+              <RestaurantRoute>
+                <PaymentProcessing />
+              </RestaurantRoute>
+            }
+          />
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
@@ -58,3 +129,4 @@ const Routes = () => {
 };
 
 export default Routes;
+

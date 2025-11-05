@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Icon from '../AppIcon';
 import Button from './Button';
+import { useAuthStore } from '../../stores';
+import { logoutApi } from '../../api/auth';
 
-const Header = ({ 
+const Header = ({
   storeName = "POS Manager",
   isOperational = true,
   onToggleOperational,
   onToggleSidebar,
   userProfile = { name: "Admin", role: "owner" }
 }) => {
+  const navigate = useNavigate();
+  const { logout } = useAuthStore();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const location = useLocation();
@@ -20,9 +24,22 @@ const Header = ({
     { id: 3, type: 'info', message: 'Ca làm việc mới bắt đầu', time: '15 phút trước' }
   ];
 
-  const handleLogout = () => {
-    // Handle logout logic
-    console.log('Logging out...');
+  const handleLogout = async () => {
+    try {
+      // Call API logout
+      await logoutApi();
+
+      // Clear Zustand store
+      logout(false); // Keep saved credentials
+
+      // Navigate to auth page
+      navigate('/auth');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if API fails, still logout locally
+      logout(false);
+      navigate('/auth');
+    }
   };
 
   const getNotificationIcon = (type) => {
@@ -80,7 +97,7 @@ const Header = ({
           >
             Tìm kiếm
           </Button>
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -90,7 +107,7 @@ const Header = ({
           >
             Khách hàng
           </Button>
-          
+
           <Button
             variant="default"
             size="sm"
@@ -145,9 +162,9 @@ const Header = ({
                   {notifications?.map((notification) => (
                     <div key={notification?.id} className="p-4 border-b border-border last:border-b-0 hover:bg-muted/50 transition-smooth">
                       <div className="flex items-start space-x-3">
-                        <Icon 
-                          name={getNotificationIcon(notification?.type)} 
-                          size={16} 
+                        <Icon
+                          name={getNotificationIcon(notification?.type)}
+                          size={16}
                           className={getNotificationColor(notification?.type)}
                         />
                         <div className="flex-1 min-w-0">
@@ -275,8 +292,8 @@ const Header = ({
       </div>
       {/* Click outside handlers */}
       {(showUserMenu || showNotifications) && (
-        <div 
-          className="fixed inset-0 z-1000" 
+        <div
+          className="fixed inset-0 z-1000"
           onClick={() => {
             setShowUserMenu(false);
             setShowNotifications(false);

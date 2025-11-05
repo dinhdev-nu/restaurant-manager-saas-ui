@@ -2,11 +2,13 @@ import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { AuthCard } from "./components/auth-card"
 import { useToast } from "hooks/use-toast"
+import { useAuthStore } from "../../stores"
 
 
 const AuthPage = () => {
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { login: loginStore } = useAuthStore()
 
   useEffect(() => {
     // Helper function để đọc cookie
@@ -28,12 +30,9 @@ const AuthPage = () => {
         try {
           const session = JSON.parse(decodeURIComponent(sessionCookie))
 
-          if (session.accessToken) {
-            localStorage.setItem("token", session.accessToken)
-          }
-
-          if (session.user) {
-            localStorage.setItem("user", JSON.stringify(session.user))
+          if (session.accessToken && session.user) {
+            // Use Zustand store instead of localStorage
+            loginStore(session.user, session.accessToken)
           }
 
           // Xóa cookie SS sau khi đã lưu
@@ -45,9 +44,13 @@ const AuthPage = () => {
             duration: 3000,
           })
 
-          // Redirect về trang chủ
+          // Redirect based on user role
           setTimeout(() => {
-            navigate("/", { replace: true })
+            if (session.user.roles?.includes("customer")) {
+              navigate("/select-restaurant", { replace: true })
+            } else {
+              navigate("/feed", { replace: true })
+            }
           }, 1000)
         } catch (error) {
           console.error("❌ Error:", error)

@@ -28,11 +28,13 @@ import CreateRestaurantModal from './components/CreateRestaurantModal';
 import AttentionModal from './components/AttentionModal';
 import PostCard from './components/PostCard';
 import { MOCK_NEARBY_RESTAURANTS, MOCK_POSTS } from '../../mocks/feedData';
+import { useAuthStore } from '../../stores';
+import { logoutApi } from '../../api/auth';
 import './feed.css';
 
 const CustomerFeed = () => {
     const navigate = useNavigate();
-    const [user, setUser] = useState(null);
+    const { user, logout } = useAuthStore();
     const [activeFilter, setActiveFilter] = useState('all');
     const [posts, setPosts] = useState([]);
     const [nearbyRestaurants, setNearbyRestaurants] = useState([]);
@@ -50,12 +52,6 @@ const CustomerFeed = () => {
     };
 
     useEffect(() => {
-        // Get user from localStorage
-        const userData = localStorage.getItem('user');
-        if (userData) {
-            setUser(JSON.parse(userData));
-        }
-
         // Load mock data
         setNearbyRestaurants(MOCK_NEARBY_RESTAURANTS);
         setPosts(MOCK_POSTS);
@@ -125,10 +121,22 @@ const CustomerFeed = () => {
         }));
     }, []);
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        navigate('/auth');
+    const handleLogout = async () => {
+        try {
+            // Call API logout
+            await logoutApi();
+
+            // Clear Zustand store
+            logout(false); // Keep saved credentials
+
+            // Navigate to auth page
+            navigate('/auth');
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Even if API fails, still logout locally
+            logout(false);
+            navigate('/auth');
+        }
     };
 
     const filteredPosts = useMemo(() => {

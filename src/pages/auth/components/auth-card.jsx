@@ -2,9 +2,10 @@ import { useEffect, useState } from "react"
 import Input from "../../../components/ui/Input"
 import { X, Mail, Eye, EyeOff } from "lucide-react"
 import { useNavigate } from "react-router-dom"
-import { googleAuthApi, registerApi, sendOtpApi, signin, signup, verifyOtpApi } from "api/auth"
+import { registerApi, sendOtpApi, signin, signup, verifyOtpApi } from "../../../api/auth"
 import { useToast } from "hooks/use-toast"
 import { isPhoneNumber, validateEmailOrPhone } from "../../../utils/validators"
+import { useAuthStore } from "../../../stores"
 
 export function AuthCard({
     rememberMe,
@@ -13,6 +14,9 @@ export function AuthCard({
 }) {
     const [isLoading, setIsLoading] = useState(false)
     const [activeTab, setActiveTab] = useState("signup")
+
+    // Zustand store
+    const { login: loginStore } = useAuthStore()
 
     const [form, setForm] = useState({
         firstName: "",
@@ -123,9 +127,10 @@ export function AuthCard({
                 await signup({ [identifierType]: identifier, password: form.password })
 
                 toast({
-                    title: "Account created successfully 🎉!",
+                    variant: "default",
+                    title: "Account created successfully 🎉",
                     description: "You can now sign in with your credentials.",
-                    duration: 5000,
+                    duration: 3000,
                 })
                 setActiveTab("signin")
                 resetForm()
@@ -138,27 +143,37 @@ export function AuthCard({
                 const identifierType = form.email ? 'email' : 'phoneNumber'
 
                 const res = await signin({ [identifierType]: identifier, password: form.password })
-                // set data to local storage
-                localStorage.setItem("token", res.metadata.token)
-                localStorage.setItem("user", JSON.stringify(res.metadata.user))
+                // Use Zustand store instead of localStorage
+                const { user, accessToken } = res.metadata
+
+                // Store in Zustand (automatically persists to localStorage)
+                loginStore(user, accessToken)
 
                 toast({
-                    title: "Signed in successfully 🎉!",
-                    description: `Welcome back, ${res.metadata.user.email || res.metadata.user.phoneNumber}!`,
-                    duration: 5000,
+                    variant: "default",
+                    title: "Signed in successfully 🎉",
+                    description: `Welcome back, ${user.email || user.phoneNumber}!`,
+                    duration: 3000,
                 })
 
-                // redirect to home page
-                navigate("/")
+                // Redirect based on user type
+                // If user has restaurants, go to restaurant selector
+                if (user.roles.includes("customer")) {
+                    navigate("/restaurant-selector")
+                }
+                else if (user.roles.includes("admin"))
+                    navigate("/admin")
+                else
+                    navigate("/feed")
             }
 
 
         } catch (error) {
             console.error("Auth error:", error)
             toast({
-                title: "Something went wrong.",
-                description: error.message || "Please try again.",
                 variant: "destructive",
+                title: "Login failed",
+                description: error.response?.data?.message || error.message || "Please try again.",
                 duration: 4000,
             })
 
@@ -198,10 +213,10 @@ export function AuthCard({
         const error = validateEmail(identifier)
         if (error) {
             toast({
+                variant: "destructive",
                 title: "Invalid input",
                 description: error,
-                variant: "info",
-                duration: 4000,
+                duration: 3000,
             })
             return
         }
@@ -242,16 +257,17 @@ export function AuthCard({
                 setOtpSent(true)
                 setOtpCountdown(60) // Bắt đầu đếm ngược 60 giây
                 toast({
-                    title: "OTP Sent",
+                    variant: "default",
+                    title: "OTP sent successfully",
                     description: `An OTP has been sent to ${form.email}. Please check your inbox.`,
-                    duration: 5000
+                    duration: 3000
                 })
             } catch (error) {
                 console.error("Send OTP error:", error)
                 toast({
-                    title: "Failed to send OTP",
-                    description: error.message || "Please try again.",
                     variant: "destructive",
+                    title: "Failed to send OTP",
+                    description: error.response?.data?.message || error.message || "Please try again.",
                     duration: 4000,
                 })
             } finally {
@@ -261,18 +277,18 @@ export function AuthCard({
             // TODO: Implement SMS/Telegram OTP sending
             setIsSendingOtp(false) // Reset loading
             toast({
-                title: "Coming Soon",
+                variant: "default",
+                title: "Coming soon",
                 description: `${method === "sms" ? "SMS" : "Telegram"} OTP will be available soon.`,
-                variant: "info",
-                duration: 4000,
+                duration: 3000,
             })
         } else {
             setIsSendingOtp(false) // Reset loading
             toast({
+                variant: "destructive",
                 title: "Method not supported",
                 description: "Please select a valid method.",
-                variant: "info",
-                duration: 4000,
+                duration: 3000,
             })
         }
         setShowMethodModal(false)
@@ -286,9 +302,9 @@ export function AuthCard({
         } catch (error) {
             console.error("Google Auth error:", error);
             toast({
-                title: "Something went wrong.",
-                description: error.message || "Please try again.",
                 variant: "destructive",
+                title: "Authentication failed",
+                description: error.response?.data?.message || error.message || "Please try again.",
                 duration: 4000,
             });
         }
