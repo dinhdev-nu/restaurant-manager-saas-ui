@@ -87,15 +87,6 @@ const CustomerFeed = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const filters = [
-        { id: 'all', label: 'Tất cả', icon: HomeIcon, color: 'text-gray-700' },
-        { id: 'promotion', label: 'Khuyến mãi', icon: TagIcon, color: 'text-red-500' },
-        { id: 'new_menu', label: 'Menu mới', icon: SparklesIcon, color: 'text-purple-500' },
-        { id: 'feedback', label: 'Review', icon: StarIcon, color: 'text-yellow-500' },
-        { id: 'event', label: 'Sự kiện', icon: CalendarIcon, color: 'text-blue-500' },
-        { id: 'experience', label: 'Kinh nghiệm', icon: FireIcon, color: 'text-orange-500' }
-    ];
-
     const handleLike = useCallback((postId) => {
         setPosts(prev => prev.map(post => {
             if (post.id === postId) {
@@ -185,7 +176,7 @@ const CustomerFeed = () => {
     return (
         <div className="min-h-screen bg-white">
             {/* Header Component */}
-            <FeedHeader user={user} onLocationChange={handleLocationChange} />
+            <FeedHeader user={user} onLocationChange={handleLocationChange} onLogout={handleLogout} />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

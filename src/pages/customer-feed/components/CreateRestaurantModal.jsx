@@ -9,7 +9,6 @@ import {
     ClockIcon,
     CameraIcon,
     CheckCircleIcon,
-    UserIcon,
     GlobeAltIcon,
     InformationCircleIcon,
     SparklesIcon,
@@ -17,12 +16,17 @@ import {
 } from '@heroicons/react/24/outline';
 
 import { MOCK_PROVINCES, MOCK_DISTRICTS } from '../../../mocks/locations';
+import TimePicker from '../../../components/ui/TimePicker';
+import { createRestaurantApi } from 'api/restaurant';
+import { useToast } from 'hooks/use-toast';
 
 const CreateRestaurantModal = ({ isOpen, onClose }) => {
+
+    const toast = useToast()
+
     const [formData, setFormData] = useState({
         // Thông tin cơ bản
         restaurantName: '',
-        ownerName: '',
         email: '',
         phone: '',
         website: '',
@@ -34,9 +38,12 @@ const CreateRestaurantModal = ({ isOpen, onClose }) => {
 
         // Chi tiết nhà hàng
         cuisine: '',
-        priceRange: '',
         capacity: '',
-        openingHours: '',
+
+        // Giờ mở cửa
+        openingTime: '',
+        closingTime: '',
+        workingDays: [], // Từ thứ nào đến thứ nào
 
         // Dịch vụ và tiện ích
         services: [],
@@ -71,11 +78,14 @@ const CreateRestaurantModal = ({ isOpen, onClose }) => {
         'Khác'
     ];
 
-    const priceRanges = [
-        { value: '1', label: '₫ - Dưới 100.000đ/người', icon: '₫' },
-        { value: '2', label: '₫₫ - 100.000 - 300.000đ/người', icon: '₫₫' },
-        { value: '3', label: '₫₫₫ - 300.000 - 500.000đ/người', icon: '₫₫₫' },
-        { value: '4', label: '₫₫₫₫ - Trên 500.000đ/người', icon: '₫₫₫₫' }
+    const weekDays = [
+        { id: 'monday', label: 'Thứ 2', value: 2 },
+        { id: 'tuesday', label: 'Thứ 3', value: 3 },
+        { id: 'wednesday', label: 'Thứ 4', value: 4 },
+        { id: 'thursday', label: 'Thứ 5', value: 5 },
+        { id: 'friday', label: 'Thứ 6', value: 6 },
+        { id: 'saturday', label: 'Thứ 7', value: 7 },
+        { id: 'sunday', label: 'Chủ nhật', value: 8 }
     ];
 
     const serviceOptions = [
@@ -95,16 +105,6 @@ const CreateRestaurantModal = ({ isOpen, onClose }) => {
         { id: 'momo', label: 'MoMo', icon: '🟣' },
         { id: 'zalopay', label: 'ZaloPay', icon: '🔵' },
         { id: 'banking', label: 'Chuyển khoản', icon: '🏦' }
-    ];
-
-    const weekDays = [
-        { id: 'monday', label: 'T2' },
-        { id: 'tuesday', label: 'T3' },
-        { id: 'wednesday', label: 'T4' },
-        { id: 'thursday', label: 'T5' },
-        { id: 'friday', label: 'T6' },
-        { id: 'saturday', label: 'T7' },
-        { id: 'sunday', label: 'CN' }
     ];
 
     const handleChange = (e) => {
@@ -164,21 +164,108 @@ const CreateRestaurantModal = ({ isOpen, onClose }) => {
 
     const validateForm = () => {
         const newErrors = {};
-        if (!formData.restaurantName.trim()) newErrors.restaurantName = 'Vui lòng nhập tên nhà hàng';
-        if (!formData.ownerName.trim()) newErrors.ownerName = 'Vui lòng nhập tên chủ nhà hàng';
-        if (!formData.email.trim()) newErrors.email = 'Vui lòng nhập email';
-        if (!formData.phone.trim()) newErrors.phone = 'Vui lòng nhập số điện thoại';
-        if (!formData.city) newErrors.city = 'Vui lòng chọn tỉnh/thành phố';
-        if (!formData.cuisine) newErrors.cuisine = 'Vui lòng chọn loại ẩm thực';
+
+        // Tên nhà hàng
+        if (!formData.restaurantName.trim()) {
+            newErrors.restaurantName = 'Vui lòng nhập tên nhà hàng';
+        } else if (formData.restaurantName.trim().length < 3) {
+            newErrors.restaurantName = 'Tên nhà hàng phải có ít nhất 3 ký tự';
+        } else if (formData.restaurantName.trim().length > 100) {
+            newErrors.restaurantName = 'Tên nhà hàng không được vượt quá 100 ký tự';
+        }
+
+        // Email
+        if (!formData.email.trim()) {
+            newErrors.email = 'Vui lòng nhập email';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+            newErrors.email = 'Email không hợp lệ';
+        }
+
+        // Số điện thoại
+        if (!formData.phone.trim()) {
+            newErrors.phone = 'Vui lòng nhập số điện thoại';
+        } else if (!/^(0|\+84)[0-9]{9,10}$/.test(formData.phone.trim().replace(/\s/g, ''))) {
+            newErrors.phone = 'Số điện thoại phải là 10-11 số và bắt đầu bằng 0 hoặc +84';
+        }
+
+        // Website (nếu có)
+        if (formData.website.trim() && !/^https?:\/\/.+\..+/.test(formData.website.trim())) {
+            newErrors.website = 'Website phải bắt đầu bằng http:// hoặc https://';
+        }
+
+        // Địa chỉ
+        if (!formData.city) {
+            newErrors.city = 'Vui lòng chọn tỉnh/thành phố';
+        }
+
+        if (formData.address.trim() && formData.address.trim().length < 5) {
+            newErrors.address = 'Địa chỉ phải có ít nhất 5 ký tự';
+        }
+
+        // Loại ẩm thực
+        if (!formData.cuisine) {
+            newErrors.cuisine = 'Vui lòng chọn loại ẩm thực';
+        }
+
+        // Sức chứa
+        if (formData.capacity) {
+            const capacityNum = parseInt(formData.capacity);
+            if (isNaN(capacityNum) || capacityNum < 1) {
+                newErrors.capacity = 'Sức chứa phải là số nguyên dương';
+            } else if (capacityNum > 10000) {
+                newErrors.capacity = 'Sức chứa không hợp lý (tối đa 10000)';
+            }
+        }
+
+        // Giờ mở cửa - Validation format HH:MM
+        if (formData.openingTime) {
+            if (!/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(formData.openingTime)) {
+                newErrors.openingTime = 'Giờ mở cửa phải theo định dạng HH:MM (VD: 08:00)';
+            }
+        }
+
+        // Giờ đóng cửa
+        if (formData.closingTime) {
+            if (!/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(formData.closingTime)) {
+                newErrors.closingTime = 'Giờ đóng cửa phải theo định dạng HH:MM (VD: 22:00)';
+            } else if (formData.openingTime && formData.closingTime <= formData.openingTime) {
+                newErrors.closingTime = 'Giờ đóng cửa phải sau giờ mở cửa';
+            }
+        }
+
+        // Ngày làm việc
+        if (formData.workingDays.length === 0) {
+            newErrors.workingDays = 'Vui lòng chọn ít nhất một ngày làm việc';
+        }
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (validateForm()) {
-            console.log('Form submitted:', formData);
+            try {
+                // Call API tạo nhà hàng
+                await createRestaurantApi(formData);
+                // Toast thành công
+                toast({
+                    variant: "success",
+                    title: "Tạo nhà hàng thành công",
+                    description: "Nhà hàng của bạn đã được tạo.",
+                    duration: 4000,
+                });
+
+            } catch (error) {
+                console.error("❌ Error:", error);
+                // Toast thất bại
+                toast({
+                    variant: "destructive",
+                    title: "Tạo nhà hàng thất bại",
+                    description: error.response?.data?.message || error.message || "Vui lòng thử lại.",
+                    duration: 4000,
+                })
+            }
             onClose();
         }
     };
@@ -267,23 +354,6 @@ const CreateRestaurantModal = ({ isOpen, onClose }) => {
                                                         )}
                                                     </div>
 
-                                                    <div>
-                                                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                                                            Tên chủ nhà hàng <span className="text-red-500">*</span>
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            name="ownerName"
-                                                            value={formData.ownerName}
-                                                            onChange={handleChange}
-                                                            placeholder="VD: Nguyễn Văn A"
-                                                            className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-1 focus:ring-black focus:border-black transition-all"
-                                                        />
-                                                        {errors.ownerName && (
-                                                            <p className="mt-1 text-xs text-red-500">{errors.ownerName}</p>
-                                                        )}
-                                                    </div>
-
                                                     <div className="grid grid-cols-2 gap-3">
                                                         <div>
                                                             <label className="block text-xs font-medium text-gray-700 mb-1.5">
@@ -331,6 +401,9 @@ const CreateRestaurantModal = ({ isOpen, onClose }) => {
                                                             placeholder="https://..."
                                                             className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-1 focus:ring-black focus:border-black transition-all"
                                                         />
+                                                        {errors.website && (
+                                                            <p className="mt-1 text-xs text-red-500">{errors.website}</p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
@@ -461,6 +534,9 @@ const CreateRestaurantModal = ({ isOpen, onClose }) => {
                                                             placeholder="Số nhà, tên đường..."
                                                             className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-1 focus:ring-black focus:border-black transition-all"
                                                         />
+                                                        {errors.address && (
+                                                            <p className="mt-1 text-xs text-red-500">{errors.address}</p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
@@ -526,60 +602,65 @@ const CreateRestaurantModal = ({ isOpen, onClose }) => {
                                                     </div>
 
                                                     <div>
-                                                        <label className="block text-xs font-medium text-gray-700 mb-2">
-                                                            Khoảng giá
+                                                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                                            Sức chứa (người)
                                                         </label>
-                                                        <div className="grid grid-cols-2 gap-2">
-                                                            {priceRanges.map(range => (
-                                                                <label
-                                                                    key={range.value}
-                                                                    className={`relative flex items-center gap-2 px-3 py-2 text-xs rounded-lg border cursor-pointer transition-all ${formData.priceRange === range.value
-                                                                        ? 'border-black bg-black text-white'
-                                                                        : 'border-gray-300 hover:border-gray-400'
-                                                                        }`}
-                                                                >
-                                                                    <input
-                                                                        type="radio"
-                                                                        name="priceRange"
-                                                                        value={range.value}
-                                                                        checked={formData.priceRange === range.value}
-                                                                        onChange={handleChange}
-                                                                        className="sr-only"
-                                                                    />
-                                                                    <span className="font-semibold">{range.icon}</span>
-                                                                    <span className="text-xs">{range.label}</span>
-                                                                </label>
-                                                            ))}
-                                                        </div>
+                                                        <input
+                                                            type="number"
+                                                            name="capacity"
+                                                            value={formData.capacity}
+                                                            onChange={handleChange}
+                                                            placeholder="VD: 50"
+                                                            min="1"
+                                                            className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-1 focus:ring-black focus:border-black transition-all"
+                                                        />
+                                                        {errors.capacity && (
+                                                            <p className="mt-1 text-xs text-red-500">{errors.capacity}</p>
+                                                        )}
                                                     </div>
 
+                                                    {/* Ngày làm việc */}
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-gray-700 mb-2">
+                                                            Ngày làm việc <span className="text-red-500">*</span>
+                                                        </label>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {weekDays.map(day => (
+                                                                <button
+                                                                    key={day.id}
+                                                                    type="button"
+                                                                    onClick={() => handleCheckboxChange('workingDays', day.id)}
+                                                                    className={`px-3 py-2 text-xs font-medium rounded-lg border transition-all ${formData.workingDays.includes(day.id)
+                                                                        ? 'border-black bg-black text-white'
+                                                                        : 'border-gray-300 hover:border-gray-400 text-gray-700'
+                                                                        }`}
+                                                                >
+                                                                    {day.label}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                        {errors.workingDays && (
+                                                            <p className="mt-1 text-xs text-red-500">{errors.workingDays}</p>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Giờ mở cửa - đóng cửa */}
                                                     <div className="grid grid-cols-2 gap-3">
-                                                        <div>
-                                                            <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                                                                Sức chứa (người)
-                                                            </label>
-                                                            <input
-                                                                type="number"
-                                                                name="capacity"
-                                                                value={formData.capacity}
-                                                                onChange={handleChange}
-                                                                placeholder="VD: 50"
-                                                                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-1 focus:ring-black focus:border-black transition-all"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                                                                Giờ mở cửa
-                                                            </label>
-                                                            <input
-                                                                type="text"
-                                                                name="openingHours"
-                                                                value={formData.openingHours}
-                                                                onChange={handleChange}
-                                                                placeholder="VD: 8:00 - 22:00"
-                                                                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-1 focus:ring-black focus:border-black transition-all"
-                                                            />
-                                                        </div>
+                                                        <TimePicker
+                                                            label="Giờ mở cửa"
+                                                            value={formData.openingTime}
+                                                            onChange={(value) => handleChange({ target: { name: 'openingTime', value } })}
+                                                            error={errors.openingTime}
+                                                            type="opening"
+                                                        />
+
+                                                        <TimePicker
+                                                            label="Giờ đóng cửa"
+                                                            value={formData.closingTime}
+                                                            onChange={(value) => handleChange({ target: { name: 'closingTime', value } })}
+                                                            error={errors.closingTime}
+                                                            type="closing"
+                                                        />
                                                     </div>
                                                 </div>
                                             </div>
@@ -751,11 +832,6 @@ const CreateRestaurantModal = ({ isOpen, onClose }) => {
                                                                 {formData.cuisine}
                                                             </span>
                                                         )}
-                                                        {formData.priceRange && (
-                                                            <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-medium">
-                                                                {priceRanges.find(r => r.value === formData.priceRange)?.icon}
-                                                            </span>
-                                                        )}
                                                         {formData.capacity && (
                                                             <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-medium">
                                                                 👥 {formData.capacity} chỗ
@@ -812,10 +888,23 @@ const CreateRestaurantModal = ({ isOpen, onClose }) => {
                                                             </div>
                                                         )}
 
-                                                        {formData.openingHours && (
+                                                        {(formData.openingTime || formData.closingTime) && (
                                                             <div className="flex items-center gap-2.5">
                                                                 <ClockIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                                                                <span className="text-xs text-gray-700">{formData.openingHours}</span>
+                                                                <span className="text-xs text-gray-700">
+                                                                    {formData.openingTime || '--:--'} - {formData.closingTime || '--:--'}
+                                                                </span>
+                                                            </div>
+                                                        )}
+
+                                                        {formData.workingDays.length > 0 && (
+                                                            <div className="flex items-start gap-2.5">
+                                                                <span className="text-xs text-gray-400 mt-0.5">📅</span>
+                                                                <span className="text-xs text-gray-700">
+                                                                    {formData.workingDays.map(dayId =>
+                                                                        weekDays.find(d => d.id === dayId)?.label
+                                                                    ).join(', ')}
+                                                                </span>
                                                             </div>
                                                         )}
 
@@ -849,16 +938,6 @@ const CreateRestaurantModal = ({ isOpen, onClose }) => {
                                                                             </span>
                                                                         );
                                                                     })}
-                                                                </div>
-                                                            </div>
-                                                        )}
-
-                                                        {formData.ownerName && (
-                                                            <div className="flex items-center gap-2.5 pt-2 border-t border-gray-100">
-                                                                <UserIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                                                                <div className="text-xs">
-                                                                    <span className="text-gray-500">Chủ sở hữu: </span>
-                                                                    <span className="text-gray-700 font-medium">{formData.ownerName}</span>
                                                                 </div>
                                                             </div>
                                                         )}

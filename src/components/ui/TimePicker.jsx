@@ -60,21 +60,28 @@ const TimePicker = ({ value, onChange, label, error, type = 'opening' }) => {
     const [selectedHour, setSelectedHour] = useState(value?.split(':')[0] || '08');
     const [selectedMinute, setSelectedMinute] = useState(value?.split(':')[1] || '00');
 
-    // Update parent when time changes
-    useEffect(() => {
-        if (selectedHour && selectedMinute) {
-            onChange(`${selectedHour}:${selectedMinute}`);
-        }
-    }, [selectedHour, selectedMinute, onChange]);
-
-    // Sync with external value changes
+    // Sync with external value changes only
     useEffect(() => {
         if (value) {
             const [h, m] = value.split(':');
-            setSelectedHour(h);
-            setSelectedMinute(m);
+            if (h !== selectedHour || m !== selectedMinute) {
+                setSelectedHour(h);
+                setSelectedMinute(m);
+            }
         }
     }, [value]);
+
+    // Handle hour change
+    const handleHourChange = (hour) => {
+        setSelectedHour(hour);
+        onChange(`${hour}:${selectedMinute}`);
+    };
+
+    // Handle minute change
+    const handleMinuteChange = (minute) => {
+        setSelectedMinute(minute);
+        onChange(`${selectedHour}:${minute}`);
+    };
 
     const displayTime = value ? value : '--:--';
     const indicatorColor = type === 'opening' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600';
@@ -132,10 +139,10 @@ const TimePicker = ({ value, onChange, label, error, type = 'opening' }) => {
                                                     <button
                                                         key={hour.value}
                                                         type="button"
-                                                        onClick={() => setSelectedHour(hour.value)}
+                                                        onClick={() => handleHourChange(hour.value)}
                                                         className={`w-full px-3 py-2.5 text-sm text-center transition-all ${selectedHour === hour.value
-                                                                ? 'bg-black text-white font-bold'
-                                                                : 'hover:bg-gray-100 text-gray-700'
+                                                            ? 'bg-black text-white font-bold'
+                                                            : 'hover:bg-gray-100 text-gray-700'
                                                             }`}
                                                     >
                                                         <span className="font-mono text-base">{hour.label}</span>
@@ -154,10 +161,10 @@ const TimePicker = ({ value, onChange, label, error, type = 'opening' }) => {
                                                     <button
                                                         key={minute.value}
                                                         type="button"
-                                                        onClick={() => setSelectedMinute(minute.value)}
+                                                        onClick={() => handleMinuteChange(minute.value)}
                                                         className={`w-full px-3 py-2.5 text-sm text-center transition-all ${selectedMinute === minute.value
-                                                                ? 'bg-black text-white font-bold'
-                                                                : 'hover:bg-gray-100 text-gray-700'
+                                                            ? 'bg-black text-white font-bold'
+                                                            : 'hover:bg-gray-100 text-gray-700'
                                                             }`}
                                                     >
                                                         <span className="font-mono text-base">{minute.label}</span>

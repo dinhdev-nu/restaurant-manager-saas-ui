@@ -12,27 +12,7 @@ import LocationSelector from './LocationSelector';
 import { useAuthStore } from '../../../stores';
 import { logoutApi } from '../../../api/auth';
 
-const FeedHeader = ({ user, onLocationChange }) => {
-    const navigate = useNavigate();
-    const { logout } = useAuthStore();
-
-    const handleLogout = async () => {
-        try {
-            // Call API logout
-            await logoutApi();
-
-            // Clear Zustand store
-            logout(false); // Keep saved credentials
-
-            // Navigate to auth page
-            navigate('/auth');
-        } catch (error) {
-            console.error('Logout error:', error);
-            // Even if API fails, still logout locally
-            logout(false);
-            navigate('/auth');
-        }
-    };
+const FeedHeader = ({ user, onLocationChange, onLogout }) => {
 
     return (
         <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200">
@@ -130,7 +110,7 @@ const FeedHeader = ({ user, onLocationChange }) => {
                                             <Menu.Item>
                                                 {({ active }) => (
                                                     <button
-                                                        onClick={handleLogout}
+                                                        onClick={onLogout}
                                                         className={`${active ? 'bg-red-50 text-red-600' : 'text-gray-700'} w-full px-4 py-2.5 text-left text-sm flex items-center space-x-3`}
                                                     >
                                                         <ArrowRightOnRectangleIcon className="w-5 h-5" />
