@@ -1,0 +1,91 @@
+/* ============================================
+   TimePicker Component Styles
+   ============================================ */
+
+/* Custom scrollbar for time picker hour/minute list */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Firefox scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f3f4f6;
+}
+
+/* Smooth scroll behavior */
+.custom-scrollbar {
+  scroll-behavior: smooth;
+}
+
+/* Time picker dropdown animation */
+@keyframes timePickerSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.time-picker-dropdown {
+  animation: timePickerSlideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hour/Minute button hover effects */
+.time-option-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.time-option-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.05);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease;
+}
+
+.time-option-btn:active::before {
+  width: 100%;
+  height: 100%;
+}
+
+/* Selected time highlight glow */
+@keyframes selectedGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  }
+}
+
+button.bg-black.text-white {
+  animation: selectedGlow 0.4s ease-out;
+}
