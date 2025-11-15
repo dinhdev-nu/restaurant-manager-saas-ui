@@ -9,12 +9,8 @@ const TableControlPanel = ({
   onTableUpdate,
   onAddTable,
   onDeleteTable,
-  onMergeTable,
-  onTransferTable,
   tables = []
 }) => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
   const [showAddForm, setShowAddForm] = useState(false);
   const [newTableForm, setNewTableForm] = useState({
     number: '',
@@ -23,14 +19,6 @@ const TableControlPanel = ({
     x: 100,
     y: 100
   });
-
-  const statusOptions = [
-    { value: 'all', label: 'Tất cả trạng thái' },
-    { value: 'available', label: 'Trống' },
-    { value: 'occupied', label: 'Có khách' },
-    { value: 'reserved', label: 'Đã đặt' },
-    { value: 'cleaning', label: 'Dọn dẹp' }
-  ];
 
   const shapeOptions = [
     { value: 'rectangular', label: 'Hình chữ nhật' },
@@ -46,22 +34,28 @@ const TableControlPanel = ({
 
   const handleAddTable = () => {
     if (newTableForm?.number) {
-      onAddTable({
-        ...newTableForm,
-        id: `table_${Date.now()}`,
-        status: 'available',
-        currentOccupancy: 0,
-        assignedServer: null,
-        orderId: null
-      });
-      setNewTableForm({
-        number: '',
-        capacity: 4,
-        shape: 'rectangular',
-        x: 100,
-        y: 100
-      });
-      setShowAddForm(false);
+      try {
+        onAddTable({
+          ...newTableForm,
+          id: `table_${Date.now()}`,
+          status: 'available',
+          currentOccupancy: 0,
+          assignedServer: null,
+          orderId: null
+        });
+        setNewTableForm({
+          number: '',
+          capacity: 4,
+          shape: 'rectangular',
+          x: 100,
+          y: 100
+        });
+        setShowAddForm(false);
+      } catch (error) {
+        // Error is already handled by parent component with toast
+        // Just keep the form open for user to fix
+        console.error('Failed to add table:', error);
+      }
     }
   };
 
@@ -94,59 +88,59 @@ const TableControlPanel = ({
   const stats = getStatusStats();
 
   return (
-    <div className="w-80 bg-surface border-l border-border h-full flex flex-col">
+    <div className="w-80 bg-surface border-l border-border h-full flex flex-col relative">
       {/* Header */}
-      <div className="p-4 border-b border-border">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Quản lý bàn</h2>
-
-        {/* Search and Filter */}
-        <div className="space-y-3">
-          <Input
-            type="search"
-            placeholder="Tìm kiếm bàn..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e?.target?.value)}
-            className="w-full"
-          />
-
-          <Select
-            options={statusOptions}
-            value={filterStatus}
-            onChange={setFilterStatus}
-            placeholder="Lọc theo trạng thái"
-          />
+      <div className="p-4 border-b border-border flex-shrink-0">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-foreground">Quản lý bàn</h2>
         </div>
+
+        {/* Add New Table Button - Prominent */}
+        <Button
+          variant="default"
+          size="sm"
+          fullWidth
+          iconName="Plus"
+          iconPosition="left"
+          onClick={() => setShowAddForm(true)}
+          className="mb-3"
+        >
+          Thêm bàn mới
+        </Button>
       </div>
       {/* Statistics */}
-      <div className="p-4 border-b border-border">
-        <h3 className="text-sm font-medium text-foreground mb-3">Thống kê</h3>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-muted rounded-lg p-3 text-center">
-            <div className="text-lg font-bold text-foreground">{stats?.total}</div>
-            <div className="text-xs text-muted-foreground">Tổng bàn</div>
+      <div className="p-4 border-b border-border flex-shrink-0">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-medium text-foreground">Thống kê</h3>
+          <span className="text-xs text-muted-foreground">{stats?.total} bàn</span>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center space-x-1">
+            <div className="w-2 h-2 bg-success rounded-full"></div>
+            <span className="text-sm font-semibold text-success">{stats?.available}</span>
           </div>
-          <div className="bg-success/10 rounded-lg p-3 text-center">
-            <div className="text-lg font-bold text-success">{stats?.available}</div>
-            <div className="text-xs text-muted-foreground">Trống</div>
+          <div className="flex items-center space-x-1">
+            <div className="w-2 h-2 bg-warning rounded-full"></div>
+            <span className="text-sm font-semibold text-warning">{stats?.occupied}</span>
           </div>
-          <div className="bg-warning/10 rounded-lg p-3 text-center">
-            <div className="text-lg font-bold text-warning">{stats?.occupied}</div>
-            <div className="text-xs text-muted-foreground">Có khách</div>
+          <div className="flex items-center space-x-1">
+            <div className="w-2 h-2 bg-error rounded-full"></div>
+            <span className="text-sm font-semibold text-error">{stats?.reserved}</span>
           </div>
-          <div className="bg-error/10 rounded-lg p-3 text-center">
-            <div className="text-lg font-bold text-error">{stats?.reserved}</div>
-            <div className="text-xs text-muted-foreground">Đã đặt</div>
+          <div className="flex items-center space-x-1">
+            <div className="w-2 h-2 bg-primary rounded-full"></div>
+            <span className="text-sm font-semibold text-primary">{stats?.cleaning}</span>
           </div>
         </div>
       </div>
       {/* Selected Table Info */}
       {selectedTable ? (
-        <div className="p-4 border-b border-border">
-          <h3 className="text-sm font-medium text-foreground mb-3">
-            Bàn {selectedTable?.number}
-          </h3>
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="p-4 space-y-3">
+            <h3 className="text-sm font-medium text-foreground">
+              Bàn {selectedTable?.number}
+            </h3>
 
-          <div className="space-y-3">
             {/* Status Control */}
             <div>
               <label className="text-xs text-muted-foreground mb-2 block">Trạng thái</label>
@@ -199,30 +193,6 @@ const TableControlPanel = ({
             {/* Table Actions */}
             <div className="space-y-2">
               <Button
-                variant="outline"
-                size="sm"
-                fullWidth
-                iconName="Users"
-                iconPosition="left"
-                onClick={() => onMergeTable(selectedTable?.id)}
-                disabled={selectedTable?.status !== 'occupied'}
-              >
-                Ghép bàn
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                fullWidth
-                iconName="ArrowRightLeft"
-                iconPosition="left"
-                onClick={() => onTransferTable(selectedTable?.id)}
-                disabled={selectedTable?.status !== 'occupied'}
-              >
-                Chuyển bàn
-              </Button>
-
-              <Button
                 variant="destructive"
                 size="sm"
                 fullWidth
@@ -237,73 +207,91 @@ const TableControlPanel = ({
           </div>
         </div>
       ) : (
-        <div className="p-4 border-b border-border">
-          <div className="text-center text-muted-foreground">
+        <div className="flex-1 overflow-y-auto min-h-0 flex items-center justify-center">
+          <div className="text-center text-muted-foreground p-4">
             <Icon name="MousePointer" size={32} className="mx-auto mb-2" />
             <p className="text-sm">Chọn một bàn để xem chi tiết</p>
           </div>
         </div>
       )}
-      {/* Add New Table */}
-      <div className="p-4 flex-1">
-        <Button
-          variant="default"
-          size="sm"
-          fullWidth
-          iconName="Plus"
-          iconPosition="left"
-          onClick={() => setShowAddForm(!showAddForm)}
-        >
-          Thêm bàn mới
-        </Button>
 
-        {showAddForm && (
-          <div className="mt-4 space-y-3">
-            <Input
-              label="Số bàn"
-              type="text"
-              placeholder="Nhập số bàn"
-              value={newTableForm?.number}
-              onChange={(e) => setNewTableForm(prev => ({ ...prev, number: e?.target?.value }))}
-              required
-            />
+      {/* Add New Table Modal */}
+      {showAddForm && (
+        <div className="absolute inset-0 bg-surface z-50 flex flex-col">
+          <div className="p-4 border-b border-border flex items-center justify-between flex-shrink-0">
+            <h3 className="text-lg font-semibold text-foreground">Thêm bàn mới</h3>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowAddForm(false)}
+            >
+              <Icon name="X" size={20} />
+            </Button>
+          </div>
 
-            <Input
-              label="Sức chứa"
-              type="number"
-              min="1"
-              max="20"
-              value={newTableForm?.capacity}
-              onChange={(e) => setNewTableForm(prev => ({ ...prev, capacity: parseInt(e?.target?.value) }))}
-            />
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">Số bàn</label>
+              <Input
+                type="text"
+                placeholder="Ví dụ: 09"
+                value={newTableForm?.number}
+                onChange={(e) => setNewTableForm(prev => ({ ...prev, number: e?.target?.value }))}
+                required
+              />
+            </div>
 
-            <Select
-              label="Hình dạng"
-              options={shapeOptions}
-              value={newTableForm?.shape}
-              onChange={(value) => setNewTableForm(prev => ({ ...prev, shape: value }))}
-            />
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">Sức chứa (người)</label>
+              <Input
+                type="number"
+                min="1"
+                max="20"
+                value={newTableForm?.capacity}
+                onChange={(e) => setNewTableForm(prev => ({ ...prev, capacity: parseInt(e?.target?.value) || 1 }))}
+              />
+            </div>
 
-            <div className="flex space-x-2">
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleAddTable}
-                disabled={!newTableForm?.number}
-              >
-                Thêm
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAddForm(false)}
-              >
-                Hủy
-              </Button>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">Hình dạng</label>
+              <Select
+                options={shapeOptions}
+                value={newTableForm?.shape}
+                onChange={(value) => setNewTableForm(prev => ({ ...prev, shape: value }))}
+              />
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-3 border border-border">
+              <p className="text-xs text-muted-foreground">
+                <Icon name="Info" size={14} className="inline mr-1" />
+                Bàn mới sẽ được đặt ở vị trí mặc định. Bạn có thể kéo thả để điều chỉnh sau.
+              </p>
             </div>
           </div>
-        )}
-      </div>
+
+          <div className="p-4 border-t border-border flex space-x-2 flex-shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              fullWidth
+              onClick={() => setShowAddForm(false)}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              fullWidth
+              onClick={handleAddTable}
+              disabled={!newTableForm?.number}
+              iconName="Plus"
+              iconPosition="left"
+            >
+              Thêm bàn
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

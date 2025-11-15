@@ -4,122 +4,35 @@ import Header from '../../../components/ui/Header';
 import Sidebar from '../../../components/ui/Sidebar';
 import TableLayout from './components/TableLayout';
 import TableControlPanel from './components/TableControlPanel';
-import TableMergeModal from './components/TableMergeModal';
 import QuickActionBar from './components/QuickActionBar';
+import { useTableStore } from '../../../stores/table.store';
+import { useToast } from '../../../hooks/use-toast';
 
 const TableManagement = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  // Use table store
+  const tables = useTableStore((state) => state.tables);
+  const floors = useTableStore((state) => state.floors);
+  const currentFloor = useTableStore((state) => state.currentFloor);
+  const selectedTable = useTableStore((state) => state.selectedTable);
+  const setSelectedTable = useTableStore((state) => state.setSelectedTable);
+  const addTable = useTableStore((state) => state.addTable);
+  const updateTable = useTableStore((state) => state.updateTable);
+  const deleteTable = useTableStore((state) => state.deleteTable);
+  const updateTablePosition = useTableStore((state) => state.updateTablePosition);
+  const setCurrentFloor = useTableStore((state) => state.setCurrentFloor);
+  const addFloor = useTableStore((state) => state.addFloor);
+  const deleteFloor = useTableStore((state) => state.deleteFloor);
+  const getCurrentFloorTables = useTableStore((state) => state.getCurrentFloorTables);
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isOperational, setIsOperational] = useState(true);
-  const [selectedTable, setSelectedTable] = useState(null);
-  const [showMergeModal, setShowMergeModal] = useState(false);
-  const [tables, setTables] = useState([
-    {
-      id: 'table_1',
-      number: '01',
-      capacity: 4,
-      currentOccupancy: 2,
-      status: 'occupied',
-      shape: 'rectangular',
-      x: 100,
-      y: 100,
-      assignedServer: 'Nguyễn Văn A',
-      orderId: 'ORD001',
-      estimatedWaitTime: null
-    },
-    {
-      id: 'table_2',
-      number: '02',
-      capacity: 6,
-      currentOccupancy: 0,
-      status: 'available',
-      shape: 'circular',
-      x: 250,
-      y: 100,
-      assignedServer: null,
-      orderId: null,
-      estimatedWaitTime: null
-    },
-    {
-      id: 'table_3',
-      number: '03',
-      capacity: 2,
-      currentOccupancy: 2,
-      status: 'reserved',
-      shape: 'rectangular',
-      x: 400,
-      y: 100,
-      assignedServer: 'Trần Thị B',
-      orderId: null,
-      estimatedWaitTime: 15
-    },
-    {
-      id: 'table_4',
-      number: '04',
-      capacity: 8,
-      currentOccupancy: 0,
-      status: 'cleaning',
-      shape: 'rectangular',
-      x: 100,
-      y: 200,
-      assignedServer: 'Lê Văn C',
-      orderId: null,
-      estimatedWaitTime: null
-    },
-    {
-      id: 'table_5',
-      number: '05',
-      capacity: 4,
-      currentOccupancy: 4,
-      status: 'occupied',
-      shape: 'circular',
-      x: 250,
-      y: 200,
-      assignedServer: 'Phạm Thị D',
-      orderId: 'ORD002',
-      estimatedWaitTime: null
-    },
-    {
-      id: 'table_6',
-      number: '06',
-      capacity: 6,
-      currentOccupancy: 0,
-      status: 'available',
-      shape: 'rectangular',
-      x: 400,
-      y: 200,
-      assignedServer: null,
-      orderId: null,
-      estimatedWaitTime: null
-    },
-    {
-      id: 'table_7',
-      number: '07',
-      capacity: 2,
-      currentOccupancy: 1,
-      status: 'occupied',
-      shape: 'circular',
-      x: 100,
-      y: 300,
-      assignedServer: 'Nguyễn Văn A',
-      orderId: 'ORD003',
-      estimatedWaitTime: null
-    },
-    {
-      id: 'table_8',
-      number: '08',
-      capacity: 10,
-      currentOccupancy: 0,
-      status: 'available',
-      shape: 'rectangular',
-      x: 250,
-      y: 300,
-      assignedServer: null,
-      orderId: null,
-      estimatedWaitTime: null
-    }
-  ]);
+
+  // Get tables for current floor
+  const currentFloorTables = getCurrentFloorTables();
 
   const handleToggleSidebar = () => {
     if (window.innerWidth >= 1024) {
@@ -127,6 +40,18 @@ const TableManagement = () => {
     } else {
       setSidebarOpen(!sidebarOpen);
     }
+  };
+
+  const handleFloorChange = (floorId) => {
+    setCurrentFloor(floorId);
+  };
+
+  const handleAddFloor = () => {
+    addFloor();
+  };
+
+  const handleDeleteFloor = (floorId) => {
+    deleteFloor(floorId);
   };
 
   const handleTableSelect = (table) => {
@@ -138,83 +63,40 @@ const TableManagement = () => {
   };
 
   const handleTableMove = (tableId, newPosition) => {
-    setTables(prevTables =>
-      prevTables?.map(table =>
-        table?.id === tableId
-          ? { ...table, x: newPosition?.x, y: newPosition?.y }
-          : table
-      )
-    );
+    updateTablePosition(tableId, newPosition);
   };
 
   const handleTableUpdate = (tableId, updates) => {
-    setTables(prevTables =>
-      prevTables?.map(table =>
-        table?.id === tableId
-          ? { ...table, ...updates }
-          : table
-      )
-    );
-
-    // Update selected table if it's the one being updated
-    if (selectedTable?.id === tableId) {
-      setSelectedTable(prev => ({ ...prev, ...updates }));
-    }
-  };
-
-  const handleStatusChange = (tableId) => {
-    const table = tables?.find(t => t?.id === tableId);
-    if (!table) return;
-
-    // Cycle through statuses based on current status
-    let newStatus;
-    switch (table?.status) {
-      case 'available':
-        newStatus = 'occupied';
-        break;
-      case 'occupied':
-        newStatus = 'cleaning';
-        break;
-      case 'cleaning':
-        newStatus = 'available';
-        break;
-      case 'reserved':
-        newStatus = 'occupied';
-        break;
-      default:
-        newStatus = 'available';
-    }
-
-    handleTableUpdate(tableId, { status: newStatus });
+    updateTable(tableId, updates);
   };
 
   const handleQuickStatusChange = (tableId, newStatus) => {
-    handleTableUpdate(tableId, { status: newStatus });
+    updateTable(tableId, { status: newStatus });
   };
 
   const handleAddTable = (newTable) => {
-    setTables(prevTables => [...prevTables, newTable]);
-  };
+    try {
+      // Add floor property to new table
+      const tableWithFloor = { ...newTable, floor: currentFloor };
+      addTable(tableWithFloor);
 
-  const handleDeleteTable = (tableId) => {
-    setTables(prevTables => prevTables?.filter(table => table?.id !== tableId));
-    if (selectedTable?.id === tableId) {
-      setSelectedTable(null);
+      toast({
+        title: "Thêm bàn thành công",
+        description: `Bàn ${newTable.number} đã được thêm vào ${floors.find(f => f.id === currentFloor)?.name}`,
+        variant: "success"
+      });
+    } catch (error) {
+      toast({
+        title: "Lỗi thêm bàn",
+        description: error.message,
+        variant: "destructive"
+      });
+      throw error; // Re-throw để TableControlPanel biết có lỗi
     }
   };
 
-  const handleMergeTable = (tableId) => {
-    setShowMergeModal(true);
-  };
-
-  const handleTransferTable = (tableId) => {
-    setShowMergeModal(true);
-  };
-
-  const handleConfirmMerge = (mergeData) => {
-    console.log('Merge operation:', mergeData);
-    // Implement merge logic here
-    setShowMergeModal(false);
+  const handleDeleteTable = (tableId) => {
+    deleteTable(tableId);
   };
 
   const handleCreateOrder = (tableId) => {
@@ -262,7 +144,7 @@ const TableManagement = () => {
       <Sidebar
         isCollapsed={window.innerWidth >= 1024 ? sidebarCollapsed : !sidebarOpen}
         onToggleCollapse={handleToggleSidebar}
-        userRole="manager"
+        userRole="owner"
       />
 
       {/* Main Content */}
@@ -273,17 +155,19 @@ const TableManagement = () => {
           : ''
         }
       `}>
-        <div className="h-[calc(100vh-4rem)] flex">
+        <div className="h-[calc(100vh-4rem)] flex pb-16">
           {/* Table Layout */}
           <TableLayout
-            tables={tables}
+            tables={currentFloorTables}
             selectedTable={selectedTable}
             onTableSelect={handleTableSelect}
             onTableMove={handleTableMove}
             onTableClick={handleTableClick}
-            onStatusChange={handleStatusChange}
-            onMergeTable={handleMergeTable}
-            onTransferTable={handleTransferTable}
+            floors={floors}
+            currentFloor={currentFloor}
+            onFloorChange={handleFloorChange}
+            onAddFloor={handleAddFloor}
+            onDeleteFloor={handleDeleteFloor}
           />
 
           {/* Control Panel */}
@@ -292,9 +176,7 @@ const TableManagement = () => {
             onTableUpdate={handleTableUpdate}
             onAddTable={handleAddTable}
             onDeleteTable={handleDeleteTable}
-            onMergeTable={handleMergeTable}
-            onTransferTable={handleTransferTable}
-            tables={tables}
+            tables={currentFloorTables}
           />
         </div>
 
@@ -308,15 +190,6 @@ const TableManagement = () => {
           onCallWaiter={handleCallWaiter}
         />
       </main>
-
-      {/* Merge Modal */}
-      <TableMergeModal
-        isOpen={showMergeModal}
-        onClose={() => setShowMergeModal(false)}
-        sourceTable={selectedTable}
-        availableTables={tables}
-        onConfirmMerge={handleConfirmMerge}
-      />
     </div>
   );
 };

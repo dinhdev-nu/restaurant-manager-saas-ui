@@ -12,7 +12,7 @@ const QuickActionBar = ({
 }) => {
   if (!selectedTable) {
     return (
-      <div className="h-16 bg-surface border-t border-border flex items-center justify-center">
+      <div className="fixed bottom-0 left-0 right-0 h-16 bg-surface border-t border-border flex items-center justify-center z-50">
         <p className="text-sm text-muted-foreground">Chọn một bàn để hiển thị thao tác nhanh</p>
       </div>
     );
@@ -108,10 +108,10 @@ const QuickActionBar = ({
   const actions = getQuickActions();
 
   return (
-    <div className="h-16 bg-surface border-t border-border flex items-center px-4">
-      <div className="flex items-center space-x-4 flex-1">
+    <div className="fixed bottom-0 left-0 right-0 min-h-16 bg-surface border-t border-border flex items-center px-4 py-2 z-50">
+      <div className="flex items-center space-x-4 flex-1 min-w-0">
         {/* Selected Table Info */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 flex-shrink-0">
           <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center">
             <span className="font-bold text-sm">{selectedTable?.number}</span>
           </div>
@@ -141,7 +141,7 @@ const QuickActionBar = ({
         </div>
       </div>
       {/* Quick Actions */}
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-2 flex-wrap gap-2">
         {actions?.map((action, index) => (
           <Button
             key={index}
