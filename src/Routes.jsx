@@ -62,63 +62,20 @@ const Routes = () => {
             }
           />
 
-          {/* Protected Routes - Require Restaurant Selection */}
-          <Route
-            path="/"
-            element={
-              <RestaurantRoute>
-                <MainPOSDashboard />
-              </RestaurantRoute>
-            }
-          />
-          <Route
-            path="/main-pos-dashboard"
-            element={
-              <RestaurantRoute>
-                <MainPOSDashboard />
-              </RestaurantRoute>
-            }
-          />
-          <Route
-            path="/menu-management"
-            element={
-              <RestaurantRoute>
-                <MenuManagement />
-              </RestaurantRoute>
-            }
-          />
-          <Route
-            path="/order-history"
-            element={
-              <RestaurantRoute>
-                <OrderHistory />
-              </RestaurantRoute>
-            }
-          />
-          <Route
-            path="/staff-management"
-            element={
-              <RestaurantRoute>
-                <StaffManagement />
-              </RestaurantRoute>
-            }
-          />
-          <Route
-            path="/table-management"
-            element={
-              <RestaurantRoute>
-                <TableManagement />
-              </RestaurantRoute>
-            }
-          />
-          <Route
-            path="/payment-processing"
-            element={
-              <RestaurantRoute>
-                <PaymentProcessing />
-              </RestaurantRoute>
-            }
-          />
+          {/* POS Routes - PUBLIC for easy UI development */}
+          <Route path="/" element={<MainPOSDashboard />} />
+          <Route path="/main-pos-dashboard" element={<MainPOSDashboard />} />
+          <Route path="/pos/main-pos-dashboard" element={<MainPOSDashboard />} />
+          <Route path="/menu-management" element={<MenuManagement />} />
+          <Route path="/pos/menu-management" element={<MenuManagement />} />
+          <Route path="/order-history" element={<OrderHistory />} />
+          <Route path="/pos/order-history" element={<OrderHistory />} />
+          <Route path="/staff-management" element={<StaffManagement />} />
+          <Route path="/pos/staff-management" element={<StaffManagement />} />
+          <Route path="/table-management" element={<TableManagement />} />
+          <Route path="/pos/table-management" element={<TableManagement />} />
+          <Route path="/payment-processing" element={<PaymentProcessing />} />
+          <Route path="/pos/payment-processing" element={<PaymentProcessing />} />
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />

@@ -3,11 +3,11 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Icon from '../AppIcon';
 import Button from './Button';
 
-const Sidebar = ({ 
-  isCollapsed = false, 
+const Sidebar = ({
+  isCollapsed = false,
   onToggleCollapse,
   userRole = "owner",
-  className = "" 
+  className = ""
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -57,7 +57,7 @@ const Sidebar = ({
     }
   ];
 
-  const filteredNavItems = navigationItems?.filter(item => 
+  const filteredNavItems = navigationItems?.filter(item =>
     item?.roles?.includes(userRole)
   );
 
@@ -87,9 +87,9 @@ const Sidebar = ({
               onClick={onToggleCollapse}
               className="w-full hover-scale"
             >
-              <Icon 
-                name={isCollapsed ? "ChevronRight" : "ChevronLeft"} 
-                size={20} 
+              <Icon
+                name={isCollapsed ? "ChevronRight" : "ChevronLeft"}
+                size={20}
               />
             </Button>
           </div>
@@ -98,7 +98,7 @@ const Sidebar = ({
           <nav className="flex-1 p-4 space-y-2">
             {filteredNavItems?.map((item) => {
               const active = isActive(item?.path);
-              
+
               return (
                 <Button
                   key={item?.path}
@@ -110,9 +110,9 @@ const Sidebar = ({
                     ${active ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}
                   `}
                 >
-                  <Icon 
-                    name={item?.icon} 
-                    size={20} 
+                  <Icon
+                    name={item?.icon}
+                    size={20}
                     className={`
                       ${isCollapsed ? 'mx-auto' : 'mr-3'}
                       ${active ? 'text-primary-foreground' : 'text-muted-foreground'}
@@ -162,11 +162,11 @@ const Sidebar = ({
         ${isCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100'}
       `}>
         {/* Backdrop */}
-        <div 
+        <div
           className="absolute inset-0 bg-black/50"
           onClick={onToggleCollapse}
         />
-        
+
         {/* Mobile Sidebar */}
         <aside className={`
           absolute left-0 top-0 h-full w-60 bg-surface border-r border-border
@@ -195,7 +195,7 @@ const Sidebar = ({
             <nav className="flex-1 p-4 space-y-2">
               {filteredNavItems?.map((item) => {
                 const active = isActive(item?.path);
-                
+
                 return (
                   <Button
                     key={item?.path}
@@ -209,9 +209,9 @@ const Sidebar = ({
                       ${active ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}
                     `}
                   >
-                    <Icon 
-                      name={item?.icon} 
-                      size={20} 
+                    <Icon
+                      name={item?.icon}
+                      size={20}
                       className={`
                         mr-3
                         ${active ? 'text-primary-foreground' : 'text-muted-foreground'}

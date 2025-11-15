@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Icon from '../AppIcon';
 import Button from './Button';
@@ -16,7 +16,16 @@ const Header = ({
   const { logout } = useAuthStore();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const location = useLocation();
+
+  // Real-time clock update
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const notifications = [
     { id: 1, type: 'warning', message: 'Món gà rán sắp hết hàng', time: '5 phút trước' },
@@ -58,6 +67,24 @@ const Header = ({
       case 'error': return 'text-error';
       default: return 'text-primary';
     }
+  };
+
+  const formatTime = (date) => {
+    return date.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
+  const formatDate = (date) => {
+    const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    const dayName = days[date.getDay()];
+    return `${dayName}, ${date.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    })}`;
   };
 
   return (
@@ -121,6 +148,21 @@ const Header = ({
 
         {/* Right Section - Status, Notifications, User */}
         <div className="flex items-center space-x-3">
+          {/* Real-time Clock - Modern Design */}
+          <div className="hidden lg:flex items-center space-x-3 px-4 py-2 ">
+            <div className="flex items-center space-x-2">
+              <Icon name="Clock" size={16} className="text-primary" />
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold text-foreground font-mono tracking-wider">
+                  {formatTime(currentTime)}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {formatDate(currentTime)}
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* Operational Status Toggle */}
           <div className="hidden sm:flex items-center space-x-2">
             <span className="text-sm text-muted-foreground">Trạng thái:</span>
