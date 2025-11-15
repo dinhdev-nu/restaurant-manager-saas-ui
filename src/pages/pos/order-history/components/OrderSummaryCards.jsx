@@ -27,25 +27,33 @@ const OrderSummaryCards = ({ summaryData }) => {
       color: "bg-primary"
     },
     {
+      title: "Chưa thanh toán",
+      value: summaryData?.unpaidOrders?.toLocaleString('vi-VN') || '0',
+      change: 'Cần xử lý',
+      changeType: summaryData?.unpaidOrders > 0 ? 'warning' : 'neutral',
+      icon: "AlertCircle",
+      color: "bg-orange-500"
+    },
+    {
+      title: "Đơn chờ xử lý",
+      value: summaryData?.pendingOrders?.toLocaleString('vi-VN') || '0',
+      change: 'Đang chờ',
+      changeType: summaryData?.pendingOrders > 0 ? 'warning' : 'neutral',
+      icon: "Clock",
+      color: "bg-blue-500"
+    },
+    {
       title: "Giá trị trung bình",
       value: formatCurrency(summaryData?.averageOrderValue),
       change: `${summaryData?.avgChange >= 0 ? '+' : ''}${summaryData?.avgChange}%`,
       changeType: summaryData?.avgChange >= 0 ? 'positive' : 'negative',
       icon: "Calculator",
       color: "bg-accent"
-    },
-    {
-      title: "Món phổ biến",
-      value: summaryData?.popularItem,
-      change: `${summaryData?.popularItemCount} lần`,
-      changeType: 'neutral',
-      icon: "Star",
-      color: "bg-warning"
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
       {cards?.map((card, index) => (
         <div key={index} className="bg-card border border-border rounded-lg p-6 hover-scale">
           <div className="flex items-center justify-between mb-4">
@@ -53,7 +61,9 @@ const OrderSummaryCards = ({ summaryData }) => {
               <Icon name={card?.icon} size={24} color="white" />
             </div>
             <div className={`text-sm font-medium ${card?.changeType === 'positive' ? 'text-success' :
-                card?.changeType === 'negative' ? 'text-error' : 'text-muted-foreground'
+              card?.changeType === 'negative' ? 'text-error' :
+                card?.changeType === 'warning' ? 'text-orange-600' :
+                  'text-muted-foreground'
               }`}>
               {card?.change}
             </div>

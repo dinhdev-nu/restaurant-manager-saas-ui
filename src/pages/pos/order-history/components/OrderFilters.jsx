@@ -12,9 +12,17 @@ const OrderFilters = ({
 }) => {
   const statusOptions = [
     { value: 'all', label: 'Tất cả trạng thái' },
-    { value: 'completed', label: 'Hoàn thành' },
+    { value: 'pending', label: 'Chờ xử lý' },
     { value: 'processing', label: 'Đang xử lý' },
+    { value: 'completed', label: 'Hoàn thành' },
     { value: 'cancelled', label: 'Đã hủy' },
+    { value: 'refunded', label: 'Đã hoàn tiền' }
+  ];
+
+  const paymentStatusOptions = [
+    { value: 'all', label: 'Tất cả TT thanh toán' },
+    { value: 'unpaid', label: 'Chưa thanh toán' },
+    { value: 'paid', label: 'Đã thanh toán' },
     { value: 'refunded', label: 'Đã hoàn tiền' }
   ];
 
@@ -64,7 +72,7 @@ const OrderFilters = ({
           </Button>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
         <Input
           type="date"
           label="Từ ngày"
@@ -82,7 +90,7 @@ const OrderFilters = ({
         />
 
         <Select
-          label="Trạng thái"
+          label="Trạng thái đơn"
           options={statusOptions}
           value={filters?.status}
           onChange={(value) => onFilterChange('status', value)}
@@ -90,7 +98,15 @@ const OrderFilters = ({
         />
 
         <Select
-          label="Phương thức thanh toán"
+          label="TT Thanh toán"
+          options={paymentStatusOptions}
+          value={filters?.paymentStatus}
+          onChange={(value) => onFilterChange('paymentStatus', value)}
+          className="w-full"
+        />
+
+        <Select
+          label="Phương thức TT"
           options={paymentMethodOptions}
           value={filters?.paymentMethod}
           onChange={(value) => onFilterChange('paymentMethod', value)}

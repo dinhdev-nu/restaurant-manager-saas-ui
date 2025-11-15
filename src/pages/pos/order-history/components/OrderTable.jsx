@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Button from '../../../../components/ui/Button';
 import Icon from '../../../../components/AppIcon';
+import ConfirmationDialog from '../../../../components/ui/ConfirmationDialog';
 
-const OrderTable = ({ orders, onViewDetails, onReprintReceipt }) => {
+const OrderTable = ({ orders, onViewDetails, onReprintReceipt, highlightedOrderId }) => {
+  const navigate = useNavigate();
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [sortConfig, setSortConfig] = useState({ key: 'timestamp', direction: 'desc' });
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -27,6 +32,7 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt }) => {
     const statusConfig = {
       completed: { color: 'bg-success text-success-foreground', label: 'Hoàn thành' },
       processing: { color: 'bg-warning text-warning-foreground', label: 'Đang xử lý' },
+      pending: { color: 'bg-blue-500 text-white', label: 'Chờ xử lý' },
       cancelled: { color: 'bg-error text-error-foreground', label: 'Đã hủy' },
       refunded: { color: 'bg-secondary text-secondary-foreground', label: 'Đã hoàn tiền' }
     };
@@ -34,6 +40,22 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt }) => {
     const config = statusConfig?.[status] || statusConfig?.completed;
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${config?.color}`}>
+        {config?.label}
+      </span>
+    );
+  };
+
+  const getPaymentStatusBadge = (paymentStatus) => {
+    const statusConfig = {
+      paid: { color: 'bg-success text-success-foreground', label: 'Đã thanh toán', icon: 'CheckCircle' },
+      unpaid: { color: 'bg-orange-500 text-white', label: 'Chưa thanh toán', icon: 'AlertCircle' },
+      refunded: { color: 'bg-secondary text-secondary-foreground', label: 'Đã hoàn tiền', icon: 'RotateCcw' }
+    };
+
+    const config = statusConfig?.[paymentStatus] || statusConfig?.unpaid;
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${config?.color} flex items-center gap-1`}>
+        <Icon name={config?.icon} size={12} />
         {config?.label}
       </span>
     );
@@ -66,6 +88,32 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt }) => {
       direction = 'desc';
     }
     setSortConfig({ key, direction });
+  };
+
+  const handleOrderClick = (order) => {
+    // If order is unpaid, show confirmation to go to payment
+    if (order.paymentStatus === 'unpaid') {
+      setSelectedOrderForPayment(order);
+      setShowPaymentDialog(true);
+    } else {
+      // If paid, show details
+      onViewDetails(order);
+    }
+  };
+
+  const handleConfirmPayment = () => {
+    if (selectedOrderForPayment) {
+      navigate('/payment-processing', {
+        state: { order: selectedOrderForPayment }
+      });
+    }
+    setShowPaymentDialog(false);
+    setSelectedOrderForPayment(null);
+  };
+
+  const handleCancelPayment = () => {
+    setShowPaymentDialog(false);
+    setSelectedOrderForPayment(null);
   };
 
   const sortedOrders = [...orders]?.sort((a, b) => {
@@ -131,13 +179,14 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt }) => {
               </th>
               <th className="text-left p-4 font-medium text-muted-foreground">Thanh toán</th>
               <th className="text-left p-4 font-medium text-muted-foreground">Trạng thái</th>
+              <th className="text-left p-4 font-medium text-muted-foreground">TT Thanh toán</th>
               <th className="text-left p-4 font-medium text-muted-foreground">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {sortedOrders?.map((order) => (
               <React.Fragment key={order?.id}>
-                <tr className="border-b border-border hover:bg-muted/30 transition-smooth">
+                <tr className={`border-b border-border hover:bg-muted/30 transition-smooth ${highlightedOrderId === order?.id ? 'bg-primary/10 animate-pulse' : ''}`}>
                   <td className="p-4">
                     <div className="flex items-center space-x-2">
                       <Button
@@ -204,14 +253,18 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt }) => {
                     {getStatusBadge(order?.status)}
                   </td>
                   <td className="p-4">
+                    {getPaymentStatusBadge(order?.paymentStatus || 'unpaid')}
+                  </td>
+                  <td className="p-4">
                     <div className="flex items-center space-x-2">
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => onViewDetails(order)}
+                        onClick={() => handleOrderClick(order)}
                         className="hover-scale"
+                        title={order?.paymentStatus === 'unpaid' ? 'Thanh toán' : 'Xem chi tiết'}
                       >
-                        <Icon name="Eye" size={16} />
+                        <Icon name={order?.paymentStatus === 'unpaid' ? 'CreditCard' : 'Eye'} size={16} />
                       </Button>
                       <Button
                         variant="ghost"
@@ -272,20 +325,22 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt }) => {
       {/* Mobile Card Layout */}
       <div className="lg:hidden space-y-4 p-4">
         {sortedOrders?.map((order) => (
-          <div key={order?.id} className="border border-border rounded-lg p-4 space-y-3">
+          <div key={order?.id} className={`border border-border rounded-lg p-4 space-y-3 ${highlightedOrderId === order?.id ? 'bg-primary/10 border-primary animate-pulse' : ''}`}>
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 flex-wrap gap-2">
                 <span className="font-mono text-sm font-medium">#{order?.id}</span>
                 {getStatusBadge(order?.status)}
+                {getPaymentStatusBadge(order?.paymentStatus || 'unpaid')}
               </div>
               <div className="flex items-center space-x-2">
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => onViewDetails(order)}
+                  onClick={() => handleOrderClick(order)}
                   className="w-8 h-8"
+                  title={order?.paymentStatus === 'unpaid' ? 'Thanh toán' : 'Xem chi tiết'}
                 >
-                  <Icon name="Eye" size={16} />
+                  <Icon name={order?.paymentStatus === 'unpaid' ? 'CreditCard' : 'Eye'} size={16} />
                 </Button>
                 <Button
                   variant="ghost"
@@ -339,6 +394,19 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt }) => {
           </div>
         ))}
       </div>
+
+      {/* Payment Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showPaymentDialog}
+        onClose={handleCancelPayment}
+        onConfirm={handleConfirmPayment}
+        title="Thanh toán đơn hàng"
+        message={`Bạn có muốn thanh toán đơn hàng ${selectedOrderForPayment?.id}? Tổng tiền: ${selectedOrderForPayment ? formatCurrency(selectedOrderForPayment.total) : ''}`}
+        confirmText="Thanh toán ngay"
+        cancelText="Hủy"
+        variant="success"
+        icon="CreditCard"
+      />
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Header from '../../../components/ui/Header';
 import Sidebar from '../../../components/ui/Sidebar';
 import OrderSummaryCards from './components/OrderSummaryCards';
@@ -7,16 +8,29 @@ import OrderTable from './components/OrderTable';
 import OrderDetailsModal from './components/OrderDetailsModal';
 import Button from '../../../components/ui/Button';
 import Icon from '../../../components/AppIcon';
+import { useOrderStore } from '../../../stores/order.store';
 
 const OrderHistory = () => {
+  const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isOperational, setIsOperational] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [highlightedOrderId, setHighlightedOrderId] = useState(null);
+
+  // Get data from order store
+  const orders = useOrderStore((state) => state.orders);
+  const getTodayRevenue = useOrderStore((state) => state.getTodayRevenue);
+  const getTotalOrders = useOrderStore((state) => state.getTotalOrders);
+  const getAverageOrderValue = useOrderStore((state) => state.getAverageOrderValue);
+  const updateOrderStatus = useOrderStore((state) => state.updateOrderStatus);
+  const deleteOrder = useOrderStore((state) => state.deleteOrder);
+
   const [filters, setFilters] = useState({
     startDate: new Date()?.toISOString()?.split('T')?.[0],
     endDate: new Date()?.toISOString()?.split('T')?.[0],
     status: 'all',
+    paymentStatus: 'all', // Add payment status filter
     paymentMethod: 'all',
     table: 'all',
     searchQuery: '',
@@ -24,125 +38,25 @@ const OrderHistory = () => {
     maxAmount: ''
   });
 
-  // Mock data for order history
-  const mockOrders = [
-    {
-      id: "ORD001",
-      timestamp: new Date(Date.now() - 3600000),
-      customer: "Nguyễn Văn An",
-      customerPhone: "0901234567",
-      table: "Bàn 5",
-      staff: "Trần Thị Mai",
-      items: [
-        { name: "Phở bò tái", quantity: 2, price: 65000, notes: "Ít hành" },
-        { name: "Trà đá", quantity: 2, price: 10000 },
-        { name: "Nem rán", quantity: 1, price: 45000 }
-      ],
-      total: 185000,
-      paymentMethod: "cash",
-      status: "completed",
-      specialInstructions: "Giao nhanh, khách đang đợi",
-      discount: 0
-    },
-    {
-      id: "ORD002",
-      timestamp: new Date(Date.now() - 7200000),
-      customer: null,
-      customerPhone: null,
-      table: "Mang về",
-      staff: "Lê Văn Đức",
-      items: [
-        { name: "Cơm gà nướng", quantity: 1, price: 55000 },
-        { name: "Coca Cola", quantity: 1, price: 15000 }
-      ],
-      total: 70000,
-      paymentMethod: "momo",
-      status: "completed",
-      specialInstructions: null,
-      discount: 0
-    },
-    {
-      id: "ORD003",
-      timestamp: new Date(Date.now() - 10800000),
-      customer: "Phạm Thị Lan",
-      customerPhone: "0987654321",
-      table: "Bàn 12",
-      staff: "Nguyễn Văn Hùng",
-      items: [
-        { name: "Lẩu thái", quantity: 1, price: 180000 },
-        { name: "Rau củ lẩu", quantity: 1, price: 35000 },
-        { name: "Bia Saigon", quantity: 4, price: 25000 }
-      ],
-      total: 315000,
-      paymentMethod: "card",
-      status: "completed",
-      specialInstructions: "Lẩu cay vừa phải",
-      discount: 15000
-    },
-    {
-      id: "ORD004",
-      timestamp: new Date(Date.now() - 14400000),
-      customer: "Hoàng Minh Tuấn",
-      customerPhone: "0912345678",
-      table: "Giao hàng",
-      staff: "Trần Thị Mai",
-      items: [
-        { name: "Bánh mì thịt nướng", quantity: 3, price: 25000 },
-        { name: "Cà phê sữa đá", quantity: 2, price: 20000 }
-      ],
-      total: 115000,
-      paymentMethod: "zalopay",
-      status: "processing",
-      specialInstructions: "Giao đến tầng 5, phòng 502",
-      discount: 0
-    },
-    {
-      id: "ORD005",
-      timestamp: new Date(Date.now() - 18000000),
-      customer: null,
-      customerPhone: null,
-      table: "Bàn 3",
-      staff: "Lê Văn Đức",
-      items: [
-        { name: "Bún bò Huế", quantity: 1, price: 50000 },
-        { name: "Chả cá", quantity: 1, price: 35000 }
-      ],
-      total: 85000,
-      paymentMethod: "cash",
-      status: "cancelled",
-      specialInstructions: "Khách hủy do chờ quá lâu",
-      discount: 0
-    },
-    {
-      id: "ORD006",
-      timestamp: new Date(Date.now() - 21600000),
-      customer: "Vũ Thị Hoa",
-      customerPhone: "0934567890",
-      table: "Bàn 8",
-      staff: "Nguyễn Văn Hùng",
-      items: [
-        { name: "Gỏi cuốn", quantity: 2, price: 30000 },
-        { name: "Bún thịt nướng", quantity: 2, price: 45000 },
-        { name: "Nước chanh", quantity: 2, price: 15000 }
-      ],
-      total: 180000,
-      paymentMethod: "banking",
-      status: "completed",
-      specialInstructions: null,
-      discount: 0
+  // Highlight new order from navigation state
+  useEffect(() => {
+    if (location.state?.highlightOrder) {
+      setHighlightedOrderId(location.state.highlightOrder);
+      // Clear highlight after 3 seconds
+      setTimeout(() => setHighlightedOrderId(null), 3000);
     }
-  ];
+  }, [location]);
 
-  // Mock summary data
+  // Calculate summary data from actual orders
   const summaryData = {
-    todayRevenue: 1150000,
-    revenueChange: 12.5,
-    totalOrders: 28,
+    todayRevenue: getTodayRevenue(),
+    revenueChange: 12.5, // Calculate based on yesterday's revenue
+    totalOrders: getTotalOrders(),
     ordersChange: 5,
-    averageOrderValue: 125000,
+    averageOrderValue: getAverageOrderValue(),
     avgChange: -2.3,
-    popularItem: "Phở bò tái",
-    popularItemCount: 8
+    unpaidOrders: orders.filter(o => o.paymentStatus === 'unpaid').length,
+    pendingOrders: orders.filter(o => o.status === 'pending').length
   };
 
   const handleFilterChange = (key, value) => {
@@ -187,10 +101,11 @@ const OrderHistory = () => {
   };
 
   // Filter orders based on current filters
-  const filteredOrders = mockOrders?.filter(order => {
+  const filteredOrders = orders?.filter(order => {
     const orderDate = new Date(order.timestamp)?.toISOString()?.split('T')?.[0];
     const matchesDateRange = orderDate >= filters?.startDate && orderDate <= filters?.endDate;
     const matchesStatus = filters?.status === 'all' || order?.status === filters?.status;
+    const matchesPaymentStatus = filters?.paymentStatus === 'all' || order?.paymentStatus === filters?.paymentStatus;
     const matchesPayment = filters?.paymentMethod === 'all' || order?.paymentMethod === filters?.paymentMethod;
     const matchesTable = filters?.table === 'all' ||
       (filters?.table === 'takeaway' && order?.table === 'Mang về') ||
@@ -206,7 +121,7 @@ const OrderHistory = () => {
     const matchesAmount = (!filters?.minAmount || order?.total >= parseInt(filters?.minAmount)) &&
       (!filters?.maxAmount || order?.total <= parseInt(filters?.maxAmount));
 
-    return matchesDateRange && matchesStatus && matchesPayment && matchesTable && matchesSearch && matchesAmount;
+    return matchesDateRange && matchesStatus && matchesPaymentStatus && matchesPayment && matchesTable && matchesSearch && matchesAmount;
   });
 
   return (
@@ -221,7 +136,7 @@ const OrderHistory = () => {
       <Sidebar
         isCollapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        userRole="manager"
+        userRole="owner"
       />
       <main className={`
         pt-16 transition-all duration-300 ease-smooth
@@ -272,7 +187,7 @@ const OrderHistory = () => {
           {/* Results Summary */}
           <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
-              Hiển thị {filteredOrders?.length} đơn hàng từ tổng số {mockOrders?.length} đơn
+              Hiển thị {filteredOrders?.length} đơn hàng từ tổng số {orders?.length} đơn
             </div>
             <div className="flex items-center space-x-2">
               <Icon name="Filter" size={16} className="text-muted-foreground" />
@@ -287,6 +202,7 @@ const OrderHistory = () => {
             orders={filteredOrders}
             onViewDetails={handleViewDetails}
             onReprintReceipt={handleReprintReceipt}
+            highlightedOrderId={highlightedOrderId}
           />
 
           {/* Empty State */}
