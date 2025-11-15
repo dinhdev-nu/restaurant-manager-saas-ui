@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../../../components/ui/Header';
 import Sidebar from '../../../components/ui/Sidebar';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
+import { useOrderStore } from '../../../stores/order.store';
+import { useTableStore } from '../../../stores/table.store';
+import UnpaidOrdersModal from '../../../components/ui/UnpaidOrdersModal';
 
 // Import components
 import PaymentMethodSelector from './components/PaymentMethodSelector';
@@ -16,51 +19,69 @@ import PaymentSuccess from './components/PaymentSuccess';
 
 const PaymentProcessing = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const updateOrderPayment = useOrderStore((state) => state.updateOrderPayment);
+  const updateOrderStatus = useOrderStore((state) => state.updateOrderStatus);
+  const clearOrder = useTableStore((state) => state.clearOrder);
+  const getTableByOrderId = useTableStore((state) => state.getTableByOrderId);
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isOperational, setIsOperational] = useState(true);
+  const [showUnpaidModal, setShowUnpaidModal] = useState(false);
 
   // Payment flow states
   const [currentStep, setCurrentStep] = useState('method'); // method, payment, customer, success
   const [selectedMethod, setSelectedMethod] = useState('');
-  const [orderData, setOrderData] = useState({});
+  const [orderData, setOrderData] = useState(null);
   const [customerInfo, setCustomerInfo] = useState({});
   const [paymentResult, setPaymentResult] = useState({});
 
-  // Mock order data
-  const mockOrderData = {
-    orderNumber: "#001",
-    tableNumber: "5",
-    items: [
-      {
-        id: 1,
-        name: "Phở bò tái",
-        quantity: 2,
-        price: 85000,
-        total: 170000,
-        notes: "Ít hành"
-      },
-      {
-        id: 2,
-        name: "Cà phê sữa đá",
-        quantity: 1,
-        price: 25000,
-        total: 25000,
-        notes: ""
-      },
-      {
-        id: 3,
-        name: "Bánh mì thịt nướng",
-        quantity: 3,
-        price: 30000,
-        total: 90000,
-        notes: "Không rau thơm"
-      }
-    ],
-    subtotal: 285000,
-    tax: 28500,
-    discount: 0,
-    total: 313500
-  };
+  // Get order data from navigation state
+  useEffect(() => {
+    if (location.state?.order) {
+      // Order from UnpaidOrdersModal or order-history
+      const order = location.state.order;
+      setOrderData({
+        orderNumber: order.id,
+        tableNumber: order.table,
+        items: order.items.map((item, idx) => ({
+          id: idx + 1,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.price * item.quantity,
+          notes: item.notes || ''
+        })),
+        subtotal: order.subtotal,
+        tax: order.tax,
+        discount: order.discount || 0,
+        total: order.total
+      });
+      // Close unpaid modal if it was open
+      setShowUnpaidModal(false);
+    } else if (location.state?.orderNumber) {
+      // Order from dashboard (going to payment directly)
+      setOrderData({
+        orderNumber: location.state.orderNumber,
+        tableNumber: location.state.selectedTable,
+        items: location.state.cartItems.map((item, idx) => ({
+          id: idx + 1,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.price * item.quantity,
+          notes: item.note || ''
+        })),
+        subtotal: location.state.subtotal,
+        tax: location.state.tax,
+        discount: location.state.discount || 0,
+        total: location.state.totalAmount
+      });
+    } else {
+      // No order data - show unpaid orders modal
+      setShowUnpaidModal(true);
+    }
+  }, [location]);
 
   const handleMethodSelect = (method) => {
     setSelectedMethod(method);
@@ -68,10 +89,22 @@ const PaymentProcessing = () => {
   };
 
   const handlePaymentComplete = (paymentData) => {
+    // Update order in store
+    if (orderData?.orderNumber) {
+      updateOrderPayment(orderData.orderNumber, paymentData);
+      updateOrderStatus(orderData.orderNumber, 'completed');
+
+      // Clear table order if table was assigned - find table by order ID
+      const table = getTableByOrderId(orderData.orderNumber);
+      if (table) {
+        clearOrder(table.id);
+      }
+    }
+
     setPaymentResult({
       ...paymentData,
-      orderNumber: mockOrderData?.orderNumber,
-      tableNumber: mockOrderData?.tableNumber,
+      orderNumber: orderData?.orderNumber,
+      tableNumber: orderData?.tableNumber,
       customerInfo: customerInfo
     });
     setCurrentStep('success');
@@ -120,11 +153,13 @@ const PaymentProcessing = () => {
   };
 
   const renderPaymentForm = () => {
+    if (!orderData) return null;
+
     switch (selectedMethod) {
       case 'cash':
         return (
           <CashPaymentForm
-            totalAmount={mockOrderData?.total}
+            totalAmount={orderData?.total}
             onPaymentComplete={handlePaymentComplete}
             onCancel={handleBackToMethod}
           />
@@ -132,7 +167,7 @@ const PaymentProcessing = () => {
       case 'card':
         return (
           <CardPaymentForm
-            totalAmount={mockOrderData?.total}
+            totalAmount={orderData?.total}
             onPaymentComplete={handlePaymentComplete}
             onCancel={handleBackToMethod}
           />
@@ -140,7 +175,7 @@ const PaymentProcessing = () => {
       case 'momo': case 'zalopay': case 'banking': case 'qr':
         return (
           <DigitalWalletForm
-            totalAmount={mockOrderData?.total}
+            totalAmount={orderData?.total}
             walletType={selectedMethod}
             onPaymentComplete={handlePaymentComplete}
             onCancel={handleBackToMethod}
@@ -152,19 +187,28 @@ const PaymentProcessing = () => {
   };
 
   const renderStepContent = () => {
+    if (!orderData) {
+      return (
+        <div className="text-center py-12">
+          <Icon name="Loader" size={48} className="text-muted-foreground mx-auto mb-4 animate-spin" />
+          <p className="text-muted-foreground">Đang tải dữ liệu đơn hàng...</p>
+        </div>
+      );
+    }
+
     switch (currentStep) {
       case 'method':
         return (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div>
               <OrderSummary
-                orderItems={mockOrderData?.items}
-                subtotal={mockOrderData?.subtotal}
-                tax={mockOrderData?.tax}
-                discount={mockOrderData?.discount}
-                total={mockOrderData?.total}
-                orderNumber={mockOrderData?.orderNumber}
-                tableNumber={mockOrderData?.tableNumber}
+                orderItems={orderData?.items}
+                subtotal={orderData?.subtotal}
+                tax={orderData?.tax}
+                discount={orderData?.discount}
+                total={orderData?.total}
+                orderNumber={orderData?.orderNumber}
+                tableNumber={orderData?.tableNumber}
               />
             </div>
             <div>
@@ -298,9 +342,9 @@ const PaymentProcessing = () => {
 
               {/* Order Info */}
               <div className="hidden md:flex items-center space-x-4 text-sm text-muted-foreground">
-                <span>Đơn hàng: {mockOrderData?.orderNumber}</span>
+                <span>Đơn hàng: {orderData?.orderNumber}</span>
                 <span>•</span>
-                <span>Bàn: {mockOrderData?.tableNumber}</span>
+                <span>Bàn: {orderData?.tableNumber}</span>
                 <span>•</span>
                 <span>{new Date()?.toLocaleString('vi-VN')}</span>
               </div>
@@ -364,6 +408,18 @@ const PaymentProcessing = () => {
           </div>
         </div>
       </main>
+
+      {/* Unpaid Orders Modal */}
+      <UnpaidOrdersModal
+        isOpen={showUnpaidModal}
+        onClose={() => {
+          setShowUnpaidModal(false);
+          // Only navigate back if no order was selected
+          if (!orderData) {
+            navigate('/main-pos-dashboard');
+          }
+        }}
+      />
     </div>
   );
 };
