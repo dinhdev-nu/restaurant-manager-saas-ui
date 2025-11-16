@@ -6,6 +6,9 @@ import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
+import { useToast } from '../../../hooks/use-toast';
+import { useMenuStore } from '../../../stores/menu.store';
+import ConfirmationDialog from '../../../components/ui/ConfirmationDialog';
 
 // Import components
 import MenuItemCard from './components/MenuItemCard';
@@ -17,6 +20,7 @@ import MenuStats from './components/MenuStats';
 
 const MenuManagement = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isOperational, setIsOperational] = useState(true);
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
@@ -24,6 +28,12 @@ const MenuManagement = () => {
   // Modal states
   const [showItemModal, setShowItemModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [categoryIcon, setCategoryIcon] = useState('Utensils');
 
   // Filter and search states
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,99 +44,42 @@ const MenuManagement = () => {
   // Selection states
   const [selectedItems, setSelectedItems] = useState([]);
 
-  // Mock data
-  const [categories] = useState([
-    { id: 'beverages', name: 'Đồ uống', icon: 'Coffee' },
-    { id: 'appetizers', name: 'Khai vị', icon: 'Soup' },
-    { id: 'main_dishes', name: 'Món chính', icon: 'UtensilsCrossed' },
-    { id: 'desserts', name: 'Tráng miệng', icon: 'IceCream' },
-    { id: 'snacks', name: 'Đồ ăn vặt', icon: 'Cookie' }
-  ]);
+  // Menu Store
+  const {
+    categories,
+    menuItems,
+    addMenuItem,
+    updateMenuItem,
+    deleteMenuItem,
+    toggleMenuItemAvailability,
+    bulkDeleteMenuItems,
+    bulkToggleAvailability,
+    bulkUpdateCategory,
+    getAllCategoryItemCounts,
+    addCategory
+  } = useMenuStore();
 
-  const [menuItems, setMenuItems] = useState([
-    {
-      id: 1,
-      name: "Phở bò tái",
-      description: "Phở bò truyền thống với thịt bò tái, hành lá và rau thơm",
-      price: 65000,
-      category: "main_dishes",
-      image: "https://images.unsplash.com/photo-1559847844-d721426d6edc?w=300",
-      status: "available",
-      stock_quantity: 50,
-      unit: "tô",
-      updated_at: "2025-09-02T10:30:00Z"
-    },
-    {
-      id: 2,
-      name: "Cà phê sữa đá",
-      description: "Cà phê phin truyền thống pha với sữa đặc và đá",
-      price: 25000,
-      category: "beverages",
-      image: "https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?w=300",
-      status: "available",
-      stock_quantity: 100,
-      unit: "ly",
-      updated_at: "2025-09-02T09:15:00Z"
-    },
-    {
-      id: 3,
-      name: "Bánh mì thịt nướng",
-      description: "Bánh mì giòn với thịt nướng, pate, rau cải và gia vị",
-      price: 35000,
-      category: "snacks",
-      image: "https://images.pixabay.com/photo/2020/04/04/15/07/banh-mi-5002067_640.jpg",
-      status: "low_stock",
-      stock_quantity: 5,
-      unit: "ổ",
-      updated_at: "2025-09-02T08:45:00Z"
-    },
-    {
-      id: 4,
-      name: "Gỏi cuốn tôm thịt",
-      description: "Gỏi cuốn tươi với tôm, thịt heo, bún và rau sống",
-      price: 45000,
-      category: "appetizers",
-      image: "https://images.unsplash.com/photo-1559847844-d721426d6edc?w=300",
-      status: "available",
-      stock_quantity: 30,
-      unit: "đĩa",
-      updated_at: "2025-09-02T11:20:00Z"
-    },
-    {
-      id: 5,
-      name: "Chè ba màu",
-      description: "Chè truyền thống với đậu xanh, đậu đỏ và thạch",
-      price: 20000,
-      category: "desserts",
-      image: "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?w=300",
-      status: "unavailable",
-      stock_quantity: 0,
-      unit: "ly",
-      updated_at: "2025-09-01T16:30:00Z"
-    },
-    {
-      id: 6,
-      name: "Trà đá chanh",
-      description: "Trà đá tươi mát với chanh tươi và đường",
-      price: 15000,
-      category: "beverages",
-      image: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=300",
-      status: "available",
-      stock_quantity: 80,
-      unit: "ly",
-      updated_at: "2025-09-02T12:00:00Z"
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (showItemModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
     }
-  ]);
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showItemModal]);
 
   // Filter and sort items
-  const filteredItems = menuItems?.filter(item => {
-    const matchesSearch = item?.name?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
-      item?.description?.toLowerCase()?.includes(searchQuery?.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || item?.category === selectedCategory;
+  const filteredItems = menuItems.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
-  })?.sort((a, b) => {
-    let aValue = a?.[sortBy];
-    let bValue = b?.[sortBy];
+  }).sort((a, b) => {
+    let aValue = a[sortBy];
+    let bValue = b[sortBy];
 
     if (sortBy === 'price') {
       aValue = parseFloat(aValue);
@@ -135,8 +88,8 @@ const MenuManagement = () => {
       aValue = new Date(aValue);
       bValue = new Date(bValue);
     } else {
-      aValue = aValue?.toString()?.toLowerCase();
-      bValue = bValue?.toString()?.toLowerCase();
+      aValue = aValue.toString().toLowerCase();
+      bValue = bValue.toString().toLowerCase();
     }
 
     if (sortOrder === 'asc') {
@@ -147,10 +100,7 @@ const MenuManagement = () => {
   });
 
   // Calculate category counts
-  const categoryItemCounts = categories?.reduce((counts, category) => {
-    counts[category.id] = menuItems?.filter(item => item?.category === category?.id)?.length;
-    return counts;
-  }, {});
+  const categoryItemCounts = getAllCategoryItemCounts();
 
   // Sort options
   const sortOptions = [
@@ -178,69 +128,172 @@ const MenuManagement = () => {
   };
 
   const handleSaveItem = (itemData) => {
-    if (editingItem) {
-      // Update existing item
-      setMenuItems(prev => prev?.map(item =>
-        item?.id === editingItem?.id ? { ...itemData, id: editingItem?.id } : item
-      ));
-    } else {
-      // Add new item
-      setMenuItems(prev => [...prev, { ...itemData, id: Date.now() }]);
+    try {
+      if (editingItem) {
+        // Update existing item
+        updateMenuItem(editingItem.id, itemData);
+        toast({
+          title: "Cập nhật thành công",
+          description: `Món "${itemData.name}" đã được cập nhật`,
+          variant: "success"
+        });
+      } else {
+        // Add new item
+        addMenuItem(itemData);
+        toast({
+          title: "Thêm món thành công",
+          description: `Món "${itemData.name}" đã được thêm vào thực đơn`,
+          variant: "success"
+        });
+      }
+      setShowItemModal(false);
+      setEditingItem(null);
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: error.message,
+        variant: "destructive"
+      });
     }
-    setShowItemModal(false);
-    setEditingItem(null);
   };
 
   const handleDeleteItem = (itemId) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa món ăn này?')) {
-      setMenuItems(prev => prev?.filter(item => item?.id !== itemId));
-      setSelectedItems(prev => prev?.filter(id => id !== itemId));
+    setItemToDelete(itemId);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteItem = () => {
+    try {
+      deleteMenuItem(itemToDelete);
+      setSelectedItems(prev => prev.filter(id => id !== itemToDelete));
+      toast({
+        title: "Xóa thành công",
+        description: "Món ăn đã được xóa khỏi thực đơn",
+        variant: "success"
+      });
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setItemToDelete(null);
     }
   };
 
   const handleToggleAvailability = (itemId, currentStatus) => {
-    const newStatus = currentStatus === 'available' ? 'unavailable' : 'available';
-    setMenuItems(prev => prev?.map(item =>
-      item?.id === itemId
-        ? { ...item, status: newStatus, updated_at: new Date()?.toISOString() }
-        : item
-    ));
+    try {
+      toggleMenuItemAvailability(itemId);
+      const newStatus = currentStatus === 'available' ? 'unavailable' : 'available';
+      toast({
+        title: "Cập nhật trạng thái",
+        description: `Món ăn đã chuyển sang ${newStatus === 'available' ? 'có sẵn' : 'không có sẵn'}`,
+        variant: "success"
+      });
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   const handleSelectItem = (itemId, selected) => {
     if (selected) {
       setSelectedItems(prev => [...prev, itemId]);
     } else {
-      setSelectedItems(prev => prev?.filter(id => id !== itemId));
+      setSelectedItems(prev => prev.filter(id => id !== itemId));
     }
   };
 
   const handleSelectAll = (selected) => {
     if (selected) {
-      setSelectedItems(filteredItems?.map(item => item?.id));
+      setSelectedItems(filteredItems.map(item => item.id));
     } else {
       setSelectedItems([]);
     }
   };
 
   const handleBulkDelete = () => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedItems?.length} món ăn đã chọn?`)) {
-      setMenuItems(prev => prev?.filter(item => !selectedItems?.includes(item?.id)));
+    setShowBulkDeleteDialog(true);
+  };
+
+  const confirmBulkDelete = () => {
+    try {
+      bulkDeleteMenuItems(selectedItems);
+      toast({
+        title: "Xóa thành công",
+        description: `Đã xóa ${selectedItems.length} món ăn`,
+        variant: "success"
+      });
       setSelectedItems([]);
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: error.message,
+        variant: "destructive"
+      });
     }
   };
 
   const handleBulkToggleAvailability = () => {
-    const selectedItemsData = menuItems?.filter(item => selectedItems?.includes(item?.id));
-    const allAvailable = selectedItemsData?.every(item => item?.status === 'available');
-    const newStatus = allAvailable ? 'unavailable' : 'available';
+    try {
+      const selectedItemsData = menuItems.filter(item => selectedItems.includes(item.id));
+      const allAvailable = selectedItemsData.every(item => item.status === 'available');
+      const newStatus = allAvailable ? 'unavailable' : 'available';
 
-    setMenuItems(prev => prev?.map(item =>
-      selectedItems?.includes(item?.id)
-        ? { ...item, status: newStatus, updated_at: new Date()?.toISOString() }
-        : item
-    ));
-    setSelectedItems([]);
+      bulkToggleAvailability(selectedItems, newStatus);
+      toast({
+        title: "Cập nhật thành công",
+        description: `Đã cập nhật trạng thái ${selectedItems.length} món ăn`,
+        variant: "success"
+      });
+      setSelectedItems([]);
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAddCategory = () => {
+    setShowCategoryModal(true);
+  };
+
+  const handleSaveCategory = () => {
+    if (!newCategoryName.trim()) {
+      toast({
+        title: "Lỗi",
+        description: "Tên danh mục không được để trống",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      addCategory({
+        name: newCategoryName.trim(),
+        icon: categoryIcon
+      });
+      toast({
+        title: "Thêm danh mục thành công",
+        description: `Danh mục "${newCategoryName}" đã được thêm`,
+        variant: "success"
+      });
+      setShowCategoryModal(false);
+      setNewCategoryName('');
+      setCategoryIcon('Utensils');
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -255,7 +308,7 @@ const MenuManagement = () => {
       <Sidebar
         isCollapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        userRole="manager"
+        userRole="owner"
       />
       <main className={`
         pt-16 transition-all duration-300 ease-smooth
@@ -347,6 +400,7 @@ const MenuManagement = () => {
                 selectedCategory={selectedCategory}
                 onCategoryChange={setSelectedCategory}
                 itemCounts={categoryItemCounts}
+                onAddCategory={handleAddCategory}
               />
             </div>
           </div>
@@ -354,19 +408,19 @@ const MenuManagement = () => {
           {/* Results Summary */}
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-muted-foreground">
-              Hiển thị {filteredItems?.length} trong tổng số {menuItems?.length} món ăn
-              {selectedItems?.length > 0 && (
+              Hiển thị {filteredItems.length} trong tổng số {menuItems.length} món ăn
+              {selectedItems.length > 0 && (
                 <span className="ml-2 text-primary">
-                  • Đã chọn {selectedItems?.length} món
+                  • Đã chọn {selectedItems.length} món
                 </span>
               )}
             </p>
 
-            {filteredItems?.length > 0 && (
+            {filteredItems.length > 0 && (
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <Icon name="Filter" size={16} />
                 <span>
-                  {selectedCategory !== 'all' && `Danh mục: ${categories?.find(c => c?.id === selectedCategory)?.name}`}
+                  {selectedCategory !== 'all' && `Danh mục: ${categories.find(c => c.id === selectedCategory)?.name}`}
                   {searchQuery && ` • Tìm kiếm: "${searchQuery}"`}
                 </span>
               </div>
@@ -386,19 +440,19 @@ const MenuManagement = () => {
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredItems?.map(item => (
+              {filteredItems.map(item => (
                 <MenuItemCard
-                  key={item?.id}
+                  key={item.id}
                   item={item}
                   onEdit={handleEditItem}
                   onDelete={handleDeleteItem}
                   onToggleAvailability={handleToggleAvailability}
-                  isSelected={selectedItems?.includes(item?.id)}
+                  isSelected={selectedItems.includes(item.id)}
                   onSelect={handleSelectItem}
                 />
               ))}
 
-              {filteredItems?.length === 0 && (
+              {filteredItems.length === 0 && (
                 <div className="col-span-full p-12 text-center">
                   <Icon name="Search" size={48} className="mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium text-foreground mb-2">
@@ -423,11 +477,27 @@ const MenuManagement = () => {
 
           {/* Bulk Actions Bar */}
           <BulkActionsBar
-            selectedCount={selectedItems?.length}
+            selectedCount={selectedItems.length}
             onClearSelection={() => setSelectedItems([])}
             onBulkDelete={handleBulkDelete}
             onBulkToggleAvailability={handleBulkToggleAvailability}
-            onBulkUpdateCategory={() => { }}
+            onBulkUpdateCategory={(categoryId) => {
+              try {
+                bulkUpdateCategory(selectedItems, categoryId);
+                toast({
+                  title: "Cập nhật thành công",
+                  description: `Đã cập nhật danh mục cho ${selectedItems.length} món ăn`,
+                  variant: "success"
+                });
+                setSelectedItems([]);
+              } catch (error) {
+                toast({
+                  title: "Lỗi",
+                  description: error.message,
+                  variant: "destructive"
+                });
+              }
+            }}
             categories={categories}
           />
 
@@ -442,6 +512,109 @@ const MenuManagement = () => {
             item={editingItem}
             categories={categories}
           />
+
+          {/* Delete Confirmation Dialog */}
+          <ConfirmationDialog
+            isOpen={showDeleteDialog}
+            onClose={() => {
+              setShowDeleteDialog(false);
+              setItemToDelete(null);
+            }}
+            onConfirm={confirmDeleteItem}
+            title="Xóa món ăn"
+            message={
+              itemToDelete
+                ? `Bạn có chắc chắn muốn xóa món "${menuItems.find(item => item.id === itemToDelete)?.name}"? Hành động này không thể hoàn tác.`
+                : "Bạn có chắc chắn muốn xóa món ăn này?"
+            }
+            confirmText="Xóa"
+            cancelText="Hủy"
+            variant="danger"
+            icon="Trash2"
+          />
+
+          {/* Bulk Delete Confirmation Dialog */}
+          <ConfirmationDialog
+            isOpen={showBulkDeleteDialog}
+            onClose={() => setShowBulkDeleteDialog(false)}
+            onConfirm={confirmBulkDelete}
+            title="Xóa nhiều món ăn"
+            message={`Bạn có chắc chắn muốn xóa ${selectedItems.length} món ăn đã chọn? Hành động này không thể hoàn tác.`}
+            confirmText="Xóa tất cả"
+            cancelText="Hủy"
+            variant="danger"
+            icon="Trash2"
+          />
+
+          {/* Add Category Modal */}
+          {showCategoryModal && (
+            <div className="fixed inset-0 z-1300 flex items-center justify-center overflow-hidden">
+              <div className="absolute inset-0 bg-black/50" onClick={() => setShowCategoryModal(false)} />
+              <div className="relative bg-white dark:bg-surface border border-border rounded-lg shadow-modal w-full max-w-md">
+                <div className="flex items-center justify-between p-6 border-b border-border">
+                  <h2 className="text-lg font-semibold text-foreground">Thêm danh mục mới</h2>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowCategoryModal(false)}
+                  >
+                    <Icon name="X" size={20} />
+                  </Button>
+                </div>
+                <div className="p-6 space-y-4">
+                  <Input
+                    label="Tên danh mục"
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Nhập tên danh mục"
+                    required
+                  />
+                  <Select
+                    label="Biểu tượng"
+                    options={[
+                      { value: 'Coffee', label: 'Coffee - Đồ uống' },
+                      { value: 'Soup', label: 'Soup - Khai vị' },
+                      { value: 'UtensilsCrossed', label: 'UtensilsCrossed - Món chính' },
+                      { value: 'IceCream', label: 'IceCream - Tráng miệng' },
+                      { value: 'Cookie', label: 'Cookie - Đồ ăn vặt' },
+                      { value: 'Pizza', label: 'Pizza' },
+                      { value: 'Salad', label: 'Salad' },
+                      { value: 'Wine', label: 'Wine - Rượu' },
+                      { value: 'Utensils', label: 'Utensils - Tổng quát' }
+                    ]}
+                    value={categoryIcon}
+                    onChange={setCategoryIcon}
+                    placeholder="Chọn biểu tượng"
+                  />
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                    <Icon name={categoryIcon} size={20} className="text-primary" />
+                    <span className="text-sm text-muted-foreground">Xem trước biểu tượng</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-end space-x-3 p-6 border-t border-border">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowCategoryModal(false);
+                      setNewCategoryName('');
+                      setCategoryIcon('Utensils');
+                    }}
+                  >
+                    Hủy
+                  </Button>
+                  <Button
+                    variant="default"
+                    onClick={handleSaveCategory}
+                    iconName="Plus"
+                    iconPosition="left"
+                  >
+                    Thêm danh mục
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>

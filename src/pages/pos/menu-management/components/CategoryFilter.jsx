@@ -6,7 +6,8 @@ const CategoryFilter = ({
   categories,
   selectedCategory,
   onCategoryChange,
-  itemCounts = {}
+  itemCounts = {},
+  onAddCategory
 }) => {
   const allCount = Object.values(itemCounts)?.reduce((sum, count) => sum + count, 0);
 
@@ -67,6 +68,7 @@ const CategoryFilter = ({
         className="flex-shrink-0 text-muted-foreground border-dashed"
         iconName="Plus"
         iconPosition="left"
+        onClick={onAddCategory}
       >
         Thêm danh mục
       </Button>

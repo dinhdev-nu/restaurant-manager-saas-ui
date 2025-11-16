@@ -25,6 +25,19 @@ const MenuItemModal = ({
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState('');
+  const [uploadMethod, setUploadMethod] = useState('upload'); // 'upload' or 'url'
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (item) {
@@ -126,10 +139,41 @@ const MenuItemModal = ({
     setImagePreview(value);
   };
 
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Vui lòng chọn file hình ảnh');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Kích thước file không được vượt quá 5MB');
+      return;
+    }
+
+    // Convert to base64 for preview and storage
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result;
+      setImagePreview(base64String);
+      setFormData(prev => ({ ...prev, image: base64String }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    setImagePreview('');
+    setFormData(prev => ({ ...prev, image: '' }));
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-1200 flex items-center justify-center">
+    <div className="fixed inset-0 z-1200 flex items-center justify-center overflow-hidden">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50"
@@ -234,64 +278,144 @@ const MenuItemModal = ({
 
             {/* Right Column - Image */}
             <div className="space-y-4">
-              <Input
-                label="URL hình ảnh"
-                type="url"
-                value={formData?.image}
-                onChange={handleImageChange}
-                placeholder="https://example.com/image.jpg"
-              />
-
-              {/* Image Preview */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-foreground">
-                  Xem trước
+              {/* Upload Method Tabs */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Hình ảnh món ăn
                 </label>
-                <div className="w-full h-48 border-2 border-dashed border-border rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-                  {imagePreview ? (
-                    <Image
-                      src={imagePreview}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="text-center text-muted-foreground">
-                      <Icon name="ImagePlus" size={32} className="mx-auto mb-2" />
-                      <p className="text-sm">Chưa có hình ảnh</p>
-                    </div>
+                <div className="flex items-center gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setUploadMethod('upload')}
+                    className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${uploadMethod === 'upload'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      }`}
+                  >
+                    <Icon name="Upload" size={16} className="inline mr-2" />
+                    Tải ảnh lên
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUploadMethod('url')}
+                    className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${uploadMethod === 'url'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      }`}
+                  >
+                    <Icon name="Link" size={16} className="inline mr-2" />
+                    URL
+                  </button>
+                </div>
+              </div>
+
+              {/* Upload Area */}
+              {uploadMethod === 'upload' ? (
+                <div className="space-y-3">
+                  <input
+                    type="file"
+                    id="image-upload"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="image-upload"
+                    className="block w-full h-48 border-2 border-dashed border-border rounded-lg overflow-hidden bg-muted flex items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors group"
+                  >
+                    {imagePreview ? (
+                      <div className="relative w-full h-full">
+                        <Image
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <div className="text-white text-center">
+                            <Icon name="Upload" size={32} className="mx-auto mb-2" />
+                            <p className="text-sm font-medium">Thay đổi ảnh</p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center text-muted-foreground">
+                        <Icon name="ImagePlus" size={48} className="mx-auto mb-3 text-primary/50 group-hover:text-primary transition-colors" />
+                        <p className="text-sm font-medium mb-1">Nhấn để chọn ảnh</p>
+                        <p className="text-xs">PNG, JPG, WEBP (Max 5MB)</p>
+                      </div>
+                    )}
+                  </label>
+                  {imagePreview && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRemoveImage}
+                      iconName="Trash2"
+                      iconPosition="left"
+                      className="w-full"
+                    >
+                      Xóa ảnh
+                    </Button>
                   )}
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                  <Input
+                    label="URL hình ảnh"
+                    type="url"
+                    value={formData?.image}
+                    onChange={handleImageChange}
+                    placeholder="https://example.com/image.jpg"
+                  />
 
-              {/* Sample Images */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-foreground">
-                  Hình ảnh mẫu
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=200',
-                    'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?w=200',
-                    'https://images.pixabay.com/photo/2017/12/09/08/18/pizza-3007395_640.jpg'
-                  ]?.map((url, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => {
-                        setFormData(prev => ({ ...prev, image: url }));
-                        setImagePreview(url);
-                      }}
-                      className="w-full h-16 rounded border border-border overflow-hidden hover:ring-2 hover:ring-primary transition-smooth"
-                    >
+                  {/* Image Preview */}
+                  <div className="w-full h-40 flex-shrink-0 border-2 border-dashed border-border rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                    {imagePreview ? (
                       <Image
-                        src={url}
-                        alt={`Sample ${index + 1}`}
+                        src={imagePreview}
+                        alt="Preview"
                         className="w-full h-full object-cover"
                       />
-                    </button>
-                  ))}
+                    ) : (
+                      <div className="text-center text-muted-foreground">
+                        <Icon name="ImagePlus" size={24} className="mx-auto mb-2" />
+                        <p className="text-xs">Nhập URL để xem trước</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sample Images */}
+                  <div className="flex-shrink-0">
+                    <label className="block text-xs font-medium text-muted-foreground mb-2">
+                      Hoặc chọn ảnh mẫu
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=200',
+                        'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?w=200',
+                        'https://images.pixabay.com/photo/2017/12/09/08/18/pizza-3007395_640.jpg'
+                      ]?.map((url, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => ({ ...prev, image: url }));
+                            setImagePreview(url);
+                          }}
+                          className="w-full h-16 rounded border border-border overflow-hidden hover:ring-2 hover:ring-primary transition-smooth"
+                        >
+                          <Image
+                            src={url}
+                            alt={`Sample ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </form>
