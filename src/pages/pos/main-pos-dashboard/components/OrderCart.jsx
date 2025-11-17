@@ -1,15 +1,40 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Button from '../../../../components/ui/Button';
 import Icon from '../../../../components/AppIcon';
 import Input from '../../../../components/ui/Input';
+import Select from '../../../../components/ui/Select';
+import { useTableStore } from '../../../../stores/table.store';
+import { useStaffStore } from '../../../../stores';
 
 const OrderCart = ({
   cartItems,
   onUpdateQuantity,
   onRemoveItem,
   onUpdateNote,
-  onClearCart
+  onClearCart,
+  orderNumber = null,
+  selectedTable = null,
+  onTableChange,
+  onSummaryChange,
+  selectedStaff = null,
+  onStaffChange
 }) => {
+  const [discountType, setDiscountType] = useState('percent'); // 'percent' or 'amount'
+  const [discountValue, setDiscountValue] = useState(0);
+
+  // Get table options from store
+  const getTableOptions = useTableStore((state) => state.getTableOptions);
+  const tableOptions = getTableOptions();
+
+  // Get staff options from store
+  const getActiveStaff = useStaffStore((state) => state.getActiveStaff);
+  const activeStaff = getActiveStaff();
+
+  const staffOptions = activeStaff.map(staff => ({
+    value: staff.id,
+    label: `${staff.name} - ${staff.roleDisplay}`
+  }));
+
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -21,13 +46,34 @@ const OrderCart = ({
     return cartItems?.reduce((total, item) => total + (item?.price * item?.quantity), 0);
   };
 
+  const calculateDiscount = () => {
+    const subtotal = calculateTotal();
+    if (discountType === 'percent') {
+      return subtotal * (discountValue / 100);
+    }
+    return Math.min(discountValue, subtotal); // Discount cannot exceed subtotal
+  };
+
   const calculateTax = () => {
-    return calculateTotal() * 0.1; // 10% VAT
+    const afterDiscount = calculateTotal() - calculateDiscount();
+    return afterDiscount * 0.1; // 10% VAT
   };
 
   const calculateFinalTotal = () => {
-    return calculateTotal() + calculateTax();
+    return calculateTotal() - calculateDiscount() + calculateTax();
   };
+
+  // Update parent component with summary whenever values change
+  useEffect(() => {
+    if (onSummaryChange) {
+      onSummaryChange({
+        subtotal: calculateTotal(),
+        discount: calculateDiscount(),
+        tax: calculateTax(),
+        total: calculateFinalTotal()
+      });
+    }
+  }, [cartItems, discountType, discountValue]);
 
   if (cartItems?.length === 0) {
     return (
@@ -44,24 +90,61 @@ const OrderCart = ({
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Cart Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-foreground">
-          Đơn hàng ({cartItems?.length} món)
-        </h2>
-        <Button
-          variant="ghost"
-          size="sm"
-          iconName="Trash2"
-          onClick={onClearCart}
-          className="text-error hover:text-error"
-        >
-          Xóa tất cả
-        </Button>
+    <div className="space-y-4">
+      {/* Cart Header with Order Info */}
+      <div className="space-y-3">
+        {/* Order Number & Item Count */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">
+              Đơn hàng ({cartItems?.length} món)
+            </h2>
+            {orderNumber && (
+              <p className="text-xs text-muted-foreground">
+                Mã: <span className="font-mono font-medium text-foreground">{orderNumber}</span>
+              </p>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconName="Trash2"
+            onClick={onClearCart}
+            className="text-error hover:text-error"
+          >
+            Xóa tất cả
+          </Button>
+        </div>
+
+        {/* Table Selection */}
+        {onTableChange && (
+          <Select
+            label="Chọn bàn"
+            value={selectedTable || ''}
+            onChange={(value) => onTableChange(value)}
+            options={[
+              { value: 'takeaway', label: '🥡 Mang đi' },
+              { value: 'delivery', label: '🚚 Giao hàng' },
+              ...tableOptions
+            ]}
+            placeholder="Chọn bàn..."
+          />
+        )}
+
+        {/* Staff Selection */}
+        {onStaffChange && (
+          <Select
+            label="Nhân viên phục vụ"
+            value={selectedStaff || ''}
+            onChange={(value) => onStaffChange(value)}
+            options={staffOptions}
+            placeholder="Chọn nhân viên..."
+          />
+        )}
       </div>
+
       {/* Cart Items */}
-      <div className="flex-1 overflow-y-auto space-y-3 mb-4">
+      <div className="space-y-3">
         {cartItems?.map((item) => (
           <div
             key={item?.id}
@@ -124,18 +207,65 @@ const OrderCart = ({
         ))}
       </div>
       {/* Order Summary */}
-      <div className="border-t border-border pt-4 space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Tạm tính:</span>
-          <span className="text-foreground">{formatPrice(calculateTotal())}</span>
+      <div className="border-t border-border pt-4 space-y-3">
+        {/* Discount Section */}
+        <div className="bg-muted/20 rounded-lg p-3 space-y-2">
+          <label className="text-sm font-medium text-foreground">Giảm giá</label>
+          <div className="flex space-x-2">
+            <div className="flex-1">
+              <Input
+                type="number"
+                placeholder="Nhập giảm giá"
+                value={discountValue || ''}
+                onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
+                min="0"
+                max={discountType === 'percent' ? 100 : calculateTotal()}
+              />
+            </div>
+            <Select
+              value={discountType}
+              onChange={(value) => {
+                setDiscountType(value);
+                setDiscountValue(0);
+              }}
+              options={[
+                { value: 'percent', label: '%' },
+                { value: 'amount', label: 'VNĐ' }
+              ]}
+              className="w-24"
+            />
+          </div>
+          {discountValue > 0 && (
+            <p className="text-xs text-success flex items-center">
+              <Icon name="Tag" size={12} className="mr-1" />
+              Tiết kiệm: {formatPrice(calculateDiscount())}
+            </p>
+          )}
         </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">VAT (10%):</span>
-          <span className="text-foreground">{formatPrice(calculateTax())}</span>
-        </div>
-        <div className="flex justify-between text-lg font-semibold border-t border-border pt-2">
-          <span className="text-foreground">Tổng cộng:</span>
-          <span className="text-primary">{formatPrice(calculateFinalTotal())}</span>
+
+        {/* Summary Breakdown */}
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Tạm tính:</span>
+            <span className="text-foreground">{formatPrice(calculateTotal())}</span>
+          </div>
+
+          {discountValue > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Giảm giá:</span>
+              <span className="text-success">-{formatPrice(calculateDiscount())}</span>
+            </div>
+          )}
+
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">VAT (10%):</span>
+            <span className="text-foreground">{formatPrice(calculateTax())}</span>
+          </div>
+
+          <div className="flex justify-between text-lg font-semibold border-t border-border pt-2">
+            <span className="text-foreground">Tổng cộng:</span>
+            <span className="text-primary">{formatPrice(calculateFinalTotal())}</span>
+          </div>
         </div>
       </div>
     </div>

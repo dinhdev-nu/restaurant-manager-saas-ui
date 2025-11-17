@@ -1,223 +1,150 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../../../components/ui/Header';
 import Sidebar from '../../../components/ui/Sidebar';
 import MenuCategory from './components/MenuCategory';
 import MenuGrid from './components/MenuGrid';
 import OrderCart from './components/OrderCart';
-import PaymentSection from './components/PaymentSection';
 import QuickActions from './components/QuickActions';
 import Button from '../../../components/ui/Button';
 import Icon from '../../../components/AppIcon';
+import ConfirmationDialog from '../../../components/ui/ConfirmationDialog';
+import UnpaidOrdersModal from '../../../components/ui/UnpaidOrdersModal';
+import { useToast } from '../../../hooks/use-toast';
+import { useOrderStore } from '../../../stores/order.store';
+import { useTableStore } from '../../../stores/table.store';
+import { useMenuStore } from '../../../stores/menu.store';
+import { useStaffStore } from '../../../stores';
+import soundManager from '../../../utils/sounds';
 
 const MainPOSDashboard = () => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const addOrder = useOrderStore((state) => state.addOrder);
+  const assignOrder = useTableStore((state) => state.assignOrder);
+  const getTableLabel = useTableStore((state) => state.getTableLabel);
+  const updateTable = useTableStore((state) => state.updateTable);
+
+  // Menu Store
+  const categories = useMenuStore((state) => state.categories);
+  const menuItems = useMenuStore((state) => state.menuItems);
+  const getAvailableMenuItems = useMenuStore((state) => state.getAvailableMenuItems);
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isOperational, setIsOperational] = useState(true);
-  const [activeCategory, setActiveCategory] = useState('beverages');
+  const [activeCategory, setActiveCategory] = useState('all');
   const [cartItems, setCartItems] = useState([]);
   const [showMobileCart, setShowMobileCart] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [showClearCartDialog, setShowClearCartDialog] = useState(false);
+  const [selectedTable, setSelectedTable] = useState(null);
+  const [selectedStaff, setSelectedStaff] = useState(null);
+  const [orderNumber, setOrderNumber] = useState(null);
+  const [orderSummary, setOrderSummary] = useState({
+    subtotal: 0,
+    discount: 0,
+    tax: 0,
+    total: 0
+  });
 
-  // Mock data for categories
-  const categories = [
-    { id: 'beverages', name: 'Đồ uống' },
-    { id: 'snacks', name: 'Đồ ăn nhẹ' },
-    { id: 'main-dishes', name: 'Món chính' },
-    { id: 'desserts', name: 'Tráng miệng' },
-    { id: 'combo', name: 'Combo' }
-  ];
+  // Generate order number when cart has items
+  useEffect(() => {
+    if (cartItems.length > 0 && !orderNumber) {
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0].replace(/-/g, '');
+      const timeStr = now.getTime().toString().slice(-4);
+      setOrderNumber(`HD${dateStr}${timeStr}`);
+    } else if (cartItems.length === 0) {
+      setOrderNumber(null);
+      setSelectedTable(null);
+      setSelectedStaff(null);
+    }
+  }, [cartItems, orderNumber]);
 
-  // Mock data for menu items
-  const menuItems = {
-    beverages: [
-      {
-        id: 'bev-1',
-        name: 'Cà phê đen',
-        description: 'Cà phê đen truyền thống',
-        price: 25000,
-        image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=300&h=200&fit=crop',
-        stock: 50,
-        category: 'beverages'
-      },
-      {
-        id: 'bev-2',
-        name: 'Cà phê sữa',
-        description: 'Cà phê sữa đá thơm ngon',
-        price: 30000,
-        image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=300&h=200&fit=crop',
-        stock: 45,
-        category: 'beverages'
-      },
-      {
-        id: 'bev-3',
-        name: 'Trà đá',
-        description: 'Trà đá mát lạnh',
-        price: 15000,
-        image: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=300&h=200&fit=crop',
-        stock: 3,
-        category: 'beverages'
-      },
-      {
-        id: 'bev-4',
-        name: 'Nước cam',
-        description: 'Nước cam tươi nguyên chất',
-        price: 35000,
-        image: 'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=300&h=200&fit=crop',
-        stock: 0,
-        category: 'beverages'
-      },
-      {
-        id: 'bev-5',
-        name: 'Sinh tố bơ',
-        description: 'Sinh tố bơ béo ngậy',
-        price: 45000,
-        image: 'https://images.unsplash.com/photo-1553909489-cd47e0ef937f?w=300&h=200&fit=crop',
-        stock: 20,
-        category: 'beverages'
-      },
-      {
-        id: 'bev-6',
-        name: 'Nước dừa',
-        description: 'Nước dừa tươi mát',
-        price: 25000,
-        image: 'https://images.unsplash.com/photo-1520342868574-5fa3804e551c?w=300&h=200&fit=crop',
-        stock: 15,
-        category: 'beverages'
+  // Set selected table from navigation state
+  useEffect(() => {
+    if (location.state?.selectedTable) {
+      setSelectedTable(location.state.selectedTable);
+      // Clear the state to prevent it from being reused
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, location.pathname, navigate]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // F2: Go to Payment
+      if (e.key === 'F2') {
+        e.preventDefault();
+        if (cartItems.length > 0) {
+          handleGoToPayment();
+        }
       }
-    ],
-    snacks: [
-      {
-        id: 'snack-1',
-        name: 'Bánh mì thịt nướng',
-        description: 'Bánh mì thịt nướng thơm ngon',
-        price: 35000,
-        image: 'https://images.unsplash.com/photo-1558030006-450675393462?w=300&h=200&fit=crop',
-        stock: 25,
-        category: 'snacks'
-      },
-      {
-        id: 'snack-2',
-        name: 'Nem nướng',
-        description: 'Nem nướng Nha Trang',
-        price: 40000,
-        image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=300&h=200&fit=crop',
-        stock: 18,
-        category: 'snacks'
-      },
-      {
-        id: 'snack-3',
-        name: 'Chả cá',
-        description: 'Chả cá Hà Nội',
-        price: 50000,
-        image: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=300&h=200&fit=crop',
-        stock: 2,
-        category: 'snacks'
-      },
-      {
-        id: 'snack-4',
-        name: 'Bánh xèo',
-        description: 'Bánh xèo miền Tây',
-        price: 45000,
-        image: 'https://images.unsplash.com/photo-1559847844-d721426d6edc?w=300&h=200&fit=crop',
-        stock: 12,
-        category: 'snacks'
+      // F4: Clear cart
+      if (e.key === 'F4') {
+        e.preventDefault();
+        if (cartItems.length > 0) {
+          setShowClearCartDialog(true);
+        }
       }
-    ],
-    'main-dishes': [
-      {
-        id: 'main-1',
-        name: 'Cơm tấm sườn nướng',
-        description: 'Cơm tấm sườn nướng đặc biệt',
-        price: 65000,
-        image: 'https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=300&h=200&fit=crop',
-        stock: 30,
-        category: 'main-dishes'
-      },
-      {
-        id: 'main-2',
-        name: 'Phở bò',
-        description: 'Phở bò Hà Nội truyền thống',
-        price: 55000,
-        image: 'https://images.unsplash.com/photo-1559847844-d721426d6edc?w=300&h=200&fit=crop',
-        stock: 25,
-        category: 'main-dishes'
-      },
-      {
-        id: 'main-3',
-        name: 'Bún bò Huế',
-        description: 'Bún bò Huế cay nồng',
-        price: 60000,
-        image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=300&h=200&fit=crop',
-        stock: 4,
-        category: 'main-dishes'
-      },
-      {
-        id: 'main-4',
-        name: 'Cơm gà',
-        description: 'Cơm gà Hải Nam',
-        price: 50000,
-        image: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=300&h=200&fit=crop',
-        stock: 0,
-        category: 'main-dishes'
+      // ESC: Close mobile cart
+      if (e.key === 'Escape') {
+        setShowMobileCart(false);
+        setShowPaymentDialog(false);
       }
-    ],
-    desserts: [
-      {
-        id: 'dessert-1',
-        name: 'Chè ba màu',
-        description: 'Chè ba màu truyền thống',
-        price: 25000,
-        image: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=300&h=200&fit=crop',
-        stock: 20,
-        category: 'desserts'
-      },
-      {
-        id: 'dessert-2',
-        name: 'Bánh flan',
-        description: 'Bánh flan caramel',
-        price: 30000,
-        image: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=300&h=200&fit=crop',
-        stock: 15,
-        category: 'desserts'
+      // Number keys 1-5: Switch categories
+      if (e.key >= '1' && e.key <= '5' && !e.ctrlKey && !e.altKey) {
+        const categoryIndex = parseInt(e.key) - 1;
+        if (categories[categoryIndex]) {
+          setActiveCategory(categories[categoryIndex].id);
+        }
       }
-    ],
-    combo: [
-      {
-        id: 'combo-1',
-        name: 'Combo cơm tấm + nước',
-        description: 'Cơm tấm sườn nướng + nước ngọt',
-        price: 75000,
-        image: 'https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=300&h=200&fit=crop',
-        stock: 10,
-        category: 'combo'
-      },
-      {
-        id: 'combo-2',
-        name: 'Combo phở + trà đá',
-        description: 'Phở bò + trà đá',
-        price: 65000,
-        image: 'https://images.unsplash.com/photo-1559847844-d721426d6edc?w=300&h=200&fit=crop',
-        stock: 8,
-        category: 'combo'
-      }
-    ]
-  };
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [cartItems, categories]);
 
   const getCurrentMenuItems = () => {
-    return menuItems?.[activeCategory] || [];
+    if (activeCategory === 'all') {
+      return getAvailableMenuItems();
+    }
+    return menuItems.filter(item =>
+      item.category === activeCategory && item.status === 'available'
+    );
   };
 
   const handleAddToCart = (item) => {
-    if (item?.stock === 0) return;
+    if (item.stock_quantity === 0 || item.status === 'unavailable') {
+      soundManager.playError();
+      toast({
+        title: "Hết hàng",
+        description: `${item.name} hiện đã hết hàng`,
+        variant: "destructive"
+      });
+      return;
+    }
 
+    soundManager.playAddToCart();
     setCartItems(prevItems => {
-      const existingItem = prevItems?.find(cartItem => cartItem?.id === item?.id);
+      const existingItem = prevItems.find(cartItem => cartItem.id === item.id);
 
       if (existingItem) {
-        return prevItems?.map(cartItem =>
-          cartItem?.id === item?.id
-            ? { ...cartItem, quantity: cartItem?.quantity + 1 }
+        toast({
+          title: "Đã cập nhật",
+          description: `${item.name} x${existingItem.quantity + 1}`,
+        });
+        return prevItems.map(cartItem =>
+          cartItem.id === item.id
+            ? { ...cartItem, quantity: cartItem.quantity + 1 }
             : cartItem
         );
       } else {
+        toast({
+          title: "Đã thêm vào giỏ",
+          description: `${item?.name}`,
+        });
         return [...prevItems, { ...item, quantity: 1, note: '' }];
       }
     });
@@ -239,6 +166,7 @@ const MainPOSDashboard = () => {
   };
 
   const handleRemoveItem = (itemId) => {
+    soundManager.playRemoveItem();
     setCartItems(prevItems => prevItems?.filter(item => item?.id !== itemId));
   };
 
@@ -253,35 +181,142 @@ const MainPOSDashboard = () => {
   };
 
   const handleClearCart = () => {
+    soundManager.playRemoveItem();
     setCartItems([]);
+    toast({
+      title: "Đã xóa giỏ hàng",
+      description: "Tất cả món đã được xóa",
+    });
   };
 
-  const handleProcessPayment = (paymentData) => {
-    console.log('Processing payment:', paymentData);
-    // Simulate payment processing
-    setTimeout(() => {
-      alert(`Thanh toán thành công!\nPhương thức: ${paymentData?.method}\nTổng tiền: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' })?.format(paymentData?.amount)}`);
-      setCartItems([]);
-      setShowMobileCart(false);
-    }, 1000);
+  const handleCreateOrder = () => {
+    if (!cartItems.length) {
+      soundManager.playError();
+      toast({
+        title: "Giỏ hàng trống",
+        description: "Vui lòng thêm món vào giỏ hàng để tạo đơn",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!selectedTable) {
+      soundManager.playError();
+      toast({
+        title: "Chưa chọn bàn",
+        description: "Vui lòng chọn bàn trước khi tạo đơn",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Get table label from value
+    const tableLabel = getTableLabel(selectedTable);
+
+    // Get staff info from store (optional)
+    let staffName = 'Chưa phân công';
+    if (selectedStaff) {
+      const getStaffById = useStaffStore.getState().getStaffById;
+      const staffInfo = getStaffById(selectedStaff);
+      staffName = staffInfo ? staffInfo.name : 'Chưa phân công';
+    }
+
+    // Update table status to occupied and assign order
+    assignOrder(selectedTable, orderNumber, cartItems.reduce((sum, item) => sum + item.quantity, 0));
+
+    // Create order and save to order store
+    const newOrder = {
+      id: orderNumber,
+      timestamp: new Date(),
+      table: tableLabel,
+      items: cartItems.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        notes: item.note || ''
+      })),
+      subtotal: orderSummary.subtotal,
+      discount: orderSummary.discount,
+      tax: orderSummary.tax,
+      total: orderSummary.total,
+      status: 'pending',
+      paymentStatus: 'unpaid',
+      staff: staffName,
+      staffId: selectedStaff,
+      customer: null,
+      customerPhone: null,
+      specialInstructions: null
+    };
+
+    // Add to store
+    const savedOrder = addOrder(newOrder);
+
+    console.log('Created Order:', savedOrder);
+
+    soundManager.playSuccess();
+    toast({
+      title: "Tạo đơn thành công!",
+      description: `Đơn hàng ${orderNumber} đã được tạo cho ${tableLabel}`,
+      variant: "success"
+    });
+
+    // Clear cart after creating order (no navigation)
+    setCartItems([]);
+    setShowMobileCart(false);
+  };
+
+  const handleGoToPayment = () => {
+    if (cartItems.length === 0) {
+      soundManager.playError();
+      toast({
+        title: "Giỏ hàng trống",
+        description: "Vui lòng thêm món vào giỏ hàng trước khi thanh toán",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Navigate to payment-processing page with order data
+    navigate('/payment-processing', {
+      state: {
+        orderNumber,
+        selectedTable,
+        cartItems,
+        subtotal: orderSummary.subtotal,
+        discount: orderSummary.discount,
+        tax: orderSummary.tax,
+        totalAmount: orderSummary.total,
+        fromDashboard: true
+      }
+    });
   };
 
   const handleBarcodeSearch = (barcode) => {
     console.log('Searching for barcode:', barcode);
-    // Mock barcode search - find item by ID
-    const allItems = Object.values(menuItems)?.flat();
-    const foundItem = allItems?.find(item => item?.id?.includes(barcode));
+    // Barcode search - find item by ID or name
+    const foundItem = menuItems.find(item =>
+      item.id.includes(barcode) ||
+      item.name.toLowerCase().includes(barcode.toLowerCase())
+    );
     if (foundItem) {
       handleAddToCart(foundItem);
     } else {
-      alert('Không tìm thấy sản phẩm với mã vạch này');
+      soundManager.playError();
+      toast({
+        title: "Không tìm thấy",
+        description: "Không tìm thấy sản phẩm với mã vạch này",
+        variant: "destructive"
+      });
     }
   };
 
   const handleCustomerSearch = (query) => {
     console.log('Searching for customer:', query);
-    // Mock customer search
-    alert(`Tìm kiếm khách hàng: ${query}`);
+    soundManager.playNotification();
+    toast({
+      title: "Tìm kiếm khách hàng",
+      description: `Đang tìm: ${query}`,
+    });
   };
 
   const handleQuickAdd = (item) => {
@@ -314,17 +349,19 @@ const MainPOSDashboard = () => {
         className="hidden lg:block"
       />
       {/* Mobile Sidebar */}
-      <Sidebar
-        isCollapsed={!sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        userRole="owner"
-        className="lg:hidden"
-      />
+      {!sidebarCollapsed && (
+        <Sidebar
+          isCollapsed={false}
+          onToggleCollapse={() => setSidebarCollapsed(true)}
+          userRole="owner"
+          className="lg:hidden"
+        />
+      )}
       <main className={`
-        pt-16 lg:pt-20 transition-all duration-300 ease-smooth
+        pt-16 md:pt-16 transition-all duration-300 ease-smooth
         ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-60'}
       `}>
-        <div className="h-[calc(100vh-4rem)] lg:h-[calc(100vh-5rem)] flex flex-col lg:flex-row">
+        <div className="h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)] flex flex-col lg:flex-row">
           {/* Left Panel - Menu */}
           <div className={`
             flex-1 bg-surface border-r border-border overflow-hidden
@@ -343,7 +380,10 @@ const MainPOSDashboard = () => {
               />
 
               <MenuCategory
-                categories={categories}
+                categories={[
+                  { id: 'all', name: 'Tất cả', icon: 'LayoutGrid' },
+                  ...categories
+                ]}
                 activeCategory={activeCategory}
                 onCategoryChange={setActiveCategory}
               />
@@ -361,9 +401,9 @@ const MainPOSDashboard = () => {
           <div className={`
             w-full lg:w-96 bg-surface border-l border-border
             ${showMobileCart ? 'flex' : 'hidden lg:flex'}
-            flex-col
+            flex-col overflow-hidden
           `}>
-            <div className="p-4 border-b border-border flex items-center justify-between">
+            <div className="p-4 border-b border-border flex items-center justify-between flex-shrink-0">
               <h2 className="text-lg font-semibold text-foreground">
                 Đơn hàng
               </h2>
@@ -377,27 +417,55 @@ const MainPOSDashboard = () => {
               </Button>
             </div>
 
-            <div className="flex-1 overflow-hidden flex flex-col">
-              <div className="flex-1 overflow-y-auto p-4">
-                <OrderCart
-                  cartItems={cartItems}
-                  onUpdateQuantity={handleUpdateQuantity}
-                  onRemoveItem={handleRemoveItem}
-                  onUpdateNote={handleUpdateNote}
-                  onClearCart={handleClearCart}
-                />
-              </div>
-
-              {cartItems?.length > 0 && (
-                <div className="border-t border-border p-4">
-                  <PaymentSection
-                    totalAmount={calculateTotal()}
-                    onProcessPayment={handleProcessPayment}
-                    disabled={cartItems?.length === 0}
-                  />
-                </div>
-              )}
+            <div className="flex-1 overflow-y-auto p-4">
+              <OrderCart
+                cartItems={cartItems}
+                onUpdateQuantity={handleUpdateQuantity}
+                onRemoveItem={handleRemoveItem}
+                onUpdateNote={handleUpdateNote}
+                onClearCart={() => setShowClearCartDialog(true)}
+                orderNumber={orderNumber}
+                selectedTable={selectedTable}
+                onTableChange={setSelectedTable}
+                selectedStaff={selectedStaff}
+                onStaffChange={setSelectedStaff}
+                onSummaryChange={setOrderSummary}
+              />
             </div>
+
+            {cartItems?.length > 0 && (
+              <div className="border-t border-border p-4 flex-shrink-0 bg-surface space-y-2">
+                {/* Create Order Button */}
+                <Button
+                  variant="outline"
+                  size="default"
+                  fullWidth
+                  iconName="FileText"
+                  iconPosition="left"
+                  onClick={handleCreateOrder}
+                  className="hover-scale touch-target"
+                >
+                  Tạo đơn hàng
+                </Button>
+
+                {/* Payment Button */}
+                <Button
+                  variant="success"
+                  size="lg"
+                  fullWidth
+                  iconName="CreditCard"
+                  iconPosition="left"
+                  onClick={handleGoToPayment}
+                  className="hover-scale touch-target"
+                >
+                  Thanh toán ({new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(orderSummary.total)})
+                </Button>
+
+                <p className="text-xs text-muted-foreground text-center">
+                  Nhấn <kbd className="px-1.5 py-0.5 bg-muted rounded text-foreground font-mono">F2</kbd> để thanh toán nhanh
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -419,6 +487,34 @@ const MainPOSDashboard = () => {
           </Button>
         </div>
       </main>
+
+      {/* Confirmation Dialogs */}
+      <ConfirmationDialog
+        isOpen={showClearCartDialog}
+        onClose={() => setShowClearCartDialog(false)}
+        onConfirm={handleClearCart}
+        title="Xóa giỏ hàng"
+        message="Bạn có chắc chắn muốn xóa tất cả món trong giỏ hàng?"
+        confirmText="Xóa tất cả"
+        cancelText="Hủy"
+        variant="danger"
+        icon="Trash2"
+      />
+
+      <ConfirmationDialog
+        isOpen={showPaymentDialog}
+        onClose={() => setShowPaymentDialog(false)}
+        onConfirm={() => {
+          // Trigger payment from PaymentSection
+          setShowPaymentDialog(false);
+        }}
+        title="Xác nhận thanh toán"
+        message={`Tổng tiền: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(orderSummary.total)}`}
+        confirmText="Thanh toán"
+        cancelText="Hủy"
+        variant="success"
+        icon="CreditCard"
+      />
     </div>
   );
 };

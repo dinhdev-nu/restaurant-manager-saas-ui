@@ -4,6 +4,7 @@ import Button from '../../../../components/ui/Button';
 import Input from '../../../../components/ui/Input';
 import Select from '../../../../components/ui/Select';
 import Image from '../../../../components/AppImage';
+import { formatCurrency, parseCurrency, digitsOnly } from '../../../../utils/formatters';
 
 const MenuItemModal = ({
   isOpen,
@@ -44,7 +45,7 @@ const MenuItemModal = ({
       setFormData({
         name: item?.name || '',
         description: item?.description || '',
-        price: item?.price?.toString() || '',
+        price: item?.price ? formatCurrency(item.price.toString()) : '',
         category: item?.category || '',
         image: item?.image || '',
         status: item?.status || 'available',
@@ -97,7 +98,8 @@ const MenuItemModal = ({
       newErrors.category = 'Danh mục là bắt buộc';
     }
 
-    if (!formData?.price || isNaN(formData?.price) || parseFloat(formData?.price) <= 0) {
+    const priceValue = parseCurrency(formData?.price || '');
+    if (!formData?.price || priceValue <= 0) {
       newErrors.price = 'Giá phải là số dương';
     }
 
@@ -118,7 +120,7 @@ const MenuItemModal = ({
     try {
       const submitData = {
         ...formData,
-        price: parseFloat(formData?.price),
+        price: parseCurrency(formData?.price),
         stock_quantity: formData?.stock_quantity ? parseInt(formData?.stock_quantity) : null,
         id: item?.id || Date.now(),
         updated_at: new Date()?.toISOString()
@@ -226,14 +228,16 @@ const MenuItemModal = ({
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   label="Giá (VND)"
-                  type="number"
+                  type="text"
                   value={formData?.price}
-                  onChange={(e) => setFormData(prev => ({ ...prev, price: e?.target?.value }))}
+                  onChange={(e) => {
+                    const cleaned = digitsOnly(e?.target?.value);
+                    const formatted = formatCurrency(cleaned);
+                    setFormData(prev => ({ ...prev, price: formatted }));
+                  }}
                   error={errors?.price}
                   required
                   placeholder="0"
-                  min="0"
-                  step="1000"
                 />
 
                 <Select
