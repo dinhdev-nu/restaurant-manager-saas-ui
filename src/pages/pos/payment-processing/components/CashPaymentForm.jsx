@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Icon from '../../../../components/AppIcon';
 import Input from '../../../../components/ui/Input';
 import Button from '../../../../components/ui/Button';
+import { formatCurrency, digitsOnly } from '../../../../utils/formatters';
 
 const CashPaymentForm = ({
   totalAmount = 0,
@@ -12,7 +13,7 @@ const CashPaymentForm = ({
   const [change, setChange] = useState(0);
   const [error, setError] = useState('');
 
-  const formatCurrency = (amount) => {
+  const formatCurrencyVND = (amount) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND'
@@ -28,7 +29,7 @@ const CashPaymentForm = ({
   ]?.filter((amount, index, arr) => arr?.indexOf(amount) === index && amount >= totalAmount);
 
   useEffect(() => {
-    const tendered = parseFloat(amountTendered?.replace(/[^\d]/g, '')) || 0;
+    const tendered = parseFloat(amountTendered) || 0;
     if (tendered >= totalAmount) {
       setChange(tendered - totalAmount);
       setError('');
@@ -41,8 +42,10 @@ const CashPaymentForm = ({
     }
   }, [amountTendered, totalAmount]);
 
-  const handleAmountChange = (value) => {
-    const numericValue = value?.replace(/[^\d]/g, '');
+  const handleAmountChange = (e) => {
+    const value = e?.target?.value;
+    // Chỉ lấy số, loại bỏ tất cả ký tự khác
+    const numericValue = digitsOnly(value);
     setAmountTendered(numericValue);
   };
 
@@ -51,7 +54,7 @@ const CashPaymentForm = ({
   };
 
   const handlePayment = () => {
-    const tendered = parseFloat(amountTendered?.replace(/[^\d]/g, '')) || 0;
+    const tendered = parseFloat(amountTendered) || 0;
     if (tendered < totalAmount) {
       setError('Số tiền nhận không đủ');
       return;
@@ -65,8 +68,6 @@ const CashPaymentForm = ({
     });
   };
 
-  const displayAmount = amountTendered ? formatCurrency(parseFloat(amountTendered?.replace(/[^\d]/g, ''))) : '';
-
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -74,7 +75,7 @@ const CashPaymentForm = ({
           Thanh toán tiền mặt
         </h3>
         <p className="text-2xl font-bold text-primary">
-          {formatCurrency(totalAmount)}
+          {formatCurrencyVND(totalAmount)}
         </p>
       </div>
       {/* Amount Input */}
@@ -82,8 +83,8 @@ const CashPaymentForm = ({
         <Input
           label="Số tiền khách đưa"
           type="text"
-          value={displayAmount}
-          onChange={(e) => handleAmountChange(e?.target?.value)}
+          value={amountTendered ? formatCurrency(amountTendered) : ''}
+          onChange={handleAmountChange}
           placeholder="Nhập số tiền..."
           error={error}
           className="text-lg text-center"
@@ -99,7 +100,7 @@ const CashPaymentForm = ({
               onClick={() => handleQuickAmount(amount)}
               className="hover-scale"
             >
-              {formatCurrency(amount)}
+              {formatCurrencyVND(amount)}
             </Button>
           ))}
         </div>
@@ -113,7 +114,7 @@ const CashPaymentForm = ({
               <span className="font-medium text-success">Tiền thối:</span>
             </div>
             <span className="text-xl font-bold text-success">
-              {formatCurrency(change)}
+              {formatCurrencyVND(change)}
             </span>
           </div>
         </div>
@@ -122,17 +123,17 @@ const CashPaymentForm = ({
       <div className="p-4 bg-muted/30 rounded-lg space-y-2">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Tổng tiền:</span>
-          <span className="font-medium text-foreground">{formatCurrency(totalAmount)}</span>
+          <span className="font-medium text-foreground">{formatCurrencyVND(totalAmount)}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Tiền nhận:</span>
           <span className="font-medium text-foreground">
-            {amountTendered ? formatCurrency(parseFloat(amountTendered?.replace(/[^\d]/g, ''))) : '0 ₫'}
+            {amountTendered ? formatCurrencyVND(parseFloat(amountTendered)) : '0 ₫'}
           </span>
         </div>
         <div className="flex justify-between text-sm pt-2 border-t border-border">
           <span className="text-muted-foreground">Tiền thối:</span>
-          <span className="font-medium text-success">{formatCurrency(change)}</span>
+          <span className="font-medium text-success">{formatCurrencyVND(change)}</span>
         </div>
       </div>
       {/* Action Buttons */}
@@ -147,7 +148,7 @@ const CashPaymentForm = ({
         <Button
           variant="success"
           onClick={handlePayment}
-          disabled={!amountTendered || parseFloat(amountTendered?.replace(/[^\d]/g, '')) < totalAmount}
+          disabled={!amountTendered || parseFloat(amountTendered) < totalAmount}
           className="flex-1"
           iconName="Check"
           iconPosition="left"

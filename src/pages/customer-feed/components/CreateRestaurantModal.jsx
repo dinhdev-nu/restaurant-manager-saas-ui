@@ -19,6 +19,7 @@ import { MOCK_PROVINCES, MOCK_DISTRICTS } from '../../../mocks/locations';
 import TimePicker from '../../../components/ui/TimePicker';
 import { createRestaurantApi } from 'api/restaurant';
 import { useToast } from 'hooks/use-toast';
+import { formatPhoneNumber, parsePhoneNumber, digitsOnly } from '../../../utils/formatters';
 
 const CreateRestaurantModal = ({ isOpen, onClose }) => {
 
@@ -115,6 +116,12 @@ const CreateRestaurantModal = ({ isOpen, onClose }) => {
                 return { ...prev, city: value, district: '' };
             }
 
+            if (name === 'phone') {
+                const cleaned = digitsOnly(value, 11);
+                const formatted = formatPhoneNumber(cleaned);
+                return { ...prev, phone: formatted };
+            }
+
             return { ...prev, [name]: value };
         });
 
@@ -184,8 +191,11 @@ const CreateRestaurantModal = ({ isOpen, onClose }) => {
         // Số điện thoại
         if (!formData.phone.trim()) {
             newErrors.phone = 'Vui lòng nhập số điện thoại';
-        } else if (!/^(0|\+84)[0-9]{9,10}$/.test(formData.phone.trim().replace(/\s/g, ''))) {
-            newErrors.phone = 'Số điện thoại phải là 10-11 số và bắt đầu bằng 0 hoặc +84';
+        } else {
+            const cleanedPhone = parsePhoneNumber(formData.phone);
+            if (!/^(0|\+?84)[0-9]{9,10}$/.test(cleanedPhone)) {
+                newErrors.phone = 'Số điện thoại phải là 10-11 số và bắt đầu bằng 0 hoặc +84';
+            }
         }
 
         // Website (nếu có)

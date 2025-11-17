@@ -2,6 +2,7 @@ import React from 'react';
 import Button from '../../../../components/ui/Button';
 import Input from '../../../../components/ui/Input';
 import Select from '../../../../components/ui/Select';
+import { formatCurrency, parseCurrency, digitsOnly } from '../../../../utils/formatters';
 
 
 const OrderFilters = ({
@@ -134,19 +135,27 @@ const OrderFilters = ({
 
         <div className="flex items-end space-x-2">
           <Input
-            type="number"
+            type="text"
             label="Giá trị từ (VND)"
             placeholder="0"
-            value={filters?.minAmount}
-            onChange={(e) => onFilterChange('minAmount', e?.target?.value)}
+            value={filters?.minAmount ? formatCurrency(filters.minAmount) : ''}
+            onChange={(e) => {
+              const value = e?.target?.value;
+              const digits = digitsOnly(value);
+              onFilterChange('minAmount', digits);
+            }}
             className="flex-1"
           />
           <Input
-            type="number"
+            type="text"
             label="Đến (VND)"
-            placeholder="999999999"
-            value={filters?.maxAmount}
-            onChange={(e) => onFilterChange('maxAmount', e?.target?.value)}
+            placeholder="999.999.999"
+            value={filters?.maxAmount ? formatCurrency(filters.maxAmount) : ''}
+            onChange={(e) => {
+              const value = e?.target?.value;
+              const digits = digitsOnly(value);
+              onFilterChange('maxAmount', digits);
+            }}
             className="flex-1"
           />
         </div>

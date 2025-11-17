@@ -20,7 +20,7 @@ const ConfirmationDialog = ({
             case 'danger':
                 return {
                     iconColor: 'text-error',
-                    confirmVariant: 'error'
+                    confirmVariant: 'danger'
                 };
             case 'success':
                 return {
@@ -43,8 +43,8 @@ const ConfirmationDialog = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 z-[1500] flex items-center justify-center p-4 animate-in fade-in">
-            <div className="bg-surface rounded-lg shadow-modal max-w-md w-full animate-in slide-in-from-bottom-4">
+        <div className="fixed inset-0 bg-black/50 z-[1300] flex items-center justify-center p-4 animate-in fade-in">
+            <div className="bg-card rounded-lg shadow-modal max-w-md w-full animate-in slide-in-from-bottom-4">
                 {/* Header */}
                 <div className="p-6 border-b border-border">
                     <div className="flex items-start space-x-4">

@@ -124,6 +124,11 @@ const PaymentProcessing = () => {
     setSelectedMethod('');
   };
 
+  const handleBackFromMethodStep = () => {
+    // Khi ở step method và nhấn back, hiện unpaid modal
+    setShowUnpaidModal(true);
+  };
+
   const handleShowCustomerForm = () => {
     setCurrentStep('customer');
   };
@@ -325,7 +330,17 @@ const PaymentProcessing = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => navigate('/main-pos-dashboard')}
+                  onClick={() => {
+                    if (currentStep === 'method') {
+                      handleBackFromMethodStep();
+                    } else if (currentStep === 'payment') {
+                      handleBackToMethod();
+                    } else if (currentStep === 'customer') {
+                      setCurrentStep('method');
+                    } else {
+                      navigate('/main-pos-dashboard');
+                    }
+                  }}
                   className="hover-scale"
                 >
                   <Icon name="ArrowLeft" size={20} />
