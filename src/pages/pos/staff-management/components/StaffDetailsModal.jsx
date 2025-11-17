@@ -1,9 +1,33 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import Icon from '../../../../components/AppIcon';
 import Image from '../../../../components/AppImage';
 import Button from '../../../../components/ui/Button';
+import { useStaffStore } from '../../../../stores';
 
-const StaffDetailsModal = ({ isOpen, onClose, staff }) => {
+const StaffDetailsModal = ({ isOpen, onClose, staff, onEdit }) => {
+  const getWorkedMinutes = useStaffStore((state) => state.getWorkedMinutes);
+
+  // Calculate worked time display
+  const workedDisplay = useMemo(() => {
+    if (!staff) return '0h 0p';
+    const minutes = getWorkedMinutes(staff);
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${h}h ${m}p`;
+  }, [staff, getWorkedMinutes]);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   if (!isOpen || !staff) return null;
 
   const getStatusColor = (status) => {
@@ -36,7 +60,7 @@ const StaffDetailsModal = ({ isOpen, onClose, staff }) => {
 
   const performanceData = [
     { label: 'Đơn hàng hôm nay', value: staff?.ordersToday, icon: 'Receipt' },
-    { label: 'Giờ làm việc', value: `${staff?.hoursWorked}h`, icon: 'Clock' },
+    { label: 'Giờ làm việc', value: workedDisplay, icon: 'Clock' },
     { label: 'Đánh giá trung bình', value: '4.8/5', icon: 'Star' },
     { label: 'Khách hàng phục vụ', value: '156', icon: 'Users' }
   ];
@@ -59,7 +83,7 @@ const StaffDetailsModal = ({ isOpen, onClose, staff }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-1200 flex items-center justify-center">
+    <div className="fixed inset-0 z-1200 flex items-center justify-center overflow-hidden">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50"
@@ -112,7 +136,7 @@ const StaffDetailsModal = ({ isOpen, onClose, staff }) => {
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-200px)]">
           <div className="p-6 space-y-6">
             {/* Basic Information */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -209,13 +233,13 @@ const StaffDetailsModal = ({ isOpen, onClose, staff }) => {
               </h3>
 
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {performanceData?.map((item, index) => (
+                {performanceData.map((item, index) => (
                   <div key={index} className="bg-muted/20 rounded-lg p-4 text-center">
                     <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-2">
-                      <Icon name={item?.icon} size={20} className="text-primary" />
+                      <Icon name={item.icon} size={20} className="text-primary" />
                     </div>
-                    <p className="text-lg font-semibold text-card-foreground">{item?.value}</p>
-                    <p className="text-sm text-muted-foreground">{item?.label}</p>
+                    <p className="text-lg font-semibold text-card-foreground">{item.value}</p>
+                    <p className="text-sm text-muted-foreground">{item.label}</p>
                   </div>
                 ))}
               </div>
@@ -230,14 +254,14 @@ const StaffDetailsModal = ({ isOpen, onClose, staff }) => {
 
               <div className="bg-muted/20 rounded-lg p-4">
                 <div className="space-y-3">
-                  {recentActivities?.map((activity, index) => (
-                    <div key={index} className="flex items-center space-x-3 p-2 hover:bg-muted/30 rounded-lg transition-smooth">
+                  {recentActivities.map((activity, index) => (
+                    <div key={index} className="flex items-center space-x-3 p-2 hover:bg-muted/30 rounded-lg transition-colors duration-200">
                       <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <Icon name={getActivityIcon(activity?.type)} size={14} className="text-primary" />
+                        <Icon name={getActivityIcon(activity.type)} size={14} className="text-primary" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-card-foreground">{activity?.action}</p>
-                        <p className="text-xs text-muted-foreground">{activity?.time}</p>
+                        <p className="text-sm font-medium text-card-foreground">{activity.action}</p>
+                        <p className="text-xs text-muted-foreground">{activity.time}</p>
                       </div>
                     </div>
                   ))}
@@ -302,11 +326,15 @@ const StaffDetailsModal = ({ isOpen, onClose, staff }) => {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-6 border-t border-border bg-muted/20">
+        <div className="flex items-center justify-end space-x-3 p-6 border-t border-border">
           <Button
             variant="outline"
             iconName="Edit"
             iconPosition="left"
+            onClick={() => {
+              onEdit(staff);
+              onClose();
+            }}
           >
             Chỉnh sửa
           </Button>

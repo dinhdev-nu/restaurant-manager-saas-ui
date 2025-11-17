@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
@@ -8,12 +8,30 @@ import Header from '../../../components/ui/Header';
 import Sidebar from '../../../components/ui/Sidebar';
 import StaffCard from './components/StaffCard';
 import StaffTable from './components/StaffTable';
-import AddStaffModal from './components/AddStaffModal';
+import StaffFormModal from './components/StaffFormModal';
 import StaffDetailsModal from './components/StaffDetailsModal';
 import BulkActionsBar from './components/BulkActionsBar';
+import ConfirmationDialog from '../../../components/ui/ConfirmationDialog';
+import { useStaffStore } from '../../../stores';
+import { toast } from '../../../hooks/use-toast';
 
 const StaffManagement = () => {
   const navigate = useNavigate();
+
+  // Zustand Store
+  const {
+    staff: staffData,
+    addStaff,
+    updateStaff,
+    deleteStaff,
+    toggleStaffStatus,
+    bulkDeleteStaff,
+    bulkUpdateRole,
+    bulkUpdateStatus,
+    getStaffStats
+  } = useStaffStore();
+
+  // Local State
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isOperational, setIsOperational] = useState(true);
   const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'table'
@@ -21,126 +39,14 @@ const StaffManagement = () => {
   const [filterRole, setFilterRole] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [sortBy, setSortBy] = useState('name');
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showStaffModal, setShowStaffModal] = useState(false);
+  const [staffModalMode, setStaffModalMode] = useState('add');
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedStaffForDetails, setSelectedStaffForDetails] = useState(null);
+  const [selectedStaffForForm, setSelectedStaffForForm] = useState(null);
+  const [selectedStaffForDelete, setSelectedStaffForDelete] = useState(null);
   const [selectedStaff, setSelectedStaff] = useState([]);
-  const [staffData, setStaffData] = useState([]);
-
-  // Mock staff data
-  useEffect(() => {
-    const mockStaff = [
-      {
-        id: 1,
-        name: "Nguyễn Văn An",
-        employeeId: "NV001",
-        phone: "0123 456 789",
-        email: "an.nguyen@restaurant.com",
-        role: "manager",
-        roleDisplay: "Quản lý",
-        status: "active",
-        statusDisplay: "Đang làm việc",
-        shift: "Ca sáng",
-        workingHours: "8h/ngày",
-        avatar: "https://randomuser.me/api/portraits/men/32.jpg",
-        ordersToday: 45,
-        hoursWorked: 6,
-        joinDate: "2024-01-15",
-        lastLogin: "2025-09-02T14:30:00"
-      },
-      {
-        id: 2,
-        name: "Trần Thị Bình",
-        employeeId: "NV002",
-        phone: "0987 654 321",
-        email: "binh.tran@restaurant.com",
-        role: "cashier",
-        roleDisplay: "Thu ngân",
-        status: "active",
-        statusDisplay: "Đang làm việc",
-        shift: "Ca chiều",
-        workingHours: "8h/ngày",
-        avatar: "https://randomuser.me/api/portraits/women/44.jpg",
-        ordersToday: 32,
-        hoursWorked: 5,
-        joinDate: "2024-02-20",
-        lastLogin: "2025-09-02T14:15:00"
-      },
-      {
-        id: 3,
-        name: "Lê Minh Cường",
-        employeeId: "NV003",
-        phone: "0345 678 901",
-        email: "cuong.le@restaurant.com",
-        role: "kitchen",
-        roleDisplay: "Nhân viên bếp",
-        status: "on-break",
-        statusDisplay: "Đang nghỉ",
-        shift: "Ca sáng",
-        workingHours: "8h/ngày",
-        avatar: "https://randomuser.me/api/portraits/men/25.jpg",
-        ordersToday: 28,
-        hoursWorked: 4,
-        joinDate: "2024-03-10",
-        lastLogin: "2025-09-02T13:45:00"
-      },
-      {
-        id: 4,
-        name: "Phạm Thị Dung",
-        employeeId: "NV004",
-        phone: "0567 890 123",
-        email: "dung.pham@restaurant.com",
-        role: "waiter",
-        roleDisplay: "Phục vụ",
-        status: "active",
-        statusDisplay: "Đang làm việc",
-        shift: "Ca chiều",
-        workingHours: "6h/ngày",
-        avatar: "https://randomuser.me/api/portraits/women/67.jpg",
-        ordersToday: 38,
-        hoursWorked: 4,
-        joinDate: "2024-04-05",
-        lastLogin: "2025-09-02T14:20:00"
-      },
-      {
-        id: 5,
-        name: "Hoàng Văn Em",
-        employeeId: "NV005",
-        phone: "0789 012 345",
-        email: "em.hoang@restaurant.com",
-        role: "cashier",
-        roleDisplay: "Thu ngân",
-        status: "inactive",
-        statusDisplay: "Nghỉ phép",
-        shift: "Ca đêm",
-        workingHours: "8h/ngày",
-        avatar: "https://randomuser.me/api/portraits/men/18.jpg",
-        ordersToday: 0,
-        hoursWorked: 0,
-        joinDate: "2024-05-12",
-        lastLogin: "2025-09-01T22:00:00"
-      },
-      {
-        id: 6,
-        name: "Vũ Thị Giang",
-        employeeId: "NV006",
-        phone: "0901 234 567",
-        email: "giang.vu@restaurant.com",
-        role: "kitchen",
-        roleDisplay: "Nhân viên bếp",
-        status: "active",
-        statusDisplay: "Đang làm việc",
-        shift: "Ca sáng",
-        workingHours: "8h/ngày",
-        avatar: "https://randomuser.me/api/portraits/women/29.jpg",
-        ordersToday: 41,
-        hoursWorked: 6,
-        joinDate: "2024-06-18",
-        lastLogin: "2025-09-02T14:25:00"
-      }
-    ];
-    setStaffData(mockStaff);
-  }, []);
 
   const roleOptions = [
     { value: '', label: 'Tất cả vai trò' },
@@ -169,34 +75,34 @@ const StaffManagement = () => {
   ];
 
   // Filter and sort staff data
-  const filteredAndSortedStaff = React.useMemo(() => {
-    let filtered = staffData?.filter(staff => {
-      const matchesSearch = staff?.name?.toLowerCase()?.includes(searchTerm?.toLowerCase()) ||
-        staff?.employeeId?.toLowerCase()?.includes(searchTerm?.toLowerCase()) ||
-        staff?.phone?.includes(searchTerm) ||
-        staff?.email?.toLowerCase()?.includes(searchTerm?.toLowerCase());
+  const filteredAndSortedStaff = useMemo(() => {
+    let filtered = staffData.filter(staff => {
+      const matchesSearch = staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        staff.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        staff.phone.includes(searchTerm) ||
+        staff.email.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesRole = !filterRole || staff?.role === filterRole;
-      const matchesStatus = !filterStatus || staff?.status === filterStatus;
+      const matchesRole = !filterRole || staff.role === filterRole;
+      const matchesStatus = !filterStatus || staff.status === filterStatus;
 
       return matchesSearch && matchesRole && matchesStatus;
     });
 
     // Sort
-    filtered?.sort((a, b) => {
+    filtered.sort((a, b) => {
       switch (sortBy) {
         case 'name':
-          return a?.name?.localeCompare(b?.name);
+          return a.name.localeCompare(b.name);
         case 'name-desc':
-          return b?.name?.localeCompare(a?.name);
+          return b.name.localeCompare(a.name);
         case 'role':
-          return a?.roleDisplay?.localeCompare(b?.roleDisplay);
+          return a.roleDisplay.localeCompare(b.roleDisplay);
         case 'status':
-          return a?.statusDisplay?.localeCompare(b?.statusDisplay);
+          return a.statusDisplay.localeCompare(b.statusDisplay);
         case 'join-date':
           return new Date(b.joinDate) - new Date(a.joinDate);
         case 'performance':
-          return b?.ordersToday - a?.ordersToday;
+          return b.ordersToday - a.ordersToday;
         default:
           return 0;
       }
@@ -205,25 +111,48 @@ const StaffManagement = () => {
     return filtered;
   }, [staffData, searchTerm, filterRole, filterStatus, sortBy]);
 
-  const handleAddStaff = (newStaff) => {
-    setStaffData(prev => [...prev, newStaff]);
+  const handleAddStaff = () => {
+    setStaffModalMode('add');
+    setSelectedStaffForForm(null);
+    setShowStaffModal(true);
   };
 
   const handleEditStaff = (staff) => {
-    console.log('Edit staff:', staff);
-    // Implement edit functionality
+    setStaffModalMode('edit');
+    setSelectedStaffForForm(staff);
+    setShowStaffModal(true);
+  };
+
+  const handleSaveStaff = (staffFormData) => {
+    try {
+      if (staffModalMode === 'add') {
+        addStaff(staffFormData);
+        toast({
+          title: "Thành công!",
+          description: `Đã thêm nhân viên ${staffFormData.name}`,
+          variant: "success"
+        });
+      } else {
+        updateStaff(staffFormData.id, staffFormData);
+        toast({
+          title: "Cập nhật thành công!",
+          description: `Đã cập nhật thông tin ${staffFormData.name}`,
+          variant: "success"
+        });
+      }
+      setShowStaffModal(false);
+    } catch (error) {
+      console.error('Error saving staff:', error);
+      toast({
+        title: "Lỗi!",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   const handleToggleStatus = (staff) => {
-    setStaffData(prev => prev?.map(s =>
-      s?.id === staff?.id
-        ? {
-          ...s,
-          status: s?.status === 'active' ? 'on-break' : 'active',
-          statusDisplay: s?.status === 'active' ? 'Đang nghỉ' : 'Đang làm việc'
-        }
-        : s
-    ));
+    toggleStaffStatus(staff.id);
   };
 
   const handleViewDetails = (staff) => {
@@ -232,54 +161,81 @@ const StaffManagement = () => {
   };
 
   const handleDeleteStaff = (staff) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa nhân viên ${staff?.name}?`)) {
-      setStaffData(prev => prev?.filter(s => s?.id !== staff?.id));
-      setSelectedStaff(prev => prev?.filter(id => id !== staff?.id));
+    setSelectedStaffForDelete(staff);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteStaff = () => {
+    if (selectedStaffForDelete) {
+      const staffName = selectedStaffForDelete.name;
+      deleteStaff(selectedStaffForDelete.id);
+      setSelectedStaff(prev => prev.filter(id => id !== selectedStaffForDelete.id));
+      setSelectedStaffForDelete(null);
+      setShowDeleteConfirm(false);
+      toast({
+        title: "Đã xóa!",
+        description: `Đã xóa nhân viên ${staffName}`,
+        variant: "success"
+      });
     }
   };
 
   const handleSelectStaff = (staffId) => {
     setSelectedStaff(prev =>
-      prev?.includes(staffId)
-        ? prev?.filter(id => id !== staffId)
+      prev.includes(staffId)
+        ? prev.filter(id => id !== staffId)
         : [...prev, staffId]
     );
   };
 
   const handleSelectAll = () => {
-    if (selectedStaff?.length === filteredAndSortedStaff?.length) {
+    if (selectedStaff.length === filteredAndSortedStaff.length) {
       setSelectedStaff([]);
     } else {
-      setSelectedStaff(filteredAndSortedStaff?.map(staff => staff?.id));
+      setSelectedStaff(filteredAndSortedStaff.map(staff => staff.id));
     }
   };
 
   const handleBulkAction = (action) => {
-    console.log('Bulk action:', action, 'for staff:', selectedStaff);
-    // Implement bulk actions
+    if (action === 'delete' && selectedStaff.length > 0) {
+      if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedStaff.length} nhân viên?`)) {
+        const count = selectedStaff.length;
+        bulkDeleteStaff(selectedStaff);
+        setSelectedStaff([]);
+        toast({
+          title: "Xóa hàng loạt thành công!",
+          description: `Đã xóa ${count} nhân viên`,
+          variant: "success"
+        });
+      }
+    }
   };
 
   const handleBulkRoleChange = (newRole) => {
-    if (newRole && selectedStaff?.length > 0) {
-      const roleDisplay = roleOptions?.find(r => r?.value === newRole)?.label || newRole;
-      setStaffData(prev => prev?.map(staff =>
-        selectedStaff?.includes(staff?.id)
-          ? { ...staff, role: newRole, roleDisplay }
-          : staff
-      ));
+    if (newRole && selectedStaff.length > 0) {
+      const roleDisplay = roleOptions.find(r => r.value === newRole)?.label || newRole;
+      const count = selectedStaff.length;
+      bulkUpdateRole(selectedStaff, newRole, roleDisplay);
       setSelectedStaff([]);
+      toast({
+        title: "Cập nhật vai trò thành công!",
+        description: `Đã cập nhật vai trò cho ${count} nhân viên thành ${roleDisplay}`,
+        variant: "success"
+      });
     }
   };
 
   const handleBulkStatusChange = (newStatus) => {
-    if (newStatus && selectedStaff?.length > 0) {
-      const statusDisplay = statusOptions?.find(s => s?.value === newStatus)?.label || newStatus;
-      setStaffData(prev => prev?.map(staff =>
-        selectedStaff?.includes(staff?.id)
-          ? { ...staff, status: newStatus, statusDisplay }
-          : staff
-      ));
+    if (newStatus && selectedStaff.length > 0) {
+      const statusDisplay = statusOptions.find(s => s.value === newStatus)?.label || newStatus;
+      const count = selectedStaff.length;
+      bulkUpdateStatus(selectedStaff, newStatus, statusDisplay);
       setSelectedStaff([]);
+      toast({
+        title: "Cập nhật trạng thái thành công!",
+        description: `Đã cập nhật trạng thái cho ${count} nhân viên thành ${statusDisplay}`,
+        variant: "success"
+      });
     }
   };
 
@@ -298,7 +254,7 @@ const StaffManagement = () => {
         userRole="owner"
       />
       <main className={`
-        pt-16 transition-all duration-300 ease-smooth
+        pt-16 transition-all duration-300 ease-in-out
         ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-60'}
       `}>
         <div className="p-6">
@@ -328,7 +284,7 @@ const StaffManagement = () => {
                 </Button>
                 <Button
                   variant="default"
-                  onClick={() => setShowAddModal(true)}
+                  onClick={handleAddStaff}
                   iconName="UserPlus"
                   iconPosition="left"
                   className="hover-scale"
@@ -346,7 +302,7 @@ const StaffManagement = () => {
                     <Icon name="Users" size={20} className="text-primary" />
                   </div>
                   <div>
-                    <p className="text-lg font-semibold text-card-foreground">{staffData?.length}</p>
+                    <p className="text-lg font-semibold text-card-foreground">{getStaffStats().total}</p>
                     <p className="text-sm text-muted-foreground">Tổng nhân viên</p>
                   </div>
                 </div>
@@ -359,7 +315,7 @@ const StaffManagement = () => {
                   </div>
                   <div>
                     <p className="text-lg font-semibold text-card-foreground">
-                      {staffData?.filter(s => s?.status === 'active')?.length}
+                      {getStaffStats().active}
                     </p>
                     <p className="text-sm text-muted-foreground">Đang làm việc</p>
                   </div>
@@ -373,7 +329,7 @@ const StaffManagement = () => {
                   </div>
                   <div>
                     <p className="text-lg font-semibold text-card-foreground">
-                      {staffData?.filter(s => s?.status === 'on-break')?.length}
+                      {getStaffStats().onBreak}
                     </p>
                     <p className="text-sm text-muted-foreground">Đang nghỉ</p>
                   </div>
@@ -387,7 +343,7 @@ const StaffManagement = () => {
                   </div>
                   <div>
                     <p className="text-lg font-semibold text-card-foreground">
-                      {Math.round(staffData?.reduce((acc, s) => acc + s?.ordersToday, 0) / staffData?.length)}
+                      {getStaffStats().averageOrders}
                     </p>
                     <p className="text-sm text-muted-foreground">Đơn TB/người</p>
                   </div>
@@ -406,7 +362,7 @@ const StaffManagement = () => {
                     type="search"
                     placeholder="Tìm kiếm nhân viên..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e?.target?.value)}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 w-full sm:w-64"
                   />
                   <Icon
@@ -465,7 +421,7 @@ const StaffManagement = () => {
 
           {/* Bulk Actions Bar */}
           <BulkActionsBar
-            selectedCount={selectedStaff?.length}
+            selectedCount={selectedStaff.length}
             onClearSelection={() => setSelectedStaff([])}
             onBulkAction={handleBulkAction}
             onBulkRoleChange={handleBulkRoleChange}
@@ -475,9 +431,9 @@ const StaffManagement = () => {
           {/* Staff List */}
           {viewMode === 'cards' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredAndSortedStaff?.map((staff) => (
+              {filteredAndSortedStaff.map((staff) => (
                 <StaffCard
-                  key={staff?.id}
+                  key={staff.id}
                   staff={staff}
                   onEdit={handleEditStaff}
                   onToggleStatus={handleToggleStatus}
@@ -496,12 +452,12 @@ const StaffManagement = () => {
               selectedStaff={selectedStaff}
               onSelectStaff={handleSelectStaff}
               onSelectAll={handleSelectAll}
-              isAllSelected={selectedStaff?.length === filteredAndSortedStaff?.length && filteredAndSortedStaff?.length > 0}
+              isAllSelected={selectedStaff.length === filteredAndSortedStaff.length && filteredAndSortedStaff.length > 0}
             />
           )}
 
           {/* Empty State */}
-          {filteredAndSortedStaff?.length === 0 && (
+          {filteredAndSortedStaff.length === 0 && (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                 <Icon name="Users" size={32} className="text-muted-foreground" />
@@ -517,7 +473,7 @@ const StaffManagement = () => {
               {!searchTerm && !filterRole && !filterStatus && (
                 <Button
                   variant="default"
-                  onClick={() => setShowAddModal(true)}
+                  onClick={handleAddStaff}
                   iconName="UserPlus"
                   iconPosition="left"
                   className="hover-scale"
@@ -530,15 +486,29 @@ const StaffManagement = () => {
         </div>
       </main>
       {/* Modals */}
-      <AddStaffModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSave={handleAddStaff}
+      <StaffFormModal
+        isOpen={showStaffModal}
+        onClose={() => setShowStaffModal(false)}
+        onSave={handleSaveStaff}
+        staff={selectedStaffForForm}
+        mode={staffModalMode}
       />
       <StaffDetailsModal
         isOpen={showDetailsModal}
         onClose={() => setShowDetailsModal(false)}
         staff={selectedStaffForDetails}
+        onEdit={handleEditStaff}
+      />
+      <ConfirmationDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDeleteStaff}
+        title="Xóa nhân viên"
+        message={`Bạn có chắc chắn muốn xóa nhân viên "${selectedStaffForDelete?.name}"? Hành động này không thể hoàn tác.`}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        variant="danger"
+        icon="Trash2"
       />
     </div>
   );

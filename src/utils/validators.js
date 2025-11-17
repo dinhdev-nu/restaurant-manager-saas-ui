@@ -50,25 +50,6 @@ export const validateEmailOrPhone = (value) => {
 }
 
 /**
- * Format số điện thoại để hiển thị
- * @param {string} phone - Số điện thoại
- * @returns {string} - Số điện thoại đã format
- */
-export const formatPhoneNumber = (phone) => {
-    if (!phone) return ''
-    const cleaned = phone.replace(/\D/g, '')
-    
-    // Format: +84 xxx xxx xxx hoặc 0xxx xxx xxx
-    if (cleaned.startsWith('84') && cleaned.length === 11) {
-        return `+${cleaned.slice(0, 2)} ${cleaned.slice(2, 5)} ${cleaned.slice(5, 8)} ${cleaned.slice(8)}`
-    } else if (cleaned.startsWith('0') && cleaned.length === 10) {
-        return `${cleaned.slice(0, 4)} ${cleaned.slice(4, 7)} ${cleaned.slice(7)}`
-    }
-    
-    return phone
-}
-
-/**
  * Validate độ mạnh của mật khẩu
  * @param {string} password - Mật khẩu cần kiểm tra
  * @returns {object} - { isValid: boolean, strength: string, message: string }
@@ -101,3 +82,4 @@ export const validatePasswordStrength = (password) => {
                  'Weak password - consider adding uppercase, numbers, and symbols'
     }
 }
+

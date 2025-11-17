@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { memo } from 'react';
 import Icon from '../../../../components/AppIcon';
 import Button from '../../../../components/ui/Button';
 import Select from '../../../../components/ui/Select';
 
-const BulkActionsBar = ({
+const BulkActionsBar = memo(({
   selectedCount,
   onClearSelection,
   onBulkAction,
@@ -116,6 +116,8 @@ const BulkActionsBar = ({
       </div>
     </div>
   );
-};
+});
+
+BulkActionsBar.displayName = 'BulkActionsBar';
 
 export default BulkActionsBar;
