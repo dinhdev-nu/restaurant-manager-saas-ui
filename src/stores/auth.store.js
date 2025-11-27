@@ -8,10 +8,9 @@ export const useAuthStore = create(
             user: null,
             token: null,
             isAuthenticated: false,
-            selectedRestaurant: null,
 
             // Actions
-            login: (userData, tokenData) => {
+            login: (userData, tokenData) => { 
                 set({
                     user: userData,
                     token: tokenData,
@@ -23,27 +22,36 @@ export const useAuthStore = create(
                 set({
                     user: null,
                     token: null,
-                    isAuthenticated: false,
-                    selectedRestaurant: null
+                    isAuthenticated: false
                 })
+            },
+
+            setToken: (tokenData) => {
+                set({ token: tokenData })
             },
 
             updateUser: (userData) => {
                 set({ user: userData })
             },
 
-            selectRestaurant: (restaurant) => {
-                set({ selectedRestaurant: restaurant })
-            },
-
-            clearRestaurant: () => {
-                set({ selectedRestaurant: null })
+            addRoleToUser: (role) => {
+                set((state) => {
+                    if (!state.user) return state;
+                    const currentRoles = state.user.roles || [];
+                    if (currentRoles.includes(role)) return state;
+                    
+                    return {
+                        user: {
+                            ...state.user,
+                            roles: [...currentRoles, role]
+                        }
+                    };
+                });
             },
 
             // Getters
             getUser: () => get().user,
             getToken: () => get().token,
-            getSelectedRestaurant: () => get().selectedRestaurant,
         }),
         {
             name: 'auth-storage', // localStorage key
@@ -51,7 +59,6 @@ export const useAuthStore = create(
                 user: state.user,
                 token: state.token,
                 isAuthenticated: state.isAuthenticated,
-                selectedRestaurant: state.selectedRestaurant,
             }),
         }
     )

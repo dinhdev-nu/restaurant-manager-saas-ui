@@ -8,8 +8,9 @@ export { useTableStore } from './table.store'
 export { useMenuStore } from './menu.store'
 export { useStaffStore } from './staff.store'
 export { useOrderStore } from './order.store'
+export { useRestaurantStore } from './restaurant.store'
 
 /**
  * USAGE:
- * import { useAuthStore, useTableStore, useMenuStore, useStaffStore, useOrderStore } from '@/stores'
+ * import { useAuthStore, useTableStore, useMenuStore, useStaffStore, useOrderStore, useRestaurantStore } from '@/stores'
  */
