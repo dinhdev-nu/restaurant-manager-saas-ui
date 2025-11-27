@@ -1,111 +1,117 @@
-import { useState, useEffect } from 'react';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, ChevronRight, Users } from 'lucide-react';
-import { useAuthStore } from '../../stores';
+import { useRestaurantStore } from '../../stores';
+import { MOCK_DISTRICTS, MOCK_PROVINCES } from 'mocks/locations';
+import { getMyRestaurantsApi } from '../../api/restaurant';
+import { toast } from '../../hooks/use-toast';
 
 const RestaurantSelector = () => {
     const navigate = useNavigate();
-    const [restaurants, setRestaurants] = useState([]);
-    const [hoveredCard, setHoveredCard] = useState(null); useEffect(() => {
-        // Mock restaurants data - In production, fetch from API
-        // API call would be: fetchUserRestaurants(user.id)
-        const mockRestaurants = [
-            {
-                id: 1,
-                name: 'Nhà hàng Sài Gòn',
-                role: 'Owner',
-                avatar: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
-                location: 'Quận 1, TP. Hồ Chí Minh',
-                staff: 24,
-                lastAccess: '2 giờ trước'
-            },
-            {
-                id: 2,
-                name: 'Café Hà Nội',
-                role: 'Manager',
-                avatar: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=300&fit=crop',
-                location: 'Hoàn Kiếm, Hà Nội',
-                staff: 12,
-                lastAccess: '1 ngày trước'
-            },
-            {
-                id: 3,
-                name: 'BBQ Garden',
-                role: 'Staff',
-                avatar: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=300&fit=crop',
-                location: 'Quận 7, TP. Hồ Chí Minh',
-                staff: 18,
-                lastAccess: '3 ngày trước'
-            },
-            {
-                id: 4,
-                name: 'Lẩu Thái Lan',
-                role: 'Manager',
-                avatar: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=400&h=300&fit=crop',
-                location: 'Quận 3, TP. Hồ Chí Minh',
-                staff: 15,
-                lastAccess: '5 ngày trước'
-            },
-            {
-                id: 5,
-                name: 'Sushi Master',
-                role: 'Owner',
-                avatar: 'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=400&h=300&fit=crop',
-                location: 'Đống Đa, Hà Nội',
-                staff: 20,
-                lastAccess: '1 tuần trước'
-            },
-            {
-                id: 6,
-                name: 'Pizza Italia',
-                role: 'Staff',
-                avatar: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
-                location: 'Quận 2, TP. Hồ Chí Minh',
-                staff: 8,
-                lastAccess: '2 tuần trước'
-            }
-        ];
+    const restaurantsFromStore = useRestaurantStore((state) => state.getAllRestaurants());
+    const setRestaurantsFromMetadata = useRestaurantStore((state) => state.setRestaurantsFromMetadata);
+    const [hoveredCard, setHoveredCard] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-        setRestaurants(mockRestaurants);
+    useEffect(() => {
+        const fetchMyRestaurants = async () => {
+            try {
+                setIsLoading(true);
+                const response = await getMyRestaurantsApi();
+
+                if (response.metadata) {
+                    const restaurants = setRestaurantsFromMetadata(response.metadata);
+                    console.log('Processed restaurants:', restaurants);
+                }
+            } catch (error) {
+                console.error('Error fetching restaurants:', error);
+                toast({
+                    title: 'Lỗi',
+                    description: 'Không thể tải danh sách nhà hàng. Vui lòng thử lại!',
+                    variant: 'destructive',
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchMyRestaurants();
     }, []);
 
     const handleRestaurantSelect = (restaurant) => {
-        // Save selected restaurant to localStorage
-        localStorage.setItem('selectedRestaurant', JSON.stringify(restaurant));
-
-        // Navigate based on role
-        if (restaurant.role === 'Owner' || restaurant.role === 'Manager') {
-            navigate('/dashboard');
-        } else {
-            navigate('/pos');
-        }
+        const selectRestaurant = useRestaurantStore.getState().selectRestaurant;
+        selectRestaurant(restaurant);
+        navigate('/dashboard');
     };
 
     const handleCreateRestaurant = () => {
-        navigate('/feed'); // Navigate to feed where create modal exists
+        navigate('/feed');
     };
 
     const handleGoPOS = (restaurant) => {
-        // Save to localStorage with POS mode
-        localStorage.setItem('selectedRestaurant', JSON.stringify({
+        const selectRestaurant = useRestaurantStore.getState().selectRestaurant;
+        console.log('Selecting restaurant for POS:', restaurant);
+        selectRestaurant({
             ...restaurant,
             mode: 'pos'
-        }));
-        navigate('/main-pos-dashboard'); // Navigate to POS
+        });
+        navigate('/main-pos-dashboard');
     };
 
     const getRoleBadgeColor = (role) => {
-        switch (role) {
-            case 'Owner':
-                return 'bg-black text-white';
-            case 'Manager':
-                return 'bg-gray-900 text-white';
-            case 'Staff':
-                return 'bg-gray-700 text-white';
-            default:
-                return 'bg-gray-500 text-white';
+        const roleKey = role?.toLowerCase() || '';
+        if (roleKey.includes('chủ') || roleKey.includes('owner')) {
+            return 'bg-black text-white';
         }
+        if (roleKey.includes('quản lý') || roleKey.includes('manager')) {
+            return 'bg-gray-900 text-white';
+        }
+        if (roleKey.includes('nhân viên') || roleKey.includes('staff')) {
+            return 'bg-gray-700 text-white';
+        }
+        return 'bg-gray-500 text-white';
+    };
+
+    const getTimeAgo = (dateString) => {
+        if (!dateString) return 'Mới tạo';
+
+        const now = new Date();
+        const created = new Date(dateString);
+        const diffMs = now - created;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        const diffMonths = Math.floor(diffDays / 30);
+        const diffYears = Math.floor(diffDays / 365);
+
+        if (diffMins < 1) return 'Vừa xong';
+        if (diffMins < 60) return `${diffMins} phút trước`;
+        if (diffHours < 24) return `${diffHours} giờ trước`;
+        if (diffDays < 30) return `${diffDays} ngày trước`;
+        if (diffMonths < 12) return `${diffMonths} tháng trước`;
+        return `${diffYears} năm trước`;
+    };
+
+    const formatAddress = (restaurant) => {
+        const parts = [];
+
+        if (restaurant.address) {
+            parts.push(restaurant.address);
+        }
+        if (restaurant.district) {
+            const district = MOCK_DISTRICTS[restaurant.city].find(d => d.code == restaurant.district);
+            parts.push(district.name);
+        }
+        if (restaurant.city) {
+            const city = MOCK_PROVINCES.find(p => p.code == restaurant.city);
+            parts.push(city.name);
+        }
+
+        if (parts.length > 0) {
+            return parts.join(', ');
+        }
+
+        return restaurant.cuisine || 'Chưa cập nhật';
     };
 
     return (
@@ -121,9 +127,7 @@ const RestaurantSelector = () => {
                     </p>
                 </div>
 
-                {/* Restaurant Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {/* Create New Restaurant Card */}
                     <button
                         onClick={handleCreateRestaurant}
                         onMouseEnter={() => setHoveredCard('new')}
@@ -141,34 +145,59 @@ const RestaurantSelector = () => {
                         </p>
                     </button>
 
-                    {/* Restaurant Cards */}
-                    {restaurants.map((restaurant) => (
-                        <React.Fragment key={restaurant.id}>
-                            {/* Main Restaurant Card */}
+                    {isLoading && (
+                        <>
+                            {[...Array(6)].map((_, index) => (
+                                <div
+                                    key={`skeleton-${index}`}
+                                    className="relative bg-white border border-gray-200 rounded-xl overflow-hidden animate-pulse"
+                                >
+                                    <div className="relative h-24 bg-gradient-to-br from-gray-200 to-gray-300">
+                                        <div className="absolute top-2 right-2 w-16 h-5 bg-gray-300 rounded"></div>
+                                    </div>
+
+                                    <div className="p-3 space-y-2">
+                                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                                        <div className="h-3 bg-gray-200 rounded w-full"></div>
+                                        <div className="flex items-center justify-between">
+                                            <div className="h-3 bg-gray-200 rounded w-12"></div>
+                                            <div className="h-3 bg-gray-200 rounded w-16"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </>
+                    )}
+
+                    {!isLoading && restaurantsFromStore.map((restaurant) => (
+                        <React.Fragment key={restaurant._id}>
                             <button
                                 onClick={() => handleRestaurantSelect(restaurant)}
-                                onMouseEnter={() => setHoveredCard(restaurant.id)}
+                                onMouseEnter={() => setHoveredCard(restaurant._id)}
                                 onMouseLeave={() => setHoveredCard(null)}
                                 className="group relative bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg hover:border-gray-300 transition-all duration-200 text-left"
                             >
-                                {/* Avatar/Cover */}
                                 <div className="relative h-24 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
-                                    <img
-                                        src={restaurant.avatar}
-                                        alt={restaurant.name}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                    />
+                                    {restaurant.logo ? (
+                                        <img
+                                            src={restaurant.logo}
+                                            alt={restaurant.restaurantName}
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <span className="text-4xl">🍽️</span>
+                                        </div>
+                                    )}
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
 
-                                    {/* Role Badge */}
                                     <div className="absolute top-2 right-2">
                                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${getRoleBadgeColor(restaurant.role)}`}>
-                                            {restaurant.role}
+                                            {restaurant.role || 'Chủ nhà hàng'}
                                         </span>
                                     </div>
 
-                                    {/* Arrow Icon on Hover */}
-                                    <div className={`absolute bottom-2 right-2 w-6 h-6 bg-white rounded-full flex items-center justify-center transition-all duration-200 ${hoveredCard === restaurant.id ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2'
+                                    <div className={`absolute bottom-2 right-2 w-6 h-6 bg-white rounded-full flex items-center justify-center transition-all duration-200 ${hoveredCard === restaurant._id ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2'
                                         }`}>
                                         <ChevronRight className="w-4 h-4 text-gray-900" />
                                     </div>
@@ -177,78 +206,76 @@ const RestaurantSelector = () => {
                                 {/* Info */}
                                 <div className="p-3">
                                     <h3 className="text-sm font-semibold text-gray-900 mb-0.5 truncate">
-                                        {restaurant.name}
+                                        {restaurant.restaurantName}
                                     </h3>
                                     <p className="text-xs text-gray-500 mb-2 truncate">
-                                        {restaurant.location}
+                                        {formatAddress(restaurant)}
                                     </p>
 
                                     <div className="flex items-center justify-between text-xs text-gray-500">
                                         <div className="flex items-center gap-1">
                                             <Users className="w-3 h-3" />
-                                            <span>{restaurant.staff}</span>
+                                            <span>{restaurant.capacity || 0}</span>
                                         </div>
-                                        <span className="text-xs">{restaurant.lastAccess}</span>
+                                        <span className="text-xs">{getTimeAgo(restaurant.createdAt)}</span>
                                     </div>
                                 </div>
                             </button>
 
-                            {/* POS Card - Only show for Owner */}
-                            {restaurant.role === 'Owner' && (
-                                <button
-                                    onClick={() => handleGoPOS(restaurant)}
-                                    onMouseEnter={() => setHoveredCard(`${restaurant.id}-pos`)}
-                                    onMouseLeave={() => setHoveredCard(null)}
-                                    className="group relative bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg hover:border-gray-300 transition-all duration-200 text-left"
-                                >
-                                    {/* Avatar/Cover - Same as main card */}
-                                    <div className="relative h-24 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                            <button
+                                onClick={() => handleGoPOS(restaurant)}
+                                onMouseEnter={() => setHoveredCard(`${restaurant._id}-pos`)}
+                                onMouseLeave={() => setHoveredCard(null)}
+                                className="group relative bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg hover:border-gray-300 transition-all duration-200 text-left"
+                            >
+                                <div className="relative h-24 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                                    {restaurant.logo ? (
                                         <img
-                                            src={restaurant.avatar}
-                                            alt={restaurant.name}
+                                            src={restaurant.logo}
+                                            alt={restaurant.restaurantName}
                                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-60"
                                         />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-
-                                        {/* POS Badge - Different from role badge */}
-                                        <div className="absolute top-2 right-2">
-                                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-black text-white">
-                                                POS
-                                            </span>
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center opacity-60">
+                                            <span className="text-4xl">🍽️</span>
                                         </div>
+                                    )}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
-                                        {/* Arrow Icon on Hover */}
-                                        <div className={`absolute bottom-2 right-2 w-6 h-6 bg-white rounded-full flex items-center justify-center transition-all duration-200 ${hoveredCard === `${restaurant.id}-pos` ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2'
-                                            }`}>
-                                            <ChevronRight className="w-4 h-4 text-gray-900" />
-                                        </div>
+                                    <div className="absolute top-2 right-2">
+                                        <span className="px-2 py-0.5 rounded text-xs font-medium bg-black text-white">
+                                            POS
+                                        </span>
                                     </div>
 
-                                    {/* Info - Same layout as main card */}
-                                    <div className="p-3">
-                                        <h3 className="text-sm font-semibold text-gray-900 mb-0.5 truncate">
-                                            {restaurant.name}
-                                        </h3>
-                                        <p className="text-xs text-gray-500 mb-2 truncate">
-                                            Chế độ bán hàng
-                                        </p>
-
-                                        <div className="flex items-center justify-between text-xs text-gray-500">
-                                            <div className="flex items-center gap-1">
-                                                <Users className="w-3 h-3" />
-                                                <span>{restaurant.staff}</span>
-                                            </div>
-                                            <span className="text-xs font-medium text-gray-900">POS</span>
-                                        </div>
+                                    <div className={`absolute bottom-2 right-2 w-6 h-6 bg-white rounded-full flex items-center justify-center transition-all duration-200 ${hoveredCard === `${restaurant._id}-pos` ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2'
+                                        }`}>
+                                        <ChevronRight className="w-4 h-4 text-gray-900" />
                                     </div>
-                                </button>
-                            )}
+                                </div>
+
+                                {/* Info */}
+                                <div className="p-3">
+                                    <h3 className="text-sm font-semibold text-gray-900 mb-0.5 truncate">
+                                        {restaurant.restaurantName}
+                                    </h3>
+                                    <p className="text-xs text-gray-500 mb-2 truncate">
+                                        Chế độ bán hàng
+                                    </p>
+
+                                    <div className="flex items-center justify-between text-xs text-gray-500">
+                                        <div className="flex items-center gap-1">
+                                            <Users className="w-3 h-3" />
+                                            <span>{restaurant.capacity || 0}</span>
+                                        </div>
+                                        <span className="text-xs font-medium text-gray-900">POS</span>
+                                    </div>
+                                </div>
+                            </button>
                         </React.Fragment>
                     ))}
                 </div>
             </div>
         </div>
     );
-};
-
-export default RestaurantSelector;
+}; export default RestaurantSelector;

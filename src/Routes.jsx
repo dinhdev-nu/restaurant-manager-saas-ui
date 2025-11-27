@@ -12,7 +12,7 @@ import PaymentProcessing from './pages/pos/payment-processing';
 import AuthPage from "./pages/auth/index";
 import CustomerFeed from './pages/customer-feed';
 import RestaurantSelector from './pages/restaurant-selector';
-import { useAuthStore } from './stores';
+import { useAuthStore, useRestaurantStore } from './stores';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -26,7 +26,7 @@ const ProtectedRoute = ({ children }) => {
 // Restaurant Selection Required Route
 const RestaurantRoute = ({ children }) => {
   const { token } = useAuthStore();
-  const selectedRestaurant = localStorage.getItem('selectedRestaurant');
+  const selectedRestaurant = useRestaurantStore((state) => state.selectedRestaurant);
 
   if (!token) {
     return <Navigate to="/auth" replace />;
@@ -65,17 +65,11 @@ const Routes = () => {
           {/* POS Routes - PUBLIC for easy UI development */}
           <Route path="/" element={<MainPOSDashboard />} />
           <Route path="/main-pos-dashboard" element={<MainPOSDashboard />} />
-          <Route path="/pos/main-pos-dashboard" element={<MainPOSDashboard />} />
           <Route path="/menu-management" element={<MenuManagement />} />
-          <Route path="/pos/menu-management" element={<MenuManagement />} />
           <Route path="/order-history" element={<OrderHistory />} />
-          <Route path="/pos/order-history" element={<OrderHistory />} />
           <Route path="/staff-management" element={<StaffManagement />} />
-          <Route path="/pos/staff-management" element={<StaffManagement />} />
           <Route path="/table-management" element={<TableManagement />} />
-          <Route path="/pos/table-management" element={<TableManagement />} />
           <Route path="/payment-processing" element={<PaymentProcessing />} />
-          <Route path="/pos/payment-processing" element={<PaymentProcessing />} />
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
