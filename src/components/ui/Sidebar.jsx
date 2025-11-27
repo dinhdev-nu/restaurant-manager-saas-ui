@@ -73,8 +73,8 @@ const Sidebar = ({
     <>
       {/* Desktop Sidebar */}
       <aside className={`
-        fixed left-0 top-16 h-[calc(100vh-4rem)] bg-surface border-r border-border z-1000
-        transition-all duration-300 ease-smooth
+        fixed left-0 top-14 sm:top-16 h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)] bg-surface border-r border-border z-1000
+        transition-all duration-300 ease-smooth hidden lg:block
         ${isCollapsed ? 'w-16' : 'w-60'}
         ${className}
       `}>
@@ -163,29 +163,30 @@ const Sidebar = ({
       `}>
         {/* Backdrop */}
         <div
-          className="absolute inset-0 bg-black/50"
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
           onClick={onToggleCollapse}
         />
 
         {/* Mobile Sidebar */}
         <aside className={`
-          absolute left-0 top-0 h-full w-60 bg-surface border-r border-border
-          transform transition-transform duration-300 ease-smooth
+          absolute left-0 top-0 h-full w-[280px] max-w-[85vw] bg-surface border-r border-border
+          transform transition-transform duration-300 ease-smooth shadow-2xl
           ${isCollapsed ? '-translate-x-full' : 'translate-x-0'}
         `}>
           <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="p-4 border-b border-border flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <div className="p-4 border-b border-border flex items-center justify-between safe-area-top">
+              <div className="flex items-center space-x-3 min-w-0">
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
                   <Icon name="Store" size={20} color="white" />
                 </div>
-                <h2 className="font-semibold text-foreground">POS Manager</h2>
+                <h2 className="font-semibold text-foreground truncate">POS Manager</h2>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={onToggleCollapse}
+                className="touch-target flex-shrink-0"
               >
                 <Icon name="X" size={20} />
               </Button>
@@ -237,7 +238,7 @@ const Sidebar = ({
             </nav>
 
             {/* Mobile Footer */}
-            <div className="p-4 border-t border-border">
+            <div className="p-4 border-t border-border safe-area-bottom">
               <div className="action-cluster">
                 <div className="flex items-center space-x-3 mb-3">
                   <div className="w-2 h-2 bg-success rounded-full status-pulse"></div>
