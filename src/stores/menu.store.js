@@ -14,6 +14,28 @@ export const useMenuStore = create(
       ],
       menuItems: [],
 
+      // Actions - Load from API
+      setMenuItems: (data) => {
+        // Transform API data (active + inactive arrays)
+        const allItems = [...(data.active || []), ...(data.inactive || [])];
+        const transformedItems = allItems.map(item => ({
+          _id: item._id, // Use _id from server
+          name: item.name,
+          description: item.description,
+          price: item.price,
+          category: item.category,
+          status: item.status || 'available',
+          isActive: item.isActive !== undefined ? item.isActive : true,
+          stock_quantity: item.stock_quantity || 0,
+          unit: item.unit || 'phần',
+          image: item.image,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt
+        }));
+
+        set({ menuItems: transformedItems });
+      },
+
       // Actions - Menu Items
       addMenuItem: (item) => {
         const state = get();
@@ -46,12 +68,12 @@ export const useMenuStore = create(
 
         const newItem = {
           ...item,
-          id: item.id || `menu_${Date.now()}`,
+          _id: item._id || `menu_${Date.now()}`,
           status: item.status || 'available',
           stock_quantity: item.stock_quantity || 0,
           unit: item.unit || 'phần',
-          updated_at: new Date().toISOString(),
-          created_at: item.created_at || new Date().toISOString()
+          updatedAt: new Date().toISOString(),
+          createdAt: item.createdAt || new Date().toISOString()
         };
 
         set((state) => ({
@@ -76,7 +98,7 @@ export const useMenuStore = create(
 
           // Check duplicate name (exclude current item)
           const isDuplicate = state.menuItems.some(
-            i => i.id !== itemId && i.name.toLowerCase().trim() === updates.name.toLowerCase().trim()
+            i => i._id !== itemId && i.name.toLowerCase().trim() === updates.name.toLowerCase().trim()
           );
 
           if (isDuplicate) {
@@ -91,8 +113,8 @@ export const useMenuStore = create(
 
         set((state) => ({
           menuItems: state.menuItems.map((item) =>
-            item.id === itemId 
-              ? { ...item, ...updates, updated_at: new Date().toISOString() } 
+            item._id === itemId 
+              ? { ...item, ...updates, updatedAt: new Date().toISOString() } 
               : item
           ),
         }));
@@ -100,18 +122,18 @@ export const useMenuStore = create(
 
       deleteMenuItem: (itemId) => {
         set((state) => ({
-          menuItems: state.menuItems.filter((item) => item.id !== itemId)
+          menuItems: state.menuItems.filter((item) => item._id !== itemId)
         }));
       },
 
       toggleMenuItemAvailability: (itemId) => {
         set((state) => ({
           menuItems: state.menuItems.map((item) =>
-            item.id === itemId 
+            item._id === itemId 
               ? { 
                   ...item, 
                   status: item.status === 'available' ? 'unavailable' : 'available',
-                  updated_at: new Date().toISOString()
+                  updatedAt: new Date().toISOString()
                 } 
               : item
           ),
@@ -121,8 +143,8 @@ export const useMenuStore = create(
       setMenuItemStatus: (itemId, status) => {
         set((state) => ({
           menuItems: state.menuItems.map((item) =>
-            item.id === itemId 
-              ? { ...item, status, updated_at: new Date().toISOString() } 
+            item._id === itemId 
+              ? { ...item, status, updatedAt: new Date().toISOString() } 
               : item
           ),
         }));
@@ -131,12 +153,12 @@ export const useMenuStore = create(
       updateStockQuantity: (itemId, quantity) => {
         set((state) => ({
           menuItems: state.menuItems.map((item) =>
-            item.id === itemId 
+            item._id === itemId 
               ? { 
                   ...item, 
                   stock_quantity: quantity,
                   status: quantity === 0 ? 'unavailable' : quantity < 10 ? 'low_stock' : 'available',
-                  updated_at: new Date().toISOString()
+                  updatedAt: new Date().toISOString()
                 } 
               : item
           ),
@@ -146,15 +168,15 @@ export const useMenuStore = create(
       // Bulk Actions
       bulkDeleteMenuItems: (itemIds) => {
         set((state) => ({
-          menuItems: state.menuItems.filter((item) => !itemIds.includes(item.id))
+          menuItems: state.menuItems.filter((item) => !itemIds.includes(item._id))
         }));
       },
 
       bulkToggleAvailability: (itemIds, newStatus) => {
         set((state) => ({
           menuItems: state.menuItems.map((item) =>
-            itemIds.includes(item.id)
-              ? { ...item, status: newStatus, updated_at: new Date().toISOString() }
+            itemIds.includes(item._id)
+              ? { ...item, status: newStatus, updatedAt: new Date().toISOString() }
               : item
           ),
         }));
@@ -163,8 +185,8 @@ export const useMenuStore = create(
       bulkUpdateCategory: (itemIds, categoryId) => {
         set((state) => ({
           menuItems: state.menuItems.map((item) =>
-            itemIds.includes(item.id)
-              ? { ...item, category: categoryId, updated_at: new Date().toISOString() }
+            itemIds.includes(item._id)
+              ? { ...item, category: categoryId, updatedAt: new Date().toISOString() }
               : item
           ),
         }));
@@ -224,7 +246,7 @@ export const useMenuStore = create(
       getMenuItems: () => get().menuItems,
 
       getMenuItemById: (itemId) => {
-        return get().menuItems.find((item) => item.id === itemId);
+        return get().menuItems.find((item) => item._id === itemId);
       },
 
       getMenuItemsByCategory: (categoryId) => {

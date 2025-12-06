@@ -56,7 +56,7 @@ const MenuItemCard = ({
           <input
             type="checkbox"
             checked={isSelected}
-            onChange={(e) => onSelect(item?.id, e?.target?.checked)}
+            onChange={(e) => onSelect(item?._id, e?.target?.checked)}
             className="w-4 h-4 text-primary border-border rounded focus:ring-primary"
           />
           <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted">
@@ -80,7 +80,7 @@ const MenuItemCard = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onDelete(item?.id)}
+            onClick={() => onDelete(item?._id)}
             className="w-8 h-8 text-error hover:text-error"
           >
             <Icon name="Trash2" size={16} />
@@ -111,7 +111,7 @@ const MenuItemCard = ({
         )}
 
         <div className="text-xs text-muted-foreground">
-          Cập nhật: {new Date(item.updated_at)?.toLocaleDateString('vi-VN')}
+          Cập nhật: {new Date(item.updatedAt)?.toLocaleDateString('vi-VN')}
         </div>
 
         {/* Quick availability toggle */}
@@ -120,7 +120,7 @@ const MenuItemCard = ({
             variant={item?.status === 'available' ? 'outline' : 'default'}
             size="sm"
             fullWidth
-            onClick={() => onToggleAvailability(item?.id, item?.status)}
+            onClick={() => onToggleAvailability(item?._id, item?.status)}
             iconName={item?.status === 'available' ? 'EyeOff' : 'Eye'}
             iconPosition="left"
           >

@@ -5,6 +5,7 @@ import Input from '../../../../components/ui/Input';
 import Select from '../../../../components/ui/Select';
 import Image from '../../../../components/AppImage';
 import { formatCurrency, parseCurrency, digitsOnly } from '../../../../utils/formatters';
+import { useToast } from '../../../../hooks/use-toast';
 
 const MenuItemModal = ({
   isOpen,
@@ -13,6 +14,7 @@ const MenuItemModal = ({
   item = null,
   categories = []
 }) => {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -119,17 +121,27 @@ const MenuItemModal = ({
     setIsLoading(true);
     try {
       const submitData = {
-        ...formData,
+        name: formData.name.trim(),
+        description: formData.description?.trim() || '',
         price: parseCurrency(formData?.price),
-        stock_quantity: formData?.stock_quantity ? parseInt(formData?.stock_quantity) : null,
-        id: item?.id || Date.now(),
-        updated_at: new Date()?.toISOString()
+        category: formData.category,
+        image: formData.image || '',
+        status: formData.status,
+        stock_quantity: formData?.stock_quantity ? parseInt(formData?.stock_quantity) : 0,
+        unit: formData.unit
       };
 
-      await onSave(submitData);
+      if (onSave) {
+        onSave(submitData);
+      }
+
       onClose();
     } catch (error) {
-      console.error('Error saving item:', error);
+      toast({
+        title: "Lỗi",
+        description: error?.response?.data?.message || error?.message || "Có lỗi xảy ra khi lưu món ăn",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }

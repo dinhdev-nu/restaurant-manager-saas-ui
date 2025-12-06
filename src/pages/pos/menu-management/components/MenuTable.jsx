@@ -80,17 +80,17 @@ const MenuTable = ({
           <tbody>
             {items?.map((item, index) => (
               <tr
-                key={item?.id}
+                key={item?._id}
                 className={`
                   border-b border-border hover:bg-muted/30 transition-smooth
-                  ${selectedItems?.includes(item?.id) ? 'bg-primary/5' : ''}
+                  ${selectedItems?.includes(item?._id) ? 'bg-primary/5' : ''}
                 `}
               >
                 <td className="p-4">
                   <input
                     type="checkbox"
-                    checked={selectedItems?.includes(item?.id)}
-                    onChange={(e) => onSelectItem(item?.id, e?.target?.checked)}
+                    checked={selectedItems?.includes(item?._id)}
+                    onChange={(e) => onSelectItem(item?._id, e?.target?.checked)}
                     className="w-4 h-4 text-primary border-border rounded focus:ring-primary"
                   />
                 </td>
@@ -143,7 +143,7 @@ const MenuTable = ({
 
                 <td className="p-4">
                   <span className="text-sm text-muted-foreground">
-                    {new Date(item.updated_at)?.toLocaleDateString('vi-VN')}
+                    {new Date(item.updatedAt)?.toLocaleDateString('vi-VN')}
                   </span>
                 </td>
 
@@ -152,7 +152,7 @@ const MenuTable = ({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => onToggleAvailability(item?.id, item?.status)}
+                      onClick={() => onToggleAvailability(item?._id, item?.status)}
                       className="w-8 h-8"
                       title={item?.status === 'available' ? 'Tạm ngưng' : 'Kích hoạt'}
                     >
@@ -175,7 +175,7 @@ const MenuTable = ({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => onDelete(item?.id)}
+                      onClick={() => onDelete(item?._id)}
                       className="w-8 h-8 text-error hover:text-error"
                       title="Xóa"
                     >
