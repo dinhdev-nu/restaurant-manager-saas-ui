@@ -27,9 +27,9 @@ const StaffCard = memo(({
     const today = new Date().toISOString().split('T')[0];
     return orders.filter(order => {
       const orderDate = new Date(order.timestamp).toISOString().split('T')[0];
-      return orderDate === today && order.staffId === staff.id;
+      return orderDate === today && order.staffId === staff._id;
     }).length;
-  }, [orders, staff.id]);
+  }, [orders, staff._id]);
 
   // Calculate worked minutes and display as "xh yp"
   const workedDisplay = useMemo(() => {

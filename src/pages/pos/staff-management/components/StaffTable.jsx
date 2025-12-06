@@ -27,20 +27,25 @@ const StaffTable = memo(({
     return () => clearInterval(i);
   }, []);
 
-  // Calculate dynamic data for each staff
-  const getStaffDynamicData = (member) => {
-    const ordersToday = orders.filter(order => {
-      const orderDate = new Date(order.timestamp).toISOString().split('T')[0];
-      return orderDate === today && order.staffId === member.id;
-    }).length;
+  // Memoize dynamic data for all staff to avoid recalculating on each row render
+  const staffDynamicDataMap = useMemo(() => {
+    const dataMap = new Map();
+    staff.forEach(member => {
+      const ordersToday = orders.filter(order => {
+        const orderDate = new Date(order.timestamp).toISOString().split('T')[0];
+        return orderDate === today && order.staffId === member._id;
+      }).length;
 
-    const minutes = getWorkedMinutes(member);
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    const workedDisplay = `${h}h ${m}p`;
+      const minutes = getWorkedMinutes(member);
+      const h = Math.floor(minutes / 60);
+      const m = minutes % 60;
+      const workedDisplay = `${h}h ${m}p`;
 
-    return { ordersToday, workedDisplay };
-  };
+      dataMap.set(member._id, { ordersToday, workedDisplay });
+    });
+    return dataMap;
+  }, [staff, orders, today, getWorkedMinutes, tick]);
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'active': return 'text-success';
@@ -100,11 +105,11 @@ const StaffTable = memo(({
           </thead>
           <tbody>
             {staff.map((member, index) => {
-              const dynamicData = getStaffDynamicData(member);
+              const dynamicData = staffDynamicDataMap.get(member._id) || { ordersToday: 0, workedDisplay: '0h 0p' };
 
               return (
                 <tr
-                  key={member.id}
+                  key={member._id}
                   className={`
                   border-b border-border hover:bg-muted/20 transition-colors duration-200
                   ${index % 2 === 0 ? 'bg-background' : 'bg-muted/5'}
@@ -113,8 +118,8 @@ const StaffTable = memo(({
                   <td className="p-4">
                     <input
                       type="checkbox"
-                      checked={selectedStaff.includes(member.id)}
-                      onChange={() => onSelectStaff(member.id)}
+                      checked={selectedStaff.includes(member._id)}
+                      onChange={() => onSelectStaff(member._id)}
                       className="rounded border-border"
                     />
                   </td>

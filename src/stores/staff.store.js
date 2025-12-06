@@ -7,6 +7,60 @@ export const useStaffStore = create(
       // State
       staff: [],
       
+      // Helper functions for display values
+      getRoleDisplay: (role) => {
+        const roleMap = {
+          'owner': 'Chủ cửa hàng',
+          'manager': 'Quản lý',
+          'cashier': 'Thu ngân',
+          'kitchen': 'Nhân viên bếp',
+          'waiter': 'Phục vụ',
+          'cleaner': 'Vệ sinh'
+        };
+        return roleMap[role] || role;
+      },
+
+      getStatusDisplay: (status) => {
+        const statusMap = {
+          'active': 'Đang làm việc',
+          'on-break': 'Đang nghỉ',
+          'inactive': 'Nghỉ phép'
+        };
+        return statusMap[status] || status;
+      },
+      
+      // Actions - Load from API
+      setStaff: (staffList) => {
+        const { getRoleDisplay, getStatusDisplay } = get();
+        // Transform API data to store format if needed
+        const transformedStaff = staffList.map(staff => ({
+          _id: staff._id, // Use _id from server
+          employeeId: staff.employeeId || `NV${staff._id.slice(-4)}`,
+          name: staff.name,
+          email: staff.email,
+          phone: staff.phone,
+          role: staff.role,
+          roleDisplay: staff.roleDisplay || getRoleDisplay(staff.role),
+          status: staff.status || 'active',
+          statusDisplay: staff.statusDisplay || getStatusDisplay(staff.status),
+          isActive: staff.isActive !== undefined ? staff.isActive : true,
+          joinDate: staff.joinDate || staff.startDate,
+          shift: staff.shift,
+          workingHours: staff.workingHours,
+          salary: staff.salary,
+          address: staff.address,
+          notes: staff.notes,
+          avatar: staff.avatar,
+          workStartedAt: staff.workStartedAt || null,
+          accumulatedMinutes: staff.accumulatedMinutes || 0,
+          lastWorkDate: staff.lastWorkDate || new Date().toISOString().split('T')[0],
+          createdAt: staff.createdAt,
+          updatedAt: staff.updatedAt
+        }));
+
+        set({ staff: transformedStaff });
+      },
+
       // Actions - Staff Management
       addStaff: (staffData) => {
         const state = get();
@@ -58,11 +112,16 @@ export const useStaffStore = create(
           throw new Error('Vui lòng chọn vai trò');
         }
 
+        const { getRoleDisplay, getStatusDisplay } = get();
+        const status = staffData.status || 'active';
+
         const newStaff = {
           ...staffData,
-          id: staffData.id || `staff_${Date.now()}`,
+          _id: staffData._id || `staff_${Date.now()}`,
           employeeId: staffData.employeeId || `NV${String(Date.now()).slice(-4)}`,
-          status: staffData.status || 'active',
+          status: status,
+          roleDisplay: getRoleDisplay(staffData.role),
+          statusDisplay: getStatusDisplay(status),
           // Time tracking fields
           workStartedAt: staffData.workStartedAt || null, // ISO time when (re)activated
           accumulatedMinutes: staffData.accumulatedMinutes || 0, // total minutes over sessions
@@ -103,7 +162,7 @@ export const useStaffStore = create(
 
           // Check duplicate phone (exclude current staff)
           const isDuplicatePhone = state.staff.some(
-            s => s.id !== staffId && s.phone.replace(/\s/g, '') === updates.phone.replace(/\s/g, '')
+            s => s._id !== staffId && s.phone.replace(/\s/g, '') === updates.phone.replace(/\s/g, '')
           );
 
           if (isDuplicatePhone) {
@@ -123,7 +182,7 @@ export const useStaffStore = create(
 
           // Check duplicate email (exclude current staff)
           const isDuplicateEmail = state.staff.some(
-            s => s.id !== staffId && s.email.toLowerCase() === updates.email.toLowerCase()
+            s => s._id !== staffId && s.email.toLowerCase() === updates.email.toLowerCase()
           );
 
           if (isDuplicateEmail) {
@@ -133,7 +192,7 @@ export const useStaffStore = create(
 
         set((state) => ({
           staff: state.staff.map((s) =>
-            s.id === staffId 
+            s._id === staffId 
               ? { ...s, ...updates } 
               : s
           ),
@@ -142,14 +201,14 @@ export const useStaffStore = create(
 
       deleteStaff: (staffId) => {
         set((state) => ({
-          staff: state.staff.filter((s) => s.id !== staffId)
+          staff: state.staff.filter((s) => s._id !== staffId)
         }));
       },
 
       toggleStaffStatus: (staffId) => {
         set((state) => ({
           staff: state.staff.map((s) => {
-            if (s.id !== staffId) return s;
+            if (s._id !== staffId) return s;
 
             const now = new Date();
             const today = now.toISOString().split('T')[0];
@@ -196,7 +255,7 @@ export const useStaffStore = create(
       setStaffStatus: (staffId, status, statusDisplay) => {
         set((state) => ({
           staff: state.staff.map((s) =>
-            s.id === staffId 
+            s._id === staffId 
               ? { ...s, status, statusDisplay } 
               : s
           ),
@@ -206,14 +265,14 @@ export const useStaffStore = create(
       // Bulk Actions
       bulkDeleteStaff: (staffIds) => {
         set((state) => ({
-          staff: state.staff.filter((s) => !staffIds.includes(s.id))
+          staff: state.staff.filter((s) => !staffIds.includes(s._id))
         }));
       },
 
       bulkUpdateRole: (staffIds, role, roleDisplay) => {
         set((state) => ({
           staff: state.staff.map((s) =>
-            staffIds.includes(s.id)
+            staffIds.includes(s._id)
               ? { ...s, role, roleDisplay }
               : s
           ),
@@ -223,7 +282,7 @@ export const useStaffStore = create(
       bulkUpdateStatus: (staffIds, status, statusDisplay) => {
         set((state) => ({
           staff: state.staff.map((s) =>
-            staffIds.includes(s.id)
+            staffIds.includes(s._id)
               ? { ...s, status, statusDisplay }
               : s
           ),
@@ -234,7 +293,7 @@ export const useStaffStore = create(
       getAllStaff: () => get().staff,
 
       getStaffById: (staffId) => {
-        return get().staff.find((s) => s.id === staffId);
+        return get().staff.find((s) => s._id === staffId);
       },
 
       getStaffByRole: (role) => {

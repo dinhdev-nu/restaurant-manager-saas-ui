@@ -23,8 +23,6 @@ const StaffFormModal = ({ isOpen, onClose, onSave, staff, mode = 'add' }) => {
         salary: '',
         startDate: '',
         address: '',
-        emergencyContact: '',
-        emergencyPhone: '',
         notes: '',
         avatar: ''
     });
@@ -84,8 +82,6 @@ const StaffFormModal = ({ isOpen, onClose, onSave, staff, mode = 'add' }) => {
                     salary: staff.salary ? formatCurrency(parseCurrency(staff.salary.toString())) : '',
                     startDate: staff.joinDate || '',
                     address: staff.address || '',
-                    emergencyContact: staff.emergencyContact || '',
-                    emergencyPhone: staff.emergencyPhone ? formatPhoneNumber(parsePhoneNumber(staff.emergencyPhone)) : '',
                     notes: staff.notes || '',
                     avatar: staff.avatar || ''
                 });
@@ -102,8 +98,6 @@ const StaffFormModal = ({ isOpen, onClose, onSave, staff, mode = 'add' }) => {
                     salary: '',
                     startDate: '',
                     address: '',
-                    emergencyContact: '',
-                    emergencyPhone: '',
                     notes: '',
                     avatar: ''
                 });
@@ -244,26 +238,22 @@ const StaffFormModal = ({ isOpen, onClose, onSave, staff, mode = 'add' }) => {
                     ...staff,
                     ...formData,
                     avatar: imagePreview || staff.avatar,
-                    roleDisplay: roleOptions.find(r => r.value === formData.role)?.label || formData.role,
                 };
+
                 onSave(updatedStaff);
             } else {
+                // Chỉ gửi data cần thiết cho backend
                 const newStaff = {
-                    id: Date.now(),
                     ...formData,
-                    avatar: imagePreview || `https://randomuser.me/api/portraits/${Math.random() > 0.5 ? 'men' : 'women'}/${Math.floor(Math.random() * 50) + 1}.jpg`,
-                    employeeId: `NV${String(Date.now()).slice(-4)}`,
-                    status: 'active',
-                    statusDisplay: 'Đang làm việc',
-                    roleDisplay: roleOptions.find(r => r.value === formData.role)?.label || formData.role,
-                    joinDate: formData.startDate
+                    avatar: imagePreview || '',
                 };
+
                 onSave(newStaff);
             }
 
             onClose();
         } catch (error) {
-            console.error('Error saving staff:', error);
+            // Error handled by parent
         } finally {
             setIsLoading(false);
         }
@@ -475,32 +465,6 @@ const StaffFormModal = ({ isOpen, onClose, onSave, staff, mode = 'add' }) => {
                                     className="md:col-span-2"
                                 />
                             )}
-                        </div>
-                    </div>
-
-                    {/* Emergency Contact */}
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-medium text-foreground flex items-center space-x-2">
-                            <Icon name="Phone" size={18} />
-                            <span>Liên hệ khẩn cấp</span>
-                        </h3>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Input
-                                label="Tên người liên hệ"
-                                type="text"
-                                placeholder="Họ tên người thân"
-                                value={formData.emergencyContact}
-                                onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
-                            />
-
-                            <Input
-                                label="Số điện thoại khẩn cấp"
-                                type="tel"
-                                placeholder="0123 456 789"
-                                value={formData.emergencyPhone}
-                                onChange={(e) => handlePhoneChange('emergencyPhone', e.target.value)}
-                            />
                         </div>
                     </div>
 
