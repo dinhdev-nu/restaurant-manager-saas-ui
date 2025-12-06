@@ -35,7 +35,7 @@ const TableLayout = ({
     const { active, delta } = event;
 
     if (delta.x !== 0 || delta.y !== 0) {
-      const table = tables.find(t => t.id === active.id);
+      const table = tables.find(t => t._id === active.id);
       if (table) {
         // Calculate new position immediately from current position + delta
         const layoutElement = document.querySelector('.table-layout');
@@ -63,7 +63,7 @@ const TableLayout = ({
     }
   };
 
-  const activeTable = activeId ? tables.find(t => t.id === activeId) : null;
+  const activeTable = activeId ? tables.find(t => t._id === activeId) : null;
 
   return (
     <DndContext
@@ -143,10 +143,10 @@ const TableLayout = ({
           {/* Tables */}
           {tables?.map((table) => (
             <DraggableTable
-              key={table.id}
+              key={table._id}
               table={table}
-              isSelected={selectedTable?.id === table.id}
-              isActive={activeId === table.id}
+              isSelected={selectedTable?._id === table._id}
+              isActive={activeId === table._id}
               onTableClick={onTableClick}
             />
           ))}

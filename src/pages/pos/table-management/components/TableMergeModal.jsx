@@ -15,8 +15,8 @@ const TableMergeModal = ({
 
   if (!isOpen || !sourceTable) return null;
 
-  const tableOptions = availableTables?.filter(table => table?.id !== sourceTable?.id && table?.status === 'available')?.map(table => ({
-    value: table?.id,
+  const tableOptions = availableTables?.filter(table => table?._id !== sourceTable?._id && table?.status === 'available')?.map(table => ({
+    value: table?._id,
     label: `Bàn ${table?.number} (${table?.capacity} chỗ)`,
     description: `Trạng thái: ${table?.status === 'available' ? 'Trống' : 'Có khách'}`
   }));
@@ -29,7 +29,7 @@ const TableMergeModal = ({
   const handleConfirm = () => {
     if (selectedTables?.length > 0) {
       onConfirmMerge({
-        sourceTableId: sourceTable?.id,
+        sourceTableId: sourceTable?._id,
         targetTableIds: selectedTables,
         type: mergeType
       });

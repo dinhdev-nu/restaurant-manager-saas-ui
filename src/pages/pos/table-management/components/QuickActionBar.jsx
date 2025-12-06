@@ -28,13 +28,13 @@ const QuickActionBar = ({
             label: 'Đặt khách',
             icon: 'UserPlus',
             variant: 'default',
-            action: () => onQuickStatusChange(selectedTable?.id, 'occupied')
+            action: () => onQuickStatusChange(selectedTable?._id, 'occupied')
           },
           {
             label: 'Đặt trước',
             icon: 'Clock',
             variant: 'outline',
-            action: () => onQuickStatusChange(selectedTable?.id, 'reserved')
+            action: () => onQuickStatusChange(selectedTable?._id, 'reserved')
           }
         );
         break;
@@ -45,7 +45,7 @@ const QuickActionBar = ({
             label: 'Tạo đơn',
             icon: 'Plus',
             variant: 'default',
-            action: () => onCreateOrder(selectedTable?.id)
+            action: () => onCreateOrder(selectedTable?._id)
           },
           {
             label: 'Xem đơn',
@@ -58,14 +58,14 @@ const QuickActionBar = ({
             label: 'In hóa đơn',
             icon: 'Printer',
             variant: 'outline',
-            action: () => onPrintBill(selectedTable?.id),
+            action: () => onPrintBill(selectedTable?._id),
             disabled: !selectedTable?.orderId
           },
           {
             label: 'Gọi phục vụ',
             icon: 'Bell',
             variant: 'outline',
-            action: () => onCallWaiter(selectedTable?.id)
+            action: () => onCallWaiter(selectedTable?._id)
           }
         );
         break;
@@ -76,13 +76,13 @@ const QuickActionBar = ({
             label: 'Nhận khách',
             icon: 'Check',
             variant: 'default',
-            action: () => onQuickStatusChange(selectedTable?.id, 'occupied')
+            action: () => onQuickStatusChange(selectedTable?._id, 'occupied')
           },
           {
             label: 'Hủy đặt',
             icon: 'X',
             variant: 'outline',
-            action: () => onQuickStatusChange(selectedTable?.id, 'available')
+            action: () => onQuickStatusChange(selectedTable?._id, 'available')
           }
         );
         break;
@@ -93,7 +93,7 @@ const QuickActionBar = ({
             label: 'Hoàn thành',
             icon: 'CheckCircle',
             variant: 'success',
-            action: () => onQuickStatusChange(selectedTable?.id, 'available')
+            action: () => onQuickStatusChange(selectedTable?._id, 'available')
           }
         );
         break;

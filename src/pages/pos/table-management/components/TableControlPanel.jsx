@@ -37,11 +37,7 @@ const TableControlPanel = ({
       try {
         onAddTable({
           ...newTableForm,
-          id: `table_${Date.now()}`,
-          status: 'available',
-          currentOccupancy: 0,
-          assignedServer: null,
-          orderId: null
+          status: 'available'
         });
         setNewTableForm({
           number: '',
@@ -54,21 +50,20 @@ const TableControlPanel = ({
       } catch (error) {
         // Error is already handled by parent component with toast
         // Just keep the form open for user to fix
-        console.error('Failed to add table:', error);
       }
     }
   };
 
   const handleStatusChange = (newStatus) => {
     if (selectedTable) {
-      onTableUpdate(selectedTable?.id, { status: newStatus });
+      onTableUpdate(selectedTable?._id, { status: newStatus });
     }
   };
 
   const handleServerAssignment = (serverId) => {
     if (selectedTable) {
       const server = availableServers?.find(s => s?.value === serverId);
-      onTableUpdate(selectedTable?.id, {
+      onTableUpdate(selectedTable?._id, {
         assignedServer: server ? server?.label : null
       });
     }
@@ -198,7 +193,7 @@ const TableControlPanel = ({
                 fullWidth
                 iconName="Trash2"
                 iconPosition="left"
-                onClick={() => onDeleteTable(selectedTable?.id)}
+                onClick={() => onDeleteTable(selectedTable?._id)}
                 disabled={selectedTable?.status === 'occupied'}
               >
                 Xóa bàn

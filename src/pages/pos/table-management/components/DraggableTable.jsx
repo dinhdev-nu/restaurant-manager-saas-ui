@@ -10,7 +10,7 @@ const DraggableTable = ({
     onTableClick
 }) => {
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-        id: table.id,
+        id: table._id,
     });
 
     const style = {

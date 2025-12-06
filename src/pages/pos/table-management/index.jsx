@@ -5,12 +5,22 @@ import Sidebar from '../../../components/ui/Sidebar';
 import TableLayout from './components/TableLayout';
 import TableControlPanel from './components/TableControlPanel';
 import QuickActionBar from './components/QuickActionBar';
+import { InlineLoading } from '../../../components/ui/Loading';
+import { useLoadTablesData } from '../../../hooks/use-load-tables-data';
 import { useTableStore } from '../../../stores/table.store';
+import { useRestaurantStore } from '../../../stores/restaurant.store';
 import { useToast } from '../../../hooks/use-toast';
+import { createTableApi } from '../../../api/restaurant';
 
 const TableManagement = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const selectedRestaurant = useRestaurantStore((state) => state.selectedRestaurant);
+
+  // Load tables using custom hook
+  const { isLoading: isLoadingData } = useLoadTablesData(
+    selectedRestaurant?._id
+  );
 
   // Use table store
   const tables = useTableStore((state) => state.tables);
@@ -74,11 +84,16 @@ const TableManagement = () => {
     updateTable(tableId, { status: newStatus });
   };
 
-  const handleAddTable = (newTable) => {
+  const handleAddTable = async (newTable) => {
     try {
       // Add floor property to new table
       const tableWithFloor = { ...newTable, floor: currentFloor };
-      addTable(tableWithFloor);
+
+      // Call API to create table
+      const response = await createTableApi(selectedRestaurant._id, tableWithFloor);
+
+      // Add to store with _id from server (no need to refetch)
+      addTable(response.metadata);
 
       toast({
         title: "Thêm bàn thành công",
@@ -108,13 +123,11 @@ const TableManagement = () => {
   };
 
   const handlePrintBill = (tableId) => {
-    console.log('Printing bill for table:', tableId);
-    // Implement print functionality
+    // TODO: Implement print functionality
   };
 
   const handleCallWaiter = (tableId) => {
-    console.log('Calling waiter for table:', tableId);
-    // Implement waiter notification
+    // TODO: Implement waiter notification
   };
 
   // Handle window resize
@@ -155,30 +168,34 @@ const TableManagement = () => {
           : ''
         }
       `}>
-        <div className="h-[calc(100vh-4rem)] flex pb-16">
-          {/* Table Layout */}
-          <TableLayout
-            tables={currentFloorTables}
-            selectedTable={selectedTable}
-            onTableSelect={handleTableSelect}
-            onTableMove={handleTableMove}
-            onTableClick={handleTableClick}
-            floors={floors}
-            currentFloor={currentFloor}
-            onFloorChange={handleFloorChange}
-            onAddFloor={handleAddFloor}
-            onDeleteFloor={handleDeleteFloor}
-          />
+        {isLoadingData ? (
+          <InlineLoading message="Đang tải danh sách bàn..." size="lg" />
+        ) : (
+          <div className="h-[calc(100vh-4rem)] flex pb-16">
+            {/* Table Layout */}
+            <TableLayout
+              tables={currentFloorTables}
+              selectedTable={selectedTable}
+              onTableSelect={handleTableSelect}
+              onTableMove={handleTableMove}
+              onTableClick={handleTableClick}
+              floors={floors}
+              currentFloor={currentFloor}
+              onFloorChange={handleFloorChange}
+              onAddFloor={handleAddFloor}
+              onDeleteFloor={handleDeleteFloor}
+            />
 
-          {/* Control Panel */}
-          <TableControlPanel
-            selectedTable={selectedTable}
-            onTableUpdate={handleTableUpdate}
-            onAddTable={handleAddTable}
-            onDeleteTable={handleDeleteTable}
-            tables={currentFloorTables}
-          />
-        </div>
+            {/* Control Panel */}
+            <TableControlPanel
+              selectedTable={selectedTable}
+              onTableUpdate={handleTableUpdate}
+              onAddTable={handleAddTable}
+              onDeleteTable={handleDeleteTable}
+              tables={currentFloorTables}
+            />
+          </div>
+        )}
 
         {/* Quick Action Bar */}
         <QuickActionBar

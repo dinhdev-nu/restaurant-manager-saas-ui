@@ -12,6 +12,30 @@ export const useTableStore = create(
       currentFloor: 1,
       selectedTable: null,
 
+      // Actions - Load from API
+      setTables: (tables) => {
+        // Transform API data to store format if needed
+        // Use _id from server directly
+        const transformedTables = tables.map(table => ({
+          _id: table._id, // Use _id from server
+          number: table.number,
+          floor: table.floor || 1,
+          capacity: table.capacity,
+          status: table.status || 'available',
+          shape: table.shape || 'rectangular',
+          x: table.x || 100,
+          y: table.y || 100,
+          currentOccupancy: table.currentCapacity || 0, // Map currentCapacity to currentOccupancy
+          assignedServer: table.assignedServer || null,
+          orderId: table.orderId || null,
+          estimatedWaitTime: table.estimatedWaitTime || null,
+          createdAt: table.createdAt,
+          updatedAt: table.updatedAt
+        }));
+
+        set({ tables: transformedTables });
+      },
+
       // Actions
       addTable: (table) => {
         const state = get();
@@ -32,7 +56,7 @@ export const useTableStore = create(
 
         const newTable = {
           ...table,
-          id: table.id || `table_${Date.now()}`,
+          _id: table._id || `table_${Date.now()}`, // Use _id from server or generate
           status: table.status || 'available',
           currentOccupancy: table.currentOccupancy || 0,
           assignedServer: table.assignedServer || null,
@@ -50,22 +74,22 @@ export const useTableStore = create(
       updateTable: (tableId, updates) => {
         set((state) => ({
           tables: state.tables.map((table) =>
-            table.id === tableId ? { ...table, ...updates } : table
+            table._id === tableId ? { ...table, ...updates } : table
           ),
         }));
       },
 
       deleteTable: (tableId) => {
         set((state) => ({
-          tables: state.tables.filter((table) => table.id !== tableId),
-          selectedTable: state.selectedTable?.id === tableId ? null : state.selectedTable
+          tables: state.tables.filter((table) => table._id !== tableId),
+          selectedTable: state.selectedTable?._id === tableId ? null : state.selectedTable
         }));
       },
 
       updateTablePosition: (tableId, position) => {
         set((state) => ({
           tables: state.tables.map((table) =>
-            table.id === tableId 
+            table._id === tableId 
               ? { ...table, x: position.x, y: position.y } 
               : table
           ),
@@ -75,7 +99,7 @@ export const useTableStore = create(
       setTableStatus: (tableId, status) => {
         set((state) => ({
           tables: state.tables.map((table) =>
-            table.id === tableId ? { ...table, status } : table
+            table._id === tableId ? { ...table, status } : table
           ),
         }));
       },
@@ -83,7 +107,7 @@ export const useTableStore = create(
       assignOrder: (tableId, orderId, occupancy) => {
         set((state) => ({
           tables: state.tables.map((table) =>
-            table.id === tableId 
+            table._id === tableId 
               ? { 
                   ...table, 
                   orderId, 
@@ -98,7 +122,7 @@ export const useTableStore = create(
       clearOrder: (tableId) => {
         set((state) => ({
           tables: state.tables.map((table) =>
-            table.id === tableId 
+            table._id === tableId 
               ? { 
                   ...table, 
                   orderId: null, 
@@ -114,7 +138,7 @@ export const useTableStore = create(
       assignServer: (tableId, serverName) => {
         set((state) => ({
           tables: state.tables.map((table) =>
-            table.id === tableId ? { ...table, assignedServer: serverName } : table
+            table._id === tableId ? { ...table, assignedServer: serverName } : table
           ),
         }));
       },
@@ -157,7 +181,7 @@ export const useTableStore = create(
       getTables: () => get().tables,
 
       getTableById: (tableId) => {
-        return get().tables.find((table) => table.id === tableId);
+        return get().tables.find((table) => table._id === tableId);
       },
 
       getTableByNumber: (number) => {
@@ -188,7 +212,7 @@ export const useTableStore = create(
             const floor = state.floors.find(f => f.id === table.floor);
             const floorName = floor?.name || `Tầng ${table.floor}`;
             return {
-              value: table.id,
+              value: table._id,
               label: `${floorName} - Bàn ${table.number}`,
               capacity: table.capacity,
               floor: table.floor
@@ -198,7 +222,7 @@ export const useTableStore = create(
 
       getTableLabel: (tableId) => {
         const state = get();
-        const table = state.tables.find(t => t.id === tableId);
+        const table = state.tables.find(t => t._id === tableId);
         if (!table) return tableId;
         
         const floor = state.floors.find(f => f.id === table.floor);
