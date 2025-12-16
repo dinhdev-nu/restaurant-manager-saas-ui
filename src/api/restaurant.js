@@ -83,3 +83,13 @@ export const getStaffApi = async (restaurantId) => {
     console.log('👥 Staff Response:', res.data);
     return res.data.metadata;
 }
+
+
+export const createOrderApi = async (restaurantId, orderData) => {
+    const payload = {
+        ...orderData,
+        restaurantId,
+    }
+    const res = await CallApiWithAuth.post(`/orders`, payload);
+    return res.data;
+}

@@ -12,8 +12,8 @@ export const useOrderStore = create(
       addOrder: (order) => {
         const newOrder = {
           ...order,
-          id: order.id || `ORD${Date.now()}`,
-          timestamp: order.timestamp || new Date(),
+          _id: order._id || `ORD${Date.now()}`,
+          timestamp: order.timestamp || order.createdAt || new Date(),
           status: order.status || 'pending', // pending, processing, completed, cancelled
           paymentMethod: order.paymentMethod || null,
           paymentStatus: order.paymentStatus || 'unpaid', // unpaid, paid, refunded
@@ -30,7 +30,7 @@ export const useOrderStore = create(
       updateOrder: (orderId, updates) => {
         set((state) => ({
           orders: state.orders.map((order) =>
-            order.id === orderId ? { ...order, ...updates } : order
+            order._id === orderId ? { ...order, ...updates } : order
           ),
         }));
       },
@@ -38,7 +38,7 @@ export const useOrderStore = create(
       updateOrderStatus: (orderId, status) => {
         set((state) => ({
           orders: state.orders.map((order) =>
-            order.id === orderId ? { ...order, status } : order
+            order._id === orderId ? { ...order, status } : order
           ),
         }));
       },
@@ -46,7 +46,7 @@ export const useOrderStore = create(
       updateOrderPayment: (orderId, paymentData) => {
         set((state) => ({
           orders: state.orders.map((order) =>
-            order.id === orderId
+            order._id === orderId
               ? {
                   ...order,
                   paymentMethod: paymentData.method,
@@ -61,7 +61,7 @@ export const useOrderStore = create(
 
       deleteOrder: (orderId) => {
         set((state) => ({
-          orders: state.orders.filter((order) => order.id !== orderId),
+          orders: state.orders.filter((order) => order._id !== orderId),
         }));
       },
 
@@ -81,7 +81,7 @@ export const useOrderStore = create(
       getOrders: () => get().orders,
       
       getOrderById: (orderId) => {
-        return get().orders.find((order) => order.id === orderId);
+        return get().orders.find((order) => order._id === orderId);
       },
 
       getPendingOrders: () => {
