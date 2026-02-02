@@ -13,6 +13,7 @@ import AuthPage from "./pages/auth/index";
 import CustomerFeed from './pages/customer-feed';
 import RestaurantSelector from './pages/restaurant-selector';
 import { useAuthStore, useRestaurantStore } from './stores';
+import Dashboard from "pages/analysis-reporting";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -51,8 +52,14 @@ const Routes = () => {
           {/* Restaurant Selector - After Login */}
           <Route
             path="/restaurant-selector"
-            element={<RestaurantSelector />}
-          />          {/* Customer Feed */}
+            element={
+              <ProtectedRoute>
+                <RestaurantSelector />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Customer Feed */}
           <Route
             path="/feed"
             element={
@@ -61,6 +68,9 @@ const Routes = () => {
               </ProtectedRoute>
             }
           />
+
+          {/* Analysis & Reporting */}
+          <Route path="/analysis-reporting" element={<Dashboard />} />
 
           {/* POS Routes - PUBLIC for easy UI development */}
           <Route path="/" element={<MainPOSDashboard />} />

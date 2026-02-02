@@ -1,0 +1,287 @@
+/* 
+ * Scoped CSS Variables for Analysis & Reporting Dashboard
+ * Uses .analysis-reporting wrapper class to avoid conflicts with global styles
+ * Premium dark theme with glassmorphism and modern effects
+ * 
+ * OPTIMIZED: Reduced from 649 lines to ~260 lines
+ * - Removed redundant Tailwind utility overrides (Tailwind v4 uses CSS variables automatically)
+ * - Removed duplicate delay classes (Tailwind has built-in delay-*)
+ * - Consolidated similar styles
+ */
+
+/* ================================
+   CSS VARIABLES (Required)
+   ================================ */
+.analysis-reporting {
+  /* Dark theme colors for SalesOps dashboard */
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #0a0a0c;
+  --card-foreground: #fafafa;
+  --popover: #0a0a0c;
+  --popover-foreground: #fafafa;
+  --primary: #fafafa;
+  --primary-foreground: #09090b;
+  --secondary: #131316;
+  --secondary-foreground: #fafafa;
+  --muted: #131316;
+  --muted-foreground: #909099;
+  --accent: #22c55e;
+  --accent-foreground: #09090b;
+  --destructive: #ef4444;
+  --destructive-foreground: #fafafa;
+  --border: #1e1e24;
+  --input: #131316;
+  --ring: #22c55e;
+  --radius: 0.75rem;
+  
+  /* Chart colors */
+  --chart-1: #3b82f6;
+  --chart-2: #22c55e;
+  --chart-3: #f59e0b;
+  --chart-4: #ef4444;
+  --chart-5: #8b5cf6;
+  
+  /* Sidebar colors */
+  --sidebar: #050506;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #22c55e;
+  --sidebar-primary-foreground: #09090b;
+  --sidebar-accent: #131316;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #1e1e24;
+  --sidebar-ring: #22c55e;
+  
+  /* Status colors */
+  --success: #22c55e;
+  --success-foreground: #09090b;
+  --warning: #f59e0b;
+  --warning-foreground: #09090b;
+  
+  /* Glow effects */
+  --glow-accent: rgba(34, 197, 94, 0.15);
+
+  /* Map to Tailwind CSS color system */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-border: var(--sidebar-border);
+
+  /* Base styles */
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  scroll-behavior: smooth;
+}
+
+/* ================================
+   SCROLLBAR STYLING
+   ================================ */
+.analysis-reporting ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.analysis-reporting ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.analysis-reporting ::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.analysis-reporting ::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* ================================
+   KEYFRAME ANIMATIONS
+   ================================ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(var(--tw-translate-y, 0)) translateX(var(--tw-translate-x, 0));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateX(0);
+  }
+}
+
+@keyframes smoothPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Animation classes */
+.analysis-reporting .animate-in {
+  animation-duration: 0.5s;
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.analysis-reporting .fade-in { animation-name: fadeIn; }
+.analysis-reporting .slide-in-from-bottom-4 { --tw-translate-y: 1rem; }
+.analysis-reporting .slide-in-from-bottom-2 { --tw-translate-y: 0.5rem; }
+.analysis-reporting .slide-in-from-right-2 { --tw-translate-x: 0.5rem; }
+.analysis-reporting .slide-in-from-left-2 { --tw-translate-x: -0.5rem; }
+
+.analysis-reporting .animate-pulse {
+  animation: smoothPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.analysis-reporting .shimmer {
+  background: linear-gradient(90deg, var(--secondary) 0%, var(--muted) 50%, var(--secondary) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ================================
+   PREMIUM EFFECTS
+   ================================ */
+
+/* Card hover glow effect */
+.analysis-reporting .bg-card {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02);
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.analysis-reporting .bg-card:hover {
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 4px 20px -4px rgba(0, 0, 0, 0.3),
+    0 0 40px -10px var(--glow-accent);
+}
+
+/* Header blur effect */
+.analysis-reporting .bg-background\/80 {
+  background-color: rgba(9, 9, 11, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Focus ring */
+.analysis-reporting *:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Selection styling */
+.analysis-reporting ::selection {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+/* Input autofill for dark theme */
+.analysis-reporting input:-webkit-autofill,
+.analysis-reporting input:-webkit-autofill:hover,
+.analysis-reporting input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground);
+  -webkit-box-shadow: 0 0 0px 1000px var(--input) inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ================================
+   COMPONENT FIXES
+   ================================ */
+
+/* Ensure text contrast on accent backgrounds */
+.analysis-reporting .bg-accent,
+.analysis-reporting button.bg-accent {
+  color: #ffffff !important;
+}
+
+/* Card border transitions */
+.analysis-reporting .border-border {
+  transition: border-color 0.3s ease;
+}
+
+.analysis-reporting .hover\:border-accent\/50:hover {
+  border-color: rgba(34, 197, 94, 0.5) !important;
+}
+
+/* ================================
+   RECHARTS OVERRIDES
+   ================================ */
+.analysis-reporting .recharts-tooltip-wrapper {
+  z-index: 1000;
+}
+
+.analysis-reporting .recharts-default-tooltip {
+  background-color: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+.analysis-reporting .recharts-tooltip-label {
+  color: var(--foreground) !important;
+}
+
+.analysis-reporting .recharts-tooltip-item,
+.analysis-reporting .recharts-legend-item-text {
+  color: var(--muted-foreground) !important;
+}
+
+/* ================================
+   RESPONSIVE
+   ================================ */
+@media (max-width: 768px) {
+  .analysis-reporting main {
+    padding: 1rem;
+  }
+  
+  .analysis-reporting .sticky.top-0 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .analysis-reporting header .relative.flex.items-center {
+    display: none;
+  }
+}
+
+/* Overflow protection */
+.analysis-reporting main {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+.analysis-reporting [class*="grid-cols"] {
+  min-width: 0;
+}
