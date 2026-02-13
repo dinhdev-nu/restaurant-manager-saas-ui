@@ -87,7 +87,6 @@ export function RevenueChart() {
                                 fontSize: "12px",
                             }}
                             labelStyle={{ color: "oklch(0.95 0 0)", fontWeight: 600 }}
-                            itemStyle={{ color: "oklch(0.65 0 0)" }}
                             formatter={(value) => [`$${(value / 1000).toFixed(0)}k`, ""]}
                         />
                         <Area

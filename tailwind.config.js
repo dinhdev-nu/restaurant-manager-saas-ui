@@ -77,7 +77,25 @@ export default {
         
         /* Text Colors */
         'text-primary': 'var(--color-text-primary)', /* slate-800 */
-        'text-secondary': 'var(--color-text-secondary)' /* slate-500 */
+        'text-secondary': 'var(--color-text-secondary)', /* slate-500 */
+        
+        /* Chart Colors */
+        chart: {
+          1: 'var(--color-chart-1)', /* blue */
+          2: 'var(--color-chart-2)', /* green */
+          3: 'var(--color-chart-3)', /* orange */
+          4: 'var(--color-chart-4)', /* red */
+          5: 'var(--color-chart-5)' /* purple */
+        },
+        
+        /* Sidebar Colors */
+        sidebar: {
+          DEFAULT: 'var(--color-sidebar)',
+          foreground: 'var(--color-sidebar-foreground)',
+          primary: 'var(--color-sidebar-primary)',
+          accent: 'var(--color-sidebar-accent)',
+          border: 'var(--color-sidebar-border)'
+        }
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],

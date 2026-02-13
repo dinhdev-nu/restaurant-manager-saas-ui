@@ -93,7 +93,6 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-accent: var(--sidebar-accent);
   --color-sidebar-border: var(--sidebar-border);
-
   /* Base styles */
   background-color: var(--background);
   color: var(--foreground);
@@ -251,10 +250,7 @@
   color: var(--foreground) !important;
 }
 
-.analysis-reporting .recharts-tooltip-item,
-.analysis-reporting .recharts-legend-item-text {
-  color: var(--muted-foreground) !important;
-}
+/* Keep tooltip items and legend text colors natural - don't override them */
 
 /* ================================
    RESPONSIVE

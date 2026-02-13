@@ -163,7 +163,7 @@ export function TeamSection() {
                             <span className="text-muted-foreground">Doanh thu (tr)</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30" />
+                            <div className="w-2.5 h-2.5 rounded-full bg-chart-2" />
                             <span className="text-muted-foreground">Chỉ tiêu (tr)</span>
                         </div>
                     </div>
@@ -194,10 +194,9 @@ export function TeamSection() {
                                     fontSize: "12px",
                                 }}
                                 labelStyle={{ color: "oklch(0.95 0 0)", fontWeight: 600 }}
-                                itemStyle={{ color: "oklch(0.65 0 0)" }}
                                 formatter={(value) => [`${value} triệu`, ""]}
                             />
-                            <Bar dataKey="quota" fill="oklch(0.65 0 0 / 0.2)" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="quota" fill="oklch(0.7 0.18 145)" radius={[4, 4, 0, 0]} />
                             <Bar dataKey="revenue" fill="oklch(0.7 0.18 220)" radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>

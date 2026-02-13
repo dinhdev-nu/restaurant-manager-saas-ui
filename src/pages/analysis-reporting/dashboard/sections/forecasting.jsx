@@ -109,7 +109,7 @@ export function ForecastingSection() {
                     <select
                         value={timeframe}
                         onChange={(e) => setTimeframe(e.target.value)}
-                        className="w-[140px] h-9 px-3 rounded-lg bg-secondary border border-border text-sm"
+                        className="w-[140px] h-9 px-3 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
                     >
                         <option value="monthly">Theo tháng</option>
                         <option value="quarterly">Theo quý</option>
@@ -173,7 +173,7 @@ export function ForecastingSection() {
                                 </div>
                                 <div className="flex flex-col items-end gap-2">
                                     <stat.icon
-                                        className={`w-5 h-5 ${stat.label === "At-Risk Revenue" ? "text-chart-3" : "text-accent"
+                                        className={`w-5 h-5 ${stat.label === "Doanh thu rủi ro" ? "text-chart-3" : "text-accent"
                                             }`}
                                     />
                                     <Badge
@@ -212,7 +212,7 @@ export function ForecastingSection() {
                                 <span className="text-muted-foreground">Dự báo</span>
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <div className="w-3 h-3 rounded-full bg-muted-foreground/30" />
+                                <div className="w-3 h-3 rounded-full bg-muted-foreground" />
                                 <span className="text-muted-foreground">Chỉ tiêu</span>
                             </div>
                         </div>
@@ -310,7 +310,7 @@ export function ForecastingSection() {
                                     />
                                     <Bar dataKey="committed" name="Cam kết" fill="oklch(0.7 0.18 145)" radius={[4, 4, 0, 0]} />
                                     <Bar dataKey="bestCase" name="Tốt nhất" fill="oklch(0.7 0.18 220)" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="pipeline" name="Quy trình" fill="oklch(0.22 0.005 260)" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="pipeline" name="Quy trình" fill="oklch(0.65 0 0)" radius={[4, 4, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -389,7 +389,7 @@ export function ForecastingSection() {
                         {riskFactors.map((risk, index) => (
                             <div
                                 key={risk.id}
-                                className="p-4 rounded-lg bg-secondary/50 border border-border hover:border-chart-3/30 transition-all duration-300 group animate-in fade-in slide-in-from-bottom-2"
+                                className="p-4 rounded-lg bg-secondary/50 border border-border hover:border-chart-3 transition-all duration-300 group animate-in fade-in slide-in-from-bottom-2"
                                 style={{ animationDelay: `${index * 75}ms` }}
                             >
                                 <div className="flex items-start justify-between mb-2">
@@ -428,7 +428,7 @@ export function ForecastingSection() {
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="text-xs text-muted-foreground hover:text-foreground p-0 h-auto"
+                                        className="text-xs text-muted-foreground hover:text-foreground px-2 h-auto"
                                     >
                                         Xem kế hoạch giảm thiểu
                                         <ArrowRight className="w-3 h-3 ml-1" />
