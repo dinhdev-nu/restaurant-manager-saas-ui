@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../../components/ui/Card";
 import Button from "../../../../components/ui/Button";
 import Input from "../../../../components/ui/Input";
+import Select from "../../../../components/ui/Select";
 import { Label } from "../../../../components/ui/Label";
 import { Switch } from "../../../../components/ui/Switch";
 import { Badge } from "../../../../components/ui/Badge";
-import { Avatar } from "../../../../components/ui/Avatar";
 import {
     User,
     Bell,
@@ -22,28 +22,29 @@ import {
     ExternalLink,
     Zap,
 } from "lucide-react";
+import { RestaurantProfile } from "pages/analysis-reporting/components/RestaurantProfile";
 
 const integrations = [
     {
         id: "salesforce",
         name: "Salesforce",
         description: "Đồng bộ liên hệ và cơ hội",
-        connected: true,
-        lastSync: "2 giờ trước",
+        connected: false,
+        lastSync: null,
     },
     {
         id: "hubspot",
         name: "HubSpot",
         description: "Tự động hóa marketing và CRM",
-        connected: true,
-        lastSync: "5 phút trước",
+        connected: false,
+        lastSync: null,
     },
     {
         id: "slack",
         name: "Slack",
         description: "Thông báo và cảnh báo nhóm",
-        connected: true,
-        lastSync: "Thời gian thực",
+        connected: false,
+        lastSync: null,
     },
     {
         id: "gmail",
@@ -63,8 +64,8 @@ const integrations = [
         id: "zoom",
         name: "Zoom",
         description: "Tích hợp họi nghị trực tuyến",
-        connected: true,
-        lastSync: "1 giờ trước",
+        connected: false,
+        lastSync: null,
     },
 ];
 
@@ -77,9 +78,9 @@ const notificationSettings = [
         push: true,
     },
     {
-        id: "team_activity",
-        label: "Hoạt động nhóm",
-        description: "Cập nhật về hiệu suất và mốc quan trọng của nhóm",
+        id: "staff_activity",
+        label: "Hoạt động nhân viên",
+        description: "Cập nhật về hiệu suất và mốc quan trọng của nhân viên",
         email: true,
         push: false,
     },
@@ -98,9 +99,9 @@ const notificationSettings = [
         push: false,
     },
     {
-        id: "customer_health",
-        label: "Sức khỏe khách hàng",
-        description: "Cảnh báo khi điểm sức khỏe khách hàng giảm",
+        id: "acceptance_requests",
+        label: "Yêu cầu cần chấp nhận",
+        description: "Thông báo về các yêu cầu chấp nhận",
         email: false,
         push: true,
     },
@@ -110,10 +111,19 @@ export function SettingsSection() {
     const [activeTab, setActiveTab] = useState("profile");
     const [notifications, setNotifications] = useState(notificationSettings);
     const [isSaving, setIsSaving] = useState(false);
+    const [currency, setCurrency] = useState("vnd");
+    const restaurantProfileRef = useRef(null);
 
-    const handleSave = () => {
+    const handleSave = async () => {
         setIsSaving(true);
-        setTimeout(() => setIsSaving(false), 1500);
+        try {
+            // Call the submit method from RestaurantProfile
+            if (restaurantProfileRef.current) {
+                await restaurantProfileRef.current.submit();
+            }
+        } finally {
+            setTimeout(() => setIsSaving(false), 1500);
+        }
     };
 
     const toggleNotification = (id, type) => {
@@ -163,79 +173,11 @@ export function SettingsSection() {
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <Card className="border-border bg-card">
                         <CardHeader>
-                            <CardTitle className="text-base font-medium">Thông tin cá nhân</CardTitle>
-                            <CardDescription>Cập nhật thông tin và tùy chọn cá nhân</CardDescription>
+                            <CardTitle className="text-base font-medium">Thông tin nhà hàng</CardTitle>
+                            <CardDescription>Cập nhật thông tin và tùy chọn nhà hàng</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="flex items-center gap-6">
-                                <Avatar className="w-20 h-20 bg-secondary">
-                                    <div className="w-full h-full flex items-center justify-center bg-accent text-white text-2xl font-semibold">
-                                        JD
-                                    </div>
-                                </Avatar>
-                                <div className="space-y-2">
-                                    <Button variant="outline" size="sm">
-                                        Thay đổi ảnh đại diện
-                                    </Button>
-                                    <p className="text-xs text-muted-foreground">JPG, PNG hoặc GIF. Tối đa 2MB.</p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="firstName">Họ</Label>
-                                    <Input
-                                        id="firstName"
-                                        defaultValue="Nguyễn Văn"
-                                        className="bg-secondary border-border focus:border-accent"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="lastName">Tên</Label>
-                                    <Input
-                                        id="lastName"
-                                        defaultValue="An"
-                                        className="bg-secondary border-border focus:border-accent"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="email">Email</Label>
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        defaultValue="an.nguyen@congty.vn"
-                                        className="bg-secondary border-border focus:border-accent"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="role">Vai trò</Label>
-                                    <select
-                                        id="role"
-                                        defaultValue="manager"
-                                        className="w-full h-9 px-3 rounded-lg bg-secondary border border-border text-sm"
-                                    >
-                                        <option value="admin">Quản trị viên</option>
-                                        <option value="manager">Quản lý bán hàng</option>
-                                        <option value="rep">Nhân viên bán hàng</option>
-                                        <option value="viewer">Người xem</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="timezone">Múi giờ</Label>
-                                <select
-                                    id="timezone"
-                                    defaultValue="ict"
-                                    className="w-full md:w-[300px] h-9 px-3 rounded-lg bg-secondary border border-border text-sm"
-                                >
-                                    <option value="ict">Giờ Đông Dương (ICT)</option>
-                                    <option value="jst">Giờ Nhật Bản (JST)</option>
-                                    <option value="cst">Giờ Trung Quốc (CST)</option>
-                                    <option value="ist">Giờ Ấn Độ (IST)</option>
-                                    <option value="utc">UTC</option>
-                                </select>
-                            </div>
+                            <RestaurantProfile ref={restaurantProfileRef} />
                         </CardContent>
                     </Card>
 
@@ -263,14 +205,16 @@ export function SettingsSection() {
                                         <p className="text-sm text-muted-foreground">Hiển thị tiền tệ theo khu vực</p>
                                     </div>
                                 </div>
-                                <select
-                                    defaultValue="vnd"
-                                    className="w-[120px] h-9 px-3 rounded-lg bg-secondary border border-border text-sm"
-                                >
-                                    <option value="vnd">VND (₫)</option>
-                                    <option value="usd">USD ($)</option>
-                                    <option value="eur">EUR (€)</option>
-                                </select>
+                                <Select
+                                    value={currency}
+                                    onChange={(val) => setCurrency(val)}
+                                    options={[
+                                        { value: "vnd", label: "VND (₫)" },
+                                        { value: "usd", label: "USD ($)" },
+                                        { value: "eur", label: "EUR (€)" },
+                                    ]}
+                                    className="w-[120px]"
+                                />
                             </div>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
@@ -482,7 +426,7 @@ export function SettingsSection() {
                     <Card className="border-border bg-card">
                         <CardHeader>
                             <CardTitle className="text-base font-medium">Xác thực hai yếu tố</CardTitle>
-                            <CardDescription>Thêm lớp bảo mật bổ sung cho tài khoản</CardDescription>
+                            <CardDescription>Thêm lớp bảo mật bổ sung cho tài khoản POS và Owner</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 border border-border">

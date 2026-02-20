@@ -220,7 +220,7 @@ export function CustomersSection() {
             </div>
 
             {/* Customer Cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {filteredCustomers.map((customer, index) => (
                     <Card
                         key={customer.id}

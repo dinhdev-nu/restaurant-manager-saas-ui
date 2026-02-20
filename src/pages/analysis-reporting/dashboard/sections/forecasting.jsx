@@ -2,12 +2,11 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../../components/ui/Card";
 import { Badge } from "../../../../components/ui/Badge";
 import Button from "../../../../components/ui/Button";
+import Select from "../../../../components/ui/Select";
 import {
     TrendingUp,
     TrendingDown,
     Target,
-    Calendar,
-    DollarSign,
     AlertTriangle,
     CheckCircle2,
     ArrowRight,
@@ -42,43 +41,98 @@ const forecastData = [
 ];
 
 const quarterlyForecast = [
-    { quarter: "Quý 1", committed: 30000000000, bestCase: 36250000000, pipeline: 45000000000 },
-    { quarter: "Quý 2", committed: 37500000000, bestCase: 43750000000, pipeline: 52500000000 },
-    { quarter: "Quý 3", committed: 45000000000, bestCase: 52500000000, pipeline: 62500000000 },
-    { quarter: "Quý 4", committed: 55000000000, bestCase: 65000000000, pipeline: 75000000000 },
+    {
+        quarter: "Quý 1",
+        actual: 35250000000,     // Doanh thu thực tế đã đạt được
+        forecast: 35000000000,  // Dự báo AI
+        target: 38000000000,    // Mục tiêu đề ra
+        orderCount: 2850,       // Số đơn hàng
+        avgOrderValue: 12368421 // Giá trị TB/đơn
+    },
+    {
+        quarter: "Quý 2",
+        actual: null,           // Chưa qua
+        forecast: 42000000000,
+        target: 45000000000,
+        orderCount: 3200,
+        avgOrderValue: 13125000
+    },
+    {
+        quarter: "Quý 3",
+        actual: null,
+        forecast: 48000000000,
+        target: 50000000000,
+        orderCount: 3600,
+        avgOrderValue: 13333333
+    },
+    {
+        quarter: "Quý 4",
+        actual: null,
+        forecast: 55000000000,
+        target: 58000000000,
+        orderCount: 4000,
+        avgOrderValue: 13750000
+    },
 ];
 
 const riskFactors = [
     {
         id: 1,
-        title: "Rủi ro trượt giao dịch",
-        description: "3 giao dịch có nguy cơ chuyển sang quý tiếp theo",
-        impact: "-4,5 tỷ",
+        title: "Rủi ro mùa mưa",
+        description: "Dự báo mưa kéo dài 2 tuần, ảnh hưởng lượng khách",
+        impact: "-3,5 tỷ",
         severity: "high",
-        deals: ["Acme Corp Enterprise", "GlobalTech Phase 2", "DataStream Analytics"],
+        affectedPeriods: ["Tuần 3 tháng 7", "Tuần 4 tháng 7", "Tuần 1 tháng 8"],
     },
     {
         id: 2,
-        title: "Hoạt động đối thủ",
-        description: "Cạnh tranh tăng mạnh ở phân khúc thị trường trung bình",
-        impact: "-2,4 tỷ",
+        title: "Thiếu nguồn nguyên liệu",
+        description: "Giá hải sản tăng 25%, ảnh hưởng menu chính",
+        impact: "-2,8 tỷ",
         severity: "medium",
-        deals: ["NextGen Solutions", "CloudFirst Expansion"],
+        affectedPeriods: ["Quý 3", "Quý 4"],
     },
     {
         id: 3,
-        title: "Cảnh báo đóng băng ngân sách",
-        description: "2 khách hàng báo cáo khả năng đóng băng ngân sách",
-        impact: "-3 tỷ",
+        title: "Cạnh tranh địa phương",
+        description: "2 nhà hàng mới mở trong bán kính 500m",
+        impact: "-4,2 tỷ",
         severity: "high",
-        deals: ["Innovate Labs", "TechStart Inc"],
+        affectedPeriods: ["Quý 2", "Quý 3"],
     },
 ];
 
 const scenarios = [
-    { name: "Bảo thủ", probability: 85, revenue: 155000000000, color: "chart-4" },
-    { name: "Cơ sở", probability: 65, revenue: 185000000000, color: "accent" },
-    { name: "Lạc quan", probability: 40, revenue: 215000000000, color: "chart-1" },
+    {
+        name: "Bảo thủ",
+        description: "Kinh doanh chậm do mưa nhiều, dịch bệnh, hoặc suy thoái kinh tế",
+        probability: 85,
+        revenue: 155000000000,
+        orderCount: 11500,
+        avgOrderValue: 13478260,
+        growthRate: -5,
+        color: "chart-4"
+    },
+    {
+        name: "Cơ sở",
+        description: "Hoạt động bình thường, duy trì xu hướng tăng trưởng ổn định",
+        probability: 65,
+        revenue: 185000000000,
+        orderCount: 13600,
+        avgOrderValue: 13602941,
+        growthRate: 12,
+        color: "accent"
+    },
+    {
+        name: "Lạc quan",
+        description: "Kinh doanh sôi động nhờ sự kiện lớn, khuyến mãi thành công",
+        probability: 40,
+        revenue: 215000000000,
+        orderCount: 16000,
+        avgOrderValue: 13437500,
+        growthRate: 28,
+        color: "chart-1"
+    },
 ];
 
 export function ForecastingSection() {
@@ -91,9 +145,9 @@ export function ForecastingSection() {
     }, []);
 
     const currentQuarterTarget = 45000000000;
-    const currentQuarterForecast = 52500000000;
+    const currentQuarterForecast = 42000000000;
     const forecastAccuracy = 94;
-    const pipelineCoverage = 3.2;
+    const avgTableUtilization = 68; // % sử dụng bàn trung bình
 
     return (
         <div className="space-y-6">
@@ -105,16 +159,17 @@ export function ForecastingSection() {
                         Dự đoán dựa trên AI từ dữ liệu lịch sử và phân tích quy trình
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <select
+                <div className="relative z-20 flex items-center gap-3">
+                    <Select
                         value={timeframe}
-                        onChange={(e) => setTimeframe(e.target.value)}
-                        className="w-[140px] h-9 px-3 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
-                    >
-                        <option value="monthly">Theo tháng</option>
-                        <option value="quarterly">Theo quý</option>
-                        <option value="annual">Theo năm</option>
-                    </select>
+                        onChange={(value) => setTimeframe(value)}
+                        options={[
+                            { value: 'monthly', label: 'Theo tháng' },
+                            { value: 'quarterly', label: 'Theo quý' },
+                            { value: 'annual', label: 'Theo năm' }
+                        ]}
+                        className="w-[140px] bg-secondary/80 backdrop-blur-sm border-border"
+                    />
                     <Button variant="outline" size="sm">
                         <RefreshCw className="w-4 h-4 mr-2" />
                         Làm mới
@@ -142,17 +197,17 @@ export function ForecastingSection() {
                         trendUp: true,
                     },
                     {
-                        label: "Phủ sóng quy trình",
-                        value: `${pipelineCoverage}x`,
-                        subtext: "so với chỉ tiêu",
+                        label: "Tỷ lệ sử dụng bàn",
+                        value: `${avgTableUtilization}%`,
+                        subtext: "trung bình các ca",
                         icon: TrendingUp,
-                        trend: "+0.4x",
+                        trend: "+5.2%",
                         trendUp: true,
                     },
                     {
                         label: "Doanh thu rủi ro",
-                        value: "9,9 tỷ",
-                        subtext: "3 giao dịch cảnh báo",
+                        value: "10,5 tỷ",
+                        subtext: "3 yếu tố cảnh báo",
                         icon: AlertTriangle,
                         trend: "-12%",
                         trendUp: false,
@@ -308,9 +363,9 @@ export function ForecastingSection() {
                                             <span style={{ color: "oklch(0.65 0 0)" }}>{value}</span>
                                         )}
                                     />
-                                    <Bar dataKey="committed" name="Cam kết" fill="oklch(0.7 0.18 145)" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="bestCase" name="Tốt nhất" fill="oklch(0.7 0.18 220)" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="pipeline" name="Quy trình" fill="oklch(0.65 0 0)" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="actual" name="Thực tế" fill="oklch(0.7 0.18 145)" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="forecast" name="Dự báo" fill="oklch(0.7 0.18 220)" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="target" name="Mục tiêu" fill="oklch(0.65 0 0)" radius={[4, 4, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -320,7 +375,12 @@ export function ForecastingSection() {
                 {/* Scenario Analysis */}
                 <Card className="border-border bg-card">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-base font-medium">Phân tích kịch bản</CardTitle>
+                        <div>
+                            <CardTitle className="text-base font-medium">Phân tích kịch bản doanh thu năm</CardTitle>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Dự báo dựa trên các điều kiện kinh doanh khác nhau
+                            </p>
+                        </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {scenarios.map((scenario, index) => (
@@ -345,7 +405,7 @@ export function ForecastingSection() {
                                         <div>
                                             <p className="font-medium text-foreground">{scenario.name}</p>
                                             <p className="text-xs text-muted-foreground">
-                                                {scenario.probability}% xác suất
+                                                {scenario.probability}% xác suất xảy ra
                                             </p>
                                         </div>
                                     </div>
@@ -366,6 +426,25 @@ export function ForecastingSection() {
                                                         : "oklch(0.65 0.2 25)",
                                         }}
                                     />
+                                </div>
+                                <div className="mt-3 space-y-2">
+                                    <p className="text-xs text-muted-foreground italic">
+                                        {scenario.description}
+                                    </p>
+                                    <div className="flex items-center justify-between text-xs">
+                                        <div className="flex items-center gap-3 text-muted-foreground">
+                                            <span className="flex items-center gap-1">
+                                                <span className="font-medium text-foreground">{scenario.orderCount.toLocaleString()}</span> đơn hàng
+                                            </span>
+                                            <span>•</span>
+                                            <span className="flex items-center gap-1">
+                                                <span className="font-medium text-foreground">{(scenario.avgOrderValue / 1000000).toFixed(1)}tr</span>/đơn
+                                            </span>
+                                        </div>
+                                        <span className={`font-medium ${scenario.growthRate >= 0 ? "text-accent" : "text-destructive"}`}>
+                                            {scenario.growthRate > 0 ? "+" : ""}{scenario.growthRate}% vs năm trước
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -414,13 +493,13 @@ export function ForecastingSection() {
                                     </Badge>
                                 </div>
                                 <div className="ml-5 flex items-center gap-2 flex-wrap">
-                                    {risk.deals.map((deal) => (
+                                    {risk.affectedPeriods.map((period) => (
                                         <Badge
-                                            key={deal}
+                                            key={period}
                                             variant="outline"
                                             className="text-xs text-muted-foreground border-border"
                                         >
-                                            {deal}
+                                            {period}
                                         </Badge>
                                     ))}
                                 </div>
