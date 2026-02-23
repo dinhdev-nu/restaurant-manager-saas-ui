@@ -14,6 +14,7 @@ import CustomerFeed from './pages/customer-feed';
 import RestaurantSelector from './pages/restaurant-selector';
 import { useAuthStore, useRestaurantStore } from './stores';
 import Dashboard from "pages/analysis-reporting";
+import CustomerOrdering from "pages/customer-ordering";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -71,6 +72,7 @@ const Routes = () => {
 
           {/* Analysis & Reporting */}
           <Route path="/analysis-reporting" element={<Dashboard />} />
+          <Route path="/order" element={<CustomerOrdering />} />
 
           {/* POS Routes - PUBLIC for easy UI development */}
           <Route path="/" element={<MainPOSDashboard />} />
