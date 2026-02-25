@@ -1,5 +1,6 @@
 import axios from "axios"
 import { useAuthStore } from "../stores"
+import { tokenRefreshService } from "../services/tokenRefresh"
 
 const BASE_URL = import.meta.env.VITE_SERVER_BASE_URL || "http://localhost:3000"
 
@@ -20,21 +21,6 @@ const CallApiWithAuth = axios.create({
     },
     withCredentials: true, // Cho phép gửi cookies
 })
-
-// Refresh token queue management
-let isRefreshing = false
-let failedQueue = []
-
-const processQueue = (error, token = null) => {
-    failedQueue.forEach(({ resolve, reject }) => {
-        if (error) {
-            reject(error)
-        } else {
-            resolve(token)
-        }
-    })
-    failedQueue = []
-}
 
 CallApiWithAuth.interceptors.request.use(
     (config) => {
@@ -62,34 +48,13 @@ CallApiWithAuth.interceptors.response.use(
         
         // Nếu lỗi 401 và chưa retry
         if (error.response?.status === 401 && !originalRequest._retry) {
-            // Nếu đang refresh, thêm request vào queue
-            if (isRefreshing) {
-                return new Promise((resolve, reject) => {
-                    failedQueue.push({ resolve, reject })
-                }).then(token => {
-                    originalRequest.headers.Authorization = `Bearer ${token}`
-                    return CallApiWithAuth(originalRequest)
-                }).catch(err => {
-                    return Promise.reject(err)
-                })
-            }
-
             originalRequest._retry = true
-            isRefreshing = true
             
             try {
-                // Gọi refresh token API - server tự lấy refresh token từ cookies
-                const response = await CallApi.post('/auths/refresh')
+                // Sử dụng shared token refresh service
+                const newToken = await tokenRefreshService.refresh()
                 
-                if (response.data?.metadata?.accessToken) {
-                    const newToken = response.data.metadata.accessToken
-                    
-                    // Lưu access token mới vào store
-                    useAuthStore.getState().setToken(newToken)
-                    
-                    // Process tất cả requests đang chờ trong queue
-                    processQueue(null, newToken)
-                    
+                if (newToken) {
                     // Cập nhật header Authorization với token mới
                     originalRequest.headers.Authorization = `Bearer ${newToken}`
                     
@@ -97,15 +62,10 @@ CallApiWithAuth.interceptors.response.use(
                     return CallApiWithAuth(originalRequest)
                 }
             } catch (refreshError) {
-                // Process queue với error
-                processQueue(refreshError, null)
-                
-                // Clear auth state và redirect về trang login
-                // useAuthStore.getState().logout()
-                // window.location.href = '/auth'
+                console.error('[Axios] Token refresh failed, redirecting to /auth');
+                // Token refresh failed - redirect về login
+                window.location.href = '/auth'
                 return Promise.reject(refreshError)
-            } finally {
-                isRefreshing = false
             }
         }
         
