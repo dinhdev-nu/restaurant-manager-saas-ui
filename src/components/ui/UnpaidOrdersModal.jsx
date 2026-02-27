@@ -2,13 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../AppIcon';
 import { useOrderStore } from '../../stores/order.store';
+import { getOrderCheckoutDetailsApi } from '../../api/restaurant';
+import { useToast } from '../../hooks/use-toast';
 
 const UnpaidOrdersModal = ({ isOpen, onClose }) => {
     const navigate = useNavigate();
+    const { toast } = useToast();
     const getUnpaidOrders = useOrderStore((state) => state.getUnpaidOrders);
     const [unpaidOrders, setUnpaidOrders] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedOrder, setSelectedOrder] = useState(null);
+    const [isLoadingCheckout, setIsLoadingCheckout] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -19,9 +23,31 @@ const UnpaidOrdersModal = ({ isOpen, onClose }) => {
 
     if (!isOpen) return null;
 
-    const handlePayNow = (order) => {
-        // Don't call onClose here, navigate directly
-        navigate('/payment-processing', { state: { order } });
+    const handlePayNow = async (order) => {
+        try {
+            setIsLoadingCheckout(true);
+
+            // Fetch latest order details from API
+            const response = await getOrderCheckoutDetailsApi(order._id);
+            const orderDetails = response.metadata;
+
+            // Navigate with fresh data from API
+            navigate('/payment-processing', {
+                state: {
+                    order: orderDetails,
+                    fromUnpaidModal: true
+                }
+            });
+        } catch (error) {
+            console.error('Error fetching order details:', error);
+            toast({
+                title: 'Lỗi',
+                description: 'Không thể tải thông tin đơn hàng. Vui lòng thử lại.',
+                variant: 'destructive'
+            });
+        } finally {
+            setIsLoadingCheckout(false);
+        }
     };
 
     // Filter orders
@@ -29,7 +55,8 @@ const UnpaidOrdersModal = ({ isOpen, onClose }) => {
         if (!searchQuery) return true;
         const query = searchQuery.toLowerCase();
         return (
-            order.id.toLowerCase().includes(query) ||
+            order._id.toLowerCase().includes(query) ||
+            (order.orderId && order.orderId.toLowerCase().includes(query)) ||
             order.table.toLowerCase().includes(query) ||
             order.items.some(item => item.name.toLowerCase().includes(query))
         );
@@ -125,12 +152,12 @@ const UnpaidOrdersModal = ({ isOpen, onClose }) => {
                         <div className="space-y-2">
                             {filteredOrders.map((order) => (
                                 <button
-                                    key={order.id}
+                                    key={order._id}
                                     onClick={() => setSelectedOrder(order)}
                                     onDoubleClick={() => handlePayNow(order)}
                                     className={`
                     w-full text-left p-4 rounded-xl border transition-all
-                    ${selectedOrder?.id === order.id
+                    ${selectedOrder?._id === order._id
                                             ? 'bg-blue-50 border-blue-200 shadow-sm'
                                             : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm'
                                         }
@@ -141,7 +168,11 @@ const UnpaidOrdersModal = ({ isOpen, onClose }) => {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <span className="font-semibold text-gray-900 text-sm">
-                                                    {order.id}
+                                                    {order.orderId || order._id}
+                                                </span>
+                                                <span className="text-xs text-gray-400">·</span>
+                                                <span className="text-xs font-mono text-gray-500">
+                                                    {order._id}
                                                 </span>
                                                 <span className="text-xs text-gray-400">·</span>
                                                 <span className="text-xs text-gray-600">
@@ -189,7 +220,8 @@ const UnpaidOrdersModal = ({ isOpen, onClose }) => {
                     <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex-shrink-0">
                         <div className="flex items-center justify-between gap-4">
                             <div className="text-sm text-gray-600">
-                                Đã chọn: <span className="text-gray-900 font-semibold">{selectedOrder.id}</span>
+                                Đã chọn: <span className="text-gray-900 font-semibold">{selectedOrder.orderId || selectedOrder._id}</span>
+                                <span className="text-xs text-gray-400 ml-2">({selectedOrder._id})</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
@@ -200,10 +232,20 @@ const UnpaidOrdersModal = ({ isOpen, onClose }) => {
                                 </button>
                                 <button
                                     onClick={() => handlePayNow(selectedOrder)}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-2 shadow-sm"
+                                    disabled={isLoadingCheckout}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2 shadow-sm"
                                 >
-                                    <Icon name="CreditCard" size={16} />
-                                    Thanh toán
+                                    {isLoadingCheckout ? (
+                                        <>
+                                            <Icon name="Loader" size={16} className="animate-spin" />
+                                            Đang tải...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Icon name="CreditCard" size={16} />
+                                            Thanh toán
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>

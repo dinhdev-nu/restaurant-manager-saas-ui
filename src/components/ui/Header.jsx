@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Icon from '../AppIcon';
 import Button from './Button';
 import { useAuthStore, useRestaurantStore } from '../../stores';
+import { useNotificationStore } from '../../stores/notification.store';
 import { logoutApi } from '../../api/auth';
 
 const Header = ({
@@ -15,10 +16,18 @@ const Header = ({
   const navigate = useNavigate();
   const { logout } = useAuthStore();
   const selectedRestaurant = useRestaurantStore((state) => state.selectedRestaurant);
+  const notifications = useNotificationStore((state) => state.notifications);
+  const getRelativeTime = useNotificationStore((state) => state.getRelativeTime);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [, forceUpdate] = useState(0);
   const location = useLocation();
+
+  // Debug notifications
+  useEffect(() => {
+    console.log('[Header] Notifications updated:', notifications.length, notifications);
+  }, [notifications]);
 
   const posRoutes = ['/', '/main-pos-dashboard', '/payment-processing', '/order-history', '/menu-management', '/staff-management', '/table-management'];
   const isPOSPage = posRoutes.some(route => location.pathname.includes(route));
@@ -33,26 +42,28 @@ const Header = ({
     return () => clearInterval(timer);
   }, []);
 
-  const notifications = [
-    { id: 1, type: 'warning', message: 'Món gà rán sắp hết hàng', time: '5 phút trước' },
-    { id: 2, type: 'success', message: 'Đơn hàng #1234 đã thanh toán', time: '10 phút trước' },
-    { id: 3, type: 'info', message: 'Ca làm việc mới bắt đầu', time: '15 phút trước' }
-  ];
+  // Force re-render every 30s for relative time updates
+  useEffect(() => {
+    const timer = setInterval(() => {
+      forceUpdate(prev => prev + 1);
+    }, 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleLogout = async () => {
     try {
       // Call API logout
       await logoutApi();
 
-      // Clear Zustand store
-      logout(false); // Keep saved credentials
+      // Clear all localStorage and Zustand store
+      logout();
 
       // Navigate to auth page
       navigate('/auth');
     } catch (error) {
       console.error('Logout error:', error);
       // Even if API fails, still logout locally
-      logout(false);
+      logout();
       navigate('/auth');
     }
   };
@@ -191,7 +202,7 @@ const Header = ({
                 iconPosition="left"
                 className="hover-scale"
               >
-                <span className="hidden xl:inline">{isOperational ? "Mở cửa" : "Đóng cửa"}</span>
+                <span className="hidden xl:inline">{isOperational ? "Đang mở cửa" : "Đang đóng cửa"}</span>
                 <span className="xl:hidden">{isOperational ? "Mở" : "Đóng"}</span>
               </Button>
             </div>
@@ -220,21 +231,30 @@ const Header = ({
                   <h3 className="font-medium text-popover-foreground">Thông báo</h3>
                 </div>
                 <div className="max-h-64 overflow-y-auto">
-                  {notifications?.map((notification) => (
-                    <div key={notification?.id} className="p-4 border-b border-border last:border-b-0 hover:bg-muted/50 transition-smooth">
-                      <div className="flex items-start space-x-3">
-                        <Icon
-                          name={getNotificationIcon(notification?.type)}
-                          size={16}
-                          className={getNotificationColor(notification?.type)}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-popover-foreground">{notification?.message}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{notification?.time}</p>
+                  {notifications?.length > 0 ? (
+                    notifications.map((notification) => (
+                      <div key={notification?.id} className="p-4 border-b border-border last:border-b-0 hover:bg-muted/50 transition-smooth">
+                        <div className="flex items-start space-x-3">
+                          <Icon
+                            name={getNotificationIcon(notification?.type)}
+                            size={16}
+                            className={getNotificationColor(notification?.type)}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-popover-foreground">{notification?.message}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {notification?.timestamp ? getRelativeTime(notification.timestamp) : notification?.time}
+                            </p>
+                          </div>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="p-8 text-center text-muted-foreground">
+                      <Icon name="Bell" size={32} className="mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Không có thông báo mới</p>
                     </div>
-                  ))}
+                  )}
                 </div>
                 <div className="p-3 border-t border-border">
                   <Button variant="ghost" size="sm" fullWidth>
