@@ -1,0 +1,160 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 14.5%;
+    --card: 0 0% 98%;
+    --card-foreground: 0 0% 14.5%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 14.5%;
+    --primary: 0 0% 14.5%;
+    --primary-foreground: 128 100% 92%;
+    --secondary: 0 0% 97%;
+    --secondary-foreground: 0 0% 14.5%;
+    --muted: 0 0% 97%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 128 100% 92%;
+    --accent-foreground: 0 0% 14.5%;
+    --destructive: 0 84% 60.2%;
+    --destructive-foreground: 0 84% 60.2%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 128 100% 92%;
+    --chart-1: 25 95% 53%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    --sidebar: 0 0% 98.5%;
+    --sidebar-foreground: 0 0% 14.5%;
+    --sidebar-primary: 0 0% 20.5%;
+    --sidebar-primary-foreground: 0 0% 98.5%;
+    --sidebar-accent: 0 0% 97%;
+    --sidebar-accent-foreground: 0 0% 20.5%;
+    --sidebar-border: 0 0% 92.2%;
+    --sidebar-ring: 0 0% 70.8%;
+
+    /* Custom GiGi colors */
+    --lime: 128 100% 92%;
+    --charcoal: 0 0% 14.5%;
+    --pineapple: 90 95% 90%;
+    --coconut: 90 60% 95%;
+  }
+
+  .dark {
+    --background: 0 0% 14.5%;
+    --foreground: 0 0% 98.5%;
+    --card: 0 0% 14.5%;
+    --card-foreground: 0 0% 98.5%;
+    --popover: 0 0% 14.5%;
+    --popover-foreground: 0 0% 98.5%;
+    --primary: 0 0% 98.5%;
+    --primary-foreground: 0 0% 20.5%;
+    --secondary: 0 0% 26.9%;
+    --secondary-foreground: 0 0% 98.5%;
+    --muted: 0 0% 26.9%;
+    --muted-foreground: 0 0% 70.8%;
+    --accent: 0 0% 26.9%;
+    --accent-foreground: 0 0% 98.5%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.6% 97.3%;
+    --border: 0 0% 26.9%;
+    --input: 0 0% 26.9%;
+    --ring: 0 0% 43.9%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar: 0 0% 20.5%;
+    --sidebar-foreground: 0 0% 98.5%;
+    --sidebar-primary: 220 70% 50%;
+    --sidebar-primary-foreground: 0 0% 98.5%;
+    --sidebar-accent: 0 0% 26.9%;
+    --sidebar-accent-foreground: 0 0% 98.5%;
+    --sidebar-border: 0 0% 26.9%;
+    --sidebar-ring: 0 0% 43.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom animations for GiGi - keyframes are used by Tailwind config */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(3deg);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(175, 255, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(175, 255, 0, 0.6);
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes grain {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  10% {
+    transform: translate(-5%, -10%);
+  }
+  30% {
+    transform: translate(3%, -15%);
+  }
+  50% {
+    transform: translate(12%, 9%);
+  }
+  70% {
+    transform: translate(9%, 4%);
+  }
+  90% {
+    transform: translate(-1%, 7%);
+  }
+}
+
+/* Grain animation is not in Tailwind config, so we define it here */
+@layer utilities {
+  .animate-grain {
+    animation: grain 8s steps(10) infinite;
+  }
+}
+
+.noise-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
+  animation: grain 8s steps(10) infinite;
+}
