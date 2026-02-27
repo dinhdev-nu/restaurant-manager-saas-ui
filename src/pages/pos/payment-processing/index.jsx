@@ -6,7 +6,11 @@ import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import { useOrderStore } from '../../../stores/order.store';
 import { useTableStore } from '../../../stores/table.store';
+import { useRestaurantStore } from '../../../stores/restaurant.store';
+import { generateOrderId } from '../../../utils/orderHelpers';
 import UnpaidOrdersModal from '../../../components/ui/UnpaidOrdersModal';
+import { getOrderCheckoutDetailsApi, paymentByCash, paymentByQRCode } from '../../../api/restaurant';
+import { useToast } from '../../../hooks/use-toast';
 
 // Import components
 import PaymentMethodSelector from './components/PaymentMethodSelector';
@@ -24,10 +28,13 @@ const PaymentProcessing = () => {
   const updateOrderStatus = useOrderStore((state) => state.updateOrderStatus);
   const clearOrder = useTableStore((state) => state.clearOrder);
   const getTableByOrderId = useTableStore((state) => state.getTableByOrderId);
+  const selectedRestaurant = useRestaurantStore((state) => state.selectedRestaurant);
 
+  const { toast } = useToast();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isOperational, setIsOperational] = useState(true);
   const [showUnpaidModal, setShowUnpaidModal] = useState(false);
+  const [isLoadingOrderDetails, setIsLoadingOrderDetails] = useState(false);
 
   // Payment flow states
   const [currentStep, setCurrentStep] = useState('method'); // method, payment, customer, success
@@ -35,79 +42,222 @@ const PaymentProcessing = () => {
   const [orderData, setOrderData] = useState(null);
   const [customerInfo, setCustomerInfo] = useState({});
   const [paymentResult, setPaymentResult] = useState({});
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [isLoadingQR, setIsLoadingQR] = useState(false);
+  const [selectedLoadingMethod, setSelectedLoadingMethod] = useState('');
 
   // Get order data from navigation state
   useEffect(() => {
-    if (location.state?.order) {
-      // Order from UnpaidOrdersModal or order-history
-      const order = location.state.order;
-      setOrderData({
-        orderNumber: order.id,
-        tableNumber: order.table,
-        items: order.items.map((item, idx) => ({
-          id: idx + 1,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          total: item.price * item.quantity,
-          notes: item.notes || ''
-        })),
-        subtotal: order.subtotal,
-        tax: order.tax,
-        discount: order.discount || 0,
-        total: order.total
-      });
-      // Close unpaid modal if it was open
-      setShowUnpaidModal(false);
-    } else if (location.state?.orderNumber) {
-      // Order from dashboard (going to payment directly)
-      setOrderData({
-        orderNumber: location.state.orderNumber,
-        tableNumber: location.state.selectedTable,
-        items: location.state.cartItems.map((item, idx) => ({
-          id: idx + 1,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          total: item.price * item.quantity,
-          notes: item.note || ''
-        })),
-        subtotal: location.state.subtotal,
-        tax: location.state.tax,
-        discount: location.state.discount || 0,
-        total: location.state.totalAmount
-      });
-    } else {
-      // No order data - show unpaid orders modal
-      setShowUnpaidModal(true);
-    }
+    const loadOrderDetails = async () => {
+      if (location.state?.order) {
+        const order = location.state.order;
+
+        // If order came from UnpaidModal or OrderHistory, data is already fresh from API
+        if (location.state?.fromUnpaidModal || location.state?.fromOrderHistory) {
+          setOrderData({
+            _id: order._id,
+            orderId: order.orderId || generateOrderId(order.createdAt || order.updatedAt || new Date()),
+            tableNumber: order.table,
+            items: order.items.map((item) => ({
+              itemId: item.itemId || item.menuItemId,
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+              total: item.price * item.quantity,
+              notes: item.note || item.notes || ''
+            })),
+            subtotal: order.subtotal,
+            tax: order.tax,
+            discount: order.discount || 0,
+            total: order.total
+          });
+          setShowUnpaidModal(false);
+        } else {
+          // For other sources, fetch fresh data from API
+          try {
+            setIsLoadingOrderDetails(true);
+            const response = await getOrderCheckoutDetailsApi(order._id);
+            const freshOrder = response.metadata;
+
+            setOrderData({
+              _id: freshOrder._id,
+              orderId: freshOrder.orderId || generateOrderId(freshOrder.createdAt || freshOrder.updatedAt || new Date()),
+              tableNumber: freshOrder.table,
+              items: freshOrder.items.map((item) => ({
+                itemId: item.itemId || item.menuItemId,
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                total: item.price * item.quantity,
+                notes: item.note || item.notes || ''
+              })),
+              subtotal: freshOrder.subtotal,
+              tax: freshOrder.tax,
+              discount: freshOrder.discount || 0,
+              total: freshOrder.total
+            });
+            setShowUnpaidModal(false);
+          } catch (error) {
+            console.error('Error loading order details:', error);
+            toast({
+              title: 'Lỗi',
+              description: 'Không thể tải thông tin đơn hàng. Sử dụng dữ liệu cache.',
+              variant: 'destructive'
+            });
+            // Fallback to state data
+            setOrderData({
+              _id: order._id,
+              orderId: order.orderId || generateOrderId(order.createdAt || order.updatedAt || new Date()),
+              tableNumber: order.table,
+              items: order.items.map((item) => ({
+                itemId: item.itemId,
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                total: item.price * item.quantity,
+                notes: item.note || ''
+              })),
+              subtotal: order.subtotal,
+              tax: order.tax,
+              discount: order.discount || 0,
+              total: order.total
+            });
+            setShowUnpaidModal(false);
+          } finally {
+            setIsLoadingOrderDetails(false);
+          }
+        }
+      } else if (location.state?.orderNumber) {
+        // Order from dashboard (going to payment directly)
+        setOrderData({
+          _id: location.state._id || `HD${Date.now()}`,
+          orderId: location.state.orderNumber, // This is the display ID
+          tableNumber: location.state.selectedTable,
+          items: location.state.cartItems.map((item) => ({
+            itemId: item._id || item.itemId, // Use menu item ID
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            total: item.price * item.quantity,
+            notes: item.note || ''
+          })),
+          subtotal: location.state.subtotal,
+          tax: location.state.tax,
+          discount: location.state.discount || 0,
+          total: location.state.totalAmount
+        });
+      } else {
+        // No order data - show unpaid orders modal
+        setShowUnpaidModal(true);
+      }
+    };
+
+    loadOrderDetails();
   }, [location]);
 
-  const handleMethodSelect = (method) => {
+  const handleMethodSelect = async (method) => {
+    // For QR-based payment methods, call API immediately to get QR code
+    if (['momo', 'zalopay', 'banking', 'qr'].includes(method)) {
+      try {
+        setIsLoadingQR(true);
+        setSelectedLoadingMethod(method);
+        const response = await paymentByQRCode(
+          selectedRestaurant?._id,
+          orderData?._id,
+          orderData?.total
+        );
+
+        // Save QR code URL if available
+        if (response.metadata?.qr_url) {
+          console.log('Received QR code URL:', response.metadata.qr_url);
+          setQrCodeUrl(response.metadata.qr_url);
+        } else {
+          // API success but no QR code URL returned
+          console.error('API response missing qr_url:', response);
+          toast({
+            title: 'Lỗi',
+            description: 'Không nhận được mã QR từ server. Vui lòng thử lại.',
+            variant: 'destructive'
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('Error fetching QR code:', error);
+        toast({
+          title: 'Lỗi',
+          description: 'Không thể tạo mã QR. Vui lòng thử lại.',
+          variant: 'destructive'
+        });
+        // Don't proceed to payment step if QR code generation failed
+        return;
+      } finally {
+        setIsLoadingQR(false);
+        setSelectedLoadingMethod('');
+      }
+    }
+
     setSelectedMethod(method);
     setCurrentStep('payment');
   };
 
-  const handlePaymentComplete = (paymentData) => {
-    // Update order in store
-    if (orderData?.orderNumber) {
-      updateOrderPayment(orderData.orderNumber, paymentData);
-      updateOrderStatus(orderData.orderNumber, 'completed');
+  const handlePaymentComplete = async (paymentData) => {
+    try {
+      let response;
 
-      // Clear table order if table was assigned - find table by order ID
-      const table = getTableByOrderId(orderData.orderNumber);
-      if (table) {
-        clearOrder(table.id);
+      // Call payment API based on method
+      if (paymentData.method === 'cash') {
+        response = await paymentByCash(
+          selectedRestaurant?._id,
+          orderData?._id,
+          paymentData.amountTendered
+        );
+        console.log('Cash payment response:', response);
+      } else if (['momo', 'zalopay', 'banking', 'qr'].includes(paymentData.method)) {
+        // QR code payment - API already called in handleMethodSelect
+        // Just use the existing QR code URL
+        response = {
+          metadata: {
+            qr_url: qrCodeUrl,
+            paymentId: `PAY${Date.now()}`, // Temporary ID, should be from API
+            method: paymentData.method,
+            amount: paymentData.totalAmount || orderData?.total
+          }
+        };
       }
-    }
+      // TODO: Add card payment API
 
-    setPaymentResult({
-      ...paymentData,
-      orderNumber: orderData?.orderNumber,
-      tableNumber: orderData?.tableNumber,
-      customerInfo: customerInfo
-    });
-    setCurrentStep('success');
+      // Update order in store with API response
+      if (orderData?._id && response) {
+        updateOrderPayment(orderData._id, {
+          ...paymentData,
+          transactionId: response.metadata?.paymentId || response.metadata?._id,
+          qrCodeUrl: response.metadata?.qr_url
+        });
+        updateOrderStatus(orderData._id, 'completed');
+
+        // Clear table order if table was assigned
+        const table = getTableByOrderId(orderData._id);
+        if (table) {
+          clearOrder(table._id);
+        }
+      }
+
+      setPaymentResult(response?.metadata || {});
+      setCurrentStep('success');
+
+      toast({
+        title: 'Thành công',
+        description: 'Thanh toán đã được xử lý thành công',
+        variant: 'success'
+      });
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast({
+        title: 'Lỗi thanh toán',
+        description: 'Không thể xử lý thanh toán. Vui lòng thử lại.',
+        variant: 'destructive'
+      });
+    }
   };
 
   const handleCustomerInfoSave = (info) => {
@@ -122,6 +272,7 @@ const PaymentProcessing = () => {
   const handleBackToMethod = () => {
     setCurrentStep('method');
     setSelectedMethod('');
+    setQrCodeUrl(''); // Reset QR code when going back
   };
 
   const handleBackFromMethodStep = () => {
@@ -182,6 +333,7 @@ const PaymentProcessing = () => {
           <DigitalWalletForm
             totalAmount={orderData?.total}
             walletType={selectedMethod}
+            qrCodeUrl={qrCodeUrl}
             onPaymentComplete={handlePaymentComplete}
             onCancel={handleBackToMethod}
           />
@@ -192,11 +344,11 @@ const PaymentProcessing = () => {
   };
 
   const renderStepContent = () => {
-    if (!orderData) {
+    if (!orderData || isLoadingOrderDetails) {
       return (
         <div className="text-center py-12">
           <Icon name="Loader" size={48} className="text-muted-foreground mx-auto mb-4 animate-spin" />
-          <p className="text-muted-foreground">Đang tải dữ liệu đơn hàng...</p>
+          <p className="text-muted-foreground">Đang tải dữ liệu đơn hàng từ server...</p>
         </div>
       );
     }
@@ -212,7 +364,7 @@ const PaymentProcessing = () => {
                 tax={orderData?.tax}
                 discount={orderData?.discount}
                 total={orderData?.total}
-                orderNumber={orderData?.orderNumber}
+                orderNumber={orderData?.orderId}
                 tableNumber={orderData?.tableNumber}
               />
             </div>
@@ -221,6 +373,8 @@ const PaymentProcessing = () => {
                 selectedMethod={selectedMethod}
                 onMethodSelect={handleMethodSelect}
                 availableMethods={['cash', 'card', 'momo', 'zalopay', 'banking', 'qr']}
+                isLoading={isLoadingQR}
+                loadingMethod={selectedLoadingMethod}
               />
 
               {/* Customer Info Button */}
@@ -267,9 +421,10 @@ const PaymentProcessing = () => {
 
       case 'success':
         return (
-          <div className="max-w-md mx-auto">
+          <div className="max-w-lg mx-auto">
             <PaymentSuccess
               paymentData={paymentResult}
+              orderData={orderData}
               onPrintReceipt={handlePrintReceipt}
               onSendDigitalReceipt={handleSendDigitalReceipt}
               onNewOrder={handleNewOrder}
@@ -357,7 +512,8 @@ const PaymentProcessing = () => {
 
               {/* Order Info */}
               <div className="hidden md:flex items-center space-x-4 text-sm text-muted-foreground">
-                <span>Đơn hàng: {orderData?.orderNumber}</span>
+                <span>Đơn hàng: {orderData?.orderId}</span>
+                <span className="text-xs font-mono">({orderData?._id})</span>
                 <span>•</span>
                 <span>Bàn: {orderData?.tableNumber}</span>
                 <span>•</span>

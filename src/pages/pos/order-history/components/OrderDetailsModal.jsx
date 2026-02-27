@@ -9,217 +9,234 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReprintReceipt }) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND'
-    })?.format(amount);
+    })?.format(amount || 0);
   };
 
   const formatDateTime = (timestamp) => {
-    return new Intl.DateTimeFormat('vi-VN', {
+    if (!timestamp) return 'N/A';
+    return new Date(timestamp)?.toLocaleString('vi-VN', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    })?.format(new Date(timestamp));
+      minute: '2-digit'
+    });
   };
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      completed: { color: 'bg-success text-success-foreground', label: 'Hoàn thành' },
-      processing: { color: 'bg-warning text-warning-foreground', label: 'Đang xử lý' },
-      cancelled: { color: 'bg-error text-error-foreground', label: 'Đã hủy' },
-      refunded: { color: 'bg-secondary text-secondary-foreground', label: 'Đã hoàn tiền' }
+      completed: { color: 'bg-success/10 text-success', label: 'Hoàn thành' },
+      pending: { color: 'bg-warning/10 text-warning', label: 'Đang chờ' },
+      processing: { color: 'bg-blue-100 text-blue-600', label: 'Đang xử lý' },
+      cancelled: { color: 'bg-error/10 text-error', label: 'Đã hủy' },
+      refunded: { color: 'bg-muted text-muted-foreground', label: 'Đã hoàn tiền' }
     };
-
-    const config = statusConfig?.[status] || statusConfig?.completed;
+    const config = statusConfig?.[status] || statusConfig?.pending;
     return (
-      <span className={`px-3 py-1 rounded-full text-sm font-medium ${config?.color}`}>
+      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${config?.color}`}>
         {config?.label}
       </span>
     );
   };
 
-  const subtotal = order?.items?.reduce((sum, item) => sum + (item?.price * item?.quantity), 0);
-  const tax = subtotal * 0.1; // 10% VAT
+  const getPaymentStatusBadge = (status) => {
+    const statusConfig = {
+      paid: { color: 'bg-success/10 text-success', label: 'Đã thanh toán' },
+      unpaid: { color: 'bg-warning/10 text-warning', label: 'Chưa thanh toán' },
+      refunded: { color: 'bg-muted text-muted-foreground', label: 'Đã hoàn tiền' }
+    };
+    const config = statusConfig?.[status] || statusConfig?.unpaid;
+    return (
+      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${config?.color}`}>
+        {config?.label}
+      </span>
+    );
+  };
+
+  const getTableDisplay = (table) => {
+    if (!table) return 'N/A';
+    if (table === 'takeaway') return 'Mang đi';
+    return `Bàn ${table}`;
+  };
+
+  const getPaymentMethodDisplay = (method) => {
+    const methods = {
+      cash: 'Tiền mặt',
+      CASH: 'Tiền mặt',
+      card: 'Thẻ tín dụng',
+      momo: 'MoMo',
+      zalopay: 'ZaloPay',
+      banking: 'Chuyển khoản',
+      qr: 'QR Code',
+      QR_CODE: 'QR Code'
+    };
+    return methods?.[method] || method || 'N/A';
+  };
+
+  const items = order?.items || [];
+  const subtotal = order?.subtotal || 0;
+  const tax = order?.tax || 0;
   const discount = order?.discount || 0;
+  const total = order?.total || 0;
 
   return (
     <div className="fixed inset-0 z-1200 flex items-center justify-center">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+
       {/* Modal */}
-      <div className="relative bg-surface border border-border rounded-lg shadow-modal w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
+      <div className="relative bg-surface border border-border rounded-lg shadow-modal w-full max-w-lg max-h-[90vh] overflow-hidden m-4">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <div className="flex items-center space-x-4">
-            <h2 className="text-xl font-semibold text-foreground">
-              Chi tiết đơn hàng #{order?.id}
-            </h2>
-            {getStatusBadge(order?.status)}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+          <div className="flex items-center gap-3">
+            <Icon name="Receipt" size={20} className="text-primary" />
+            <div>
+              <h2 className="font-semibold text-foreground">Chi tiết đơn hàng</h2>
+              <p className="text-xs text-muted-foreground font-mono">{order?._id}</p>
+            </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="hover-scale"
-          >
-            <Icon name="X" size={20} />
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <Icon name="X" size={18} />
           </Button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
-          {/* Order Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="font-semibold text-foreground">Thông tin đơn hàng</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Mã đơn:</span>
-                  <span className="font-mono font-medium text-foreground">#{order?.id}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Thời gian:</span>
-                  <span className="font-medium text-foreground">{formatDateTime(order?.timestamp)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Nhân viên:</span>
-                  <span className="font-medium text-foreground">{order?.staff}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Bàn/Khu vực:</span>
-                  <span className="font-medium text-foreground">{order?.table}</span>
-                </div>
-              </div>
+        <div className="overflow-y-auto max-h-[calc(90vh-130px)]">
+          {/* Status Section */}
+          <div className="px-4 py-3 border-b border-border">
+            <div className="flex items-center justify-center gap-2">
+              {getStatusBadge(order?.status)}
+              {getPaymentStatusBadge(order?.paymentStatus)}
             </div>
+          </div>
 
-            <div className="space-y-4">
-              <h3 className="font-semibold text-foreground">Thông tin khách hàng</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tên khách hàng:</span>
-                  <span className="font-medium text-foreground">{order?.customer || 'Khách lẻ'}</span>
-                </div>
-                {order?.customerPhone && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Số điện thoại:</span>
-                    <span className="font-medium text-foreground">{order?.customerPhone}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Phương thức thanh toán:</span>
-                  <span className="font-medium text-foreground capitalize">
-                    {order?.paymentMethod === 'cash' ? 'Tiền mặt' :
-                      order?.paymentMethod === 'card' ? 'Thẻ tín dụng' :
-                        order?.paymentMethod === 'momo' ? 'MoMo' :
-                          order?.paymentMethod === 'zalopay' ? 'ZaloPay' :
-                            order?.paymentMethod === 'banking' ? 'Chuyển khoản' : order?.paymentMethod}
-                  </span>
-                </div>
-              </div>
+          {/* Order Info */}
+          <div className="px-4 py-3 border-b border-border text-sm space-y-2">
+            <div className="text-xs text-muted-foreground uppercase font-medium mb-2">Thông tin đơn hàng</div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Mã đơn hàng</span>
+              <span className="text-foreground font-mono text-xs">{order?._id}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Ngày tạo</span>
+              <span className="text-foreground">{formatDateTime(order?.createdAt || order?.timestamp)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Cập nhật</span>
+              <span className="text-foreground">{formatDateTime(order?.updatedAt)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Vị trí</span>
+              <span className="text-foreground">{getTableDisplay(order?.table)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Nhân viên</span>
+              <span className="text-foreground">{order?.staff || 'Chưa phân công'}</span>
             </div>
           </div>
 
           {/* Order Items */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-foreground">Món ăn đã order</h3>
-            <div className="border border-border rounded-lg overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Món ăn</th>
-                    <th className="text-center p-3 font-medium text-muted-foreground">SL</th>
-                    <th className="text-right p-3 font-medium text-muted-foreground">Đơn giá</th>
-                    <th className="text-right p-3 font-medium text-muted-foreground">Thành tiền</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {order?.items?.map((item, index) => (
-                    <tr key={index} className="border-t border-border">
-                      <td className="p-3">
-                        <div>
-                          <div className="font-medium text-foreground">{item?.name}</div>
-                          {item?.notes && (
-                            <div className="text-sm text-muted-foreground mt-1">
-                              Ghi chú: {item?.notes}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-3 text-center font-medium text-foreground">
-                        {item?.quantity}
-                      </td>
-                      <td className="p-3 text-right font-medium text-foreground">
-                        {formatCurrency(item?.price)}
-                      </td>
-                      <td className="p-3 text-right font-semibold text-foreground">
-                        {formatCurrency(item?.price * item?.quantity)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="px-4 py-3 border-b border-border">
+            <div className="text-xs text-muted-foreground uppercase font-medium mb-2">Chi tiết món ({items.length} món)</div>
+            <div className="space-y-2">
+              {items.map((item, index) => (
+                <div key={item?.itemId || index} className="bg-muted/30 rounded p-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-foreground font-medium">{item?.name}</span>
+                    <span className="text-foreground">{formatCurrency(item?.price * item?.quantity)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>Đơn giá: {formatCurrency(item?.price)} × {item?.quantity}</span>
+                    {item?.itemId && <span className="font-mono">ID: {item?.itemId?.slice(-6)}</span>}
+                  </div>
+                  {(item?.notes || item?.note) && (
+                    <p className="text-xs text-warning mt-1">📝 {item?.notes || item?.note}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Total items count */}
+            <div className="mt-2 pt-2 border-t border-border flex justify-between text-sm">
+              <span className="text-muted-foreground">Tổng số lượng</span>
+              <span className="text-foreground font-medium">
+                {items.reduce((sum, item) => sum + (item?.quantity || 0), 0)} món
+              </span>
             </div>
           </div>
 
-          {/* Special Instructions */}
-          {order?.specialInstructions && (
-            <div className="space-y-2">
-              <h3 className="font-semibold text-foreground">Ghi chú đặc biệt</h3>
-              <div className="bg-muted/30 border border-border rounded-lg p-4">
-                <p className="text-foreground">{order?.specialInstructions}</p>
+          {/* Payment Summary */}
+          <div className="px-4 py-3 border-b border-border text-sm space-y-2">
+            <div className="text-xs text-muted-foreground uppercase font-medium mb-2">Thanh toán</div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Tạm tính</span>
+              <span className="text-foreground">{formatCurrency(subtotal)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Giảm giá</span>
+              <span className="text-foreground">-{formatCurrency(discount)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Thuế (10%)</span>
+              <span className="text-foreground">{formatCurrency(tax)}</span>
+            </div>
+            <div className="flex justify-between pt-2 border-t border-border font-bold">
+              <span className="text-foreground">Tổng cộng</span>
+              <span className="text-primary text-lg">{formatCurrency(total)}</span>
+            </div>
+          </div>
+
+          {/* Payment Info - if paid */}
+          {order?.paymentStatus === 'paid' && order?.paymentMethod && (
+            <div className="px-4 py-3 border-b border-border text-sm space-y-2">
+              <div className="text-xs text-muted-foreground uppercase font-medium mb-2">Thông tin thanh toán</div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Phương thức</span>
+                <span className="text-foreground">{getPaymentMethodDisplay(order?.paymentMethod)}</span>
               </div>
+              {order?.paidAmount && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tiền nhận</span>
+                  <span className="text-foreground">{formatCurrency(order?.paidAmount)}</span>
+                </div>
+              )}
+              {order?.changeAmount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tiền thối</span>
+                  <span className="text-success">{formatCurrency(order?.changeAmount)}</span>
+                </div>
+              )}
+              {order?.paymentId && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Mã thanh toán</span>
+                  <span className="text-foreground font-mono text-xs">{order?.paymentId}</span>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Payment Summary */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-foreground">Tổng kết thanh toán</h3>
-            <div className="bg-muted/30 border border-border rounded-lg p-4 space-y-3">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tạm tính:</span>
-                <span className="font-medium text-foreground">{formatCurrency(subtotal)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">VAT (10%):</span>
-                <span className="font-medium text-foreground">{formatCurrency(tax)}</span>
-              </div>
-              {discount > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Giảm giá:</span>
-                  <span className="font-medium text-error">-{formatCurrency(discount)}</span>
-                </div>
-              )}
-              <div className="border-t border-border pt-3">
-                <div className="flex justify-between">
-                  <span className="text-lg font-semibold text-foreground">Tổng cộng:</span>
-                  <span className="text-lg font-bold text-primary">{formatCurrency(order?.total)}</span>
-                </div>
-              </div>
+          {/* Notes */}
+          {order?.notes && (
+            <div className="px-4 py-3 border-b border-border">
+              <div className="text-xs text-muted-foreground uppercase font-medium mb-2">Ghi chú đơn hàng</div>
+              <p className="text-sm text-foreground bg-muted/30 rounded p-2">{order?.notes}</p>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-6 border-t border-border">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="hover-scale"
-          >
+        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border bg-muted/30">
+          <Button variant="outline" size="sm" onClick={onClose}>
             Đóng
           </Button>
           <Button
             variant="default"
+            size="sm"
             iconName="Printer"
             iconPosition="left"
             onClick={() => onReprintReceipt(order)}
-            className="hover-scale"
           >
-            In lại hóa đơn
+            In hóa đơn
           </Button>
         </div>
       </div>

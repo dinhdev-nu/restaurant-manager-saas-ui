@@ -4,30 +4,31 @@ import Image from '../../../../components/AppImage';
 import Button from '../../../../components/ui/Button';
 import Icon from '../../../../components/AppIcon';
 
+// Move helper functions outside component to prevent recreation on each render
+const formatPrice = (price) => {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND'
+  })?.format(price);
+};
+
+const getStockStatusColor = (stock) => {
+  if (stock === 0) return 'bg-error text-error-foreground';
+  if (stock <= 5) return 'bg-warning text-warning-foreground';
+  return 'bg-success text-success-foreground';
+};
+
+const getStockStatusText = (stock) => {
+  if (stock === 0) return 'Hết hàng';
+  if (stock <= 5) return 'Sắp hết';
+  return 'Còn hàng';
+};
 
 const MenuGrid = ({
   menuItems,
   onAddToCart
 }) => {
   const navigate = useNavigate();
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    })?.format(price);
-  };
-
-  const getStockStatusColor = (stock) => {
-    if (stock === 0) return 'bg-error text-error-foreground';
-    if (stock <= 5) return 'bg-warning text-warning-foreground';
-    return 'bg-success text-success-foreground';
-  };
-
-  const getStockStatusText = (stock) => {
-    if (stock === 0) return 'Hết hàng';
-    if (stock <= 5) return 'Sắp hết';
-    return 'Còn hàng';
-  };
 
   const handleAddNewItem = () => {
     navigate('/menu-management');
@@ -76,7 +77,7 @@ const MenuGrid = ({
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {menuItems?.map((item) => (
         <div
-          key={item?.id}
+          key={item?._id}
           className={`
             bg-card border border-border rounded-lg overflow-hidden hover-scale transition-smooth
             ${item?.stock_quantity === 0 || item?.status === 'unavailable' ? 'opacity-60' : ''}

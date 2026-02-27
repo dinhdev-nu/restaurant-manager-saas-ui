@@ -8,14 +8,14 @@ const MenuCategory = ({
   onCategoryChange
 }) => {
   return (
-    <div className="flex space-x-2 mb-4 overflow-x-auto">
+    <div className="flex space-x-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
       {categories?.map((category) => (
         <Button
           key={category?.id}
           variant={activeCategory === category?.id ? "default" : "outline"}
           size="sm"
           onClick={() => onCategoryChange(category?.id)}
-          className="whitespace-nowrap hover-scale flex items-center space-x-2"
+          className="whitespace-nowrap hover-scale flex items-center space-x-2 flex-shrink-0"
         >
           {category?.icon && (
             <Icon

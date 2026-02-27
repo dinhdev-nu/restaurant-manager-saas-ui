@@ -3,10 +3,27 @@ import Button from '../../../../components/ui/Button';
 import Input from '../../../../components/ui/Input';
 import Icon from '../../../../components/AppIcon';
 
+// Move static data and helper functions outside component to prevent recreation on each render
+const quickAddItems = [
+  { _id: 'water', name: 'Nước suối', price: 10000, icon: 'Droplets' },
+  { _id: 'tissue', name: 'Khăn giấy', price: 5000, icon: 'Package' },
+  { _id: 'bag', name: 'Túi nilon', price: 2000, icon: 'ShoppingBag' }
+];
+
+const formatPrice = (price) => {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND'
+  })?.format(price);
+};
+
 const QuickActions = ({
   onBarcodeSearch,
   onCustomerSearch,
-  onQuickAdd
+  onQuickAdd,
+  onShowRecentOrders,
+  isShowingRecentOrders = false,
+  draftOrdersCount = 0,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
@@ -22,19 +39,6 @@ const QuickActions = ({
       }
       setSearchQuery('');
     }
-  };
-
-  const quickAddItems = [
-    { id: 'water', name: 'Nước suối', price: 10000, icon: 'Droplets' },
-    { id: 'tissue', name: 'Khăn giấy', price: 5000, icon: 'Package' },
-    { id: 'bag', name: 'Túi nilon', price: 2000, icon: 'ShoppingBag' }
-  ];
-
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    })?.format(price);
   };
 
   return (
@@ -60,14 +64,14 @@ const QuickActions = ({
         </Button>
       </form>
       {/* Quick Action Buttons */}
-      <div className="flex space-x-2 overflow-x-auto">
+      <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
         <Button
           variant="outline"
           size="sm"
           iconName="QrCode"
           iconPosition="left"
           onClick={() => setShowBarcodeScanner(!showBarcodeScanner)}
-          className="whitespace-nowrap hover-scale"
+          className="whitespace-nowrap hover-scale flex-shrink-0"
         >
           Quét mã
         </Button>
@@ -77,19 +81,25 @@ const QuickActions = ({
           size="sm"
           iconName="UserPlus"
           iconPosition="left"
-          className="whitespace-nowrap hover-scale"
+          className="whitespace-nowrap hover-scale flex-shrink-0"
         >
           Khách hàng
         </Button>
 
         <Button
-          variant="outline"
+          variant={isShowingRecentOrders ? 'default' : 'outline'}
           size="sm"
-          iconName="Clock"
+          iconName="Bell"
           iconPosition="left"
-          className="whitespace-nowrap hover-scale"
+          onClick={onShowRecentOrders}
+          className="whitespace-nowrap hover-scale flex-shrink-0 relative"
         >
-          Đơn gần đây
+          Đơn cần xác nhận
+          {draftOrdersCount > 0 && (
+            <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 bg-warning text-warning-foreground rounded-full text-[10px] font-bold">
+              {draftOrdersCount}
+            </span>
+          )}
         </Button>
 
         <Button
@@ -97,7 +107,7 @@ const QuickActions = ({
           size="sm"
           iconName="Star"
           iconPosition="left"
-          className="whitespace-nowrap hover-scale"
+          className="whitespace-nowrap hover-scale flex-shrink-0"
         >
           Yêu thích
         </Button>
@@ -133,7 +143,7 @@ const QuickActions = ({
         <div className="grid grid-cols-3 gap-2">
           {quickAddItems?.map((item) => (
             <Button
-              key={item?.id}
+              key={item?._id}
               variant="outline"
               size="sm"
               onClick={() => onQuickAdd(item)}

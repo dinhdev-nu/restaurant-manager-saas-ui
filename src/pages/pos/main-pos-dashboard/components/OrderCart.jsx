@@ -13,6 +13,8 @@ const OrderCart = ({
   onUpdateNote,
   onClearCart,
   orderNumber = null,
+  draftOrderId = null,
+  draftCustomerInfo = null,
   selectedTable = null,
   onTableChange,
   onSummaryChange,
@@ -31,7 +33,7 @@ const OrderCart = ({
   const activeStaff = getActiveStaff();
 
   const staffOptions = activeStaff.map(staff => ({
-    value: staff.id,
+    value: staff._id,
     label: `${staff.name} - ${staff.roleDisplay}`
   }));
 
@@ -99,11 +101,22 @@ const OrderCart = ({
             <h2 className="text-lg font-semibold text-foreground">
               Đơn hàng ({cartItems?.length} món)
             </h2>
-            {orderNumber && (
+            {draftOrderId ? (
+              <div className="space-y-0.5">
+                <p className="text-xs text-muted-foreground">
+                  Draft ID: <span className="font-mono font-medium text-primary">{draftOrderId.slice(-8)}</span>
+                </p>
+                {draftCustomerInfo && (
+                  <p className="text-xs text-muted-foreground">
+                    Khách: <span className="font-medium text-foreground">{draftCustomerInfo.name}</span>
+                  </p>
+                )}
+              </div>
+            ) : orderNumber ? (
               <p className="text-xs text-muted-foreground">
                 Mã: <span className="font-mono font-medium text-foreground">{orderNumber}</span>
               </p>
-            )}
+            ) : null}
           </div>
           <Button
             variant="ghost"
@@ -147,7 +160,7 @@ const OrderCart = ({
       <div className="space-y-3">
         {cartItems?.map((item) => (
           <div
-            key={item?.id}
+            key={item?._id}
             className="bg-muted/30 rounded-lg p-3 border border-border"
           >
             <div className="flex items-start justify-between mb-2">
@@ -163,30 +176,30 @@ const OrderCart = ({
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => onUpdateQuantity(item?.id, item?.quantity - 1)}
+                  onClick={() => onUpdateQuantity(item?._id, item?.quantity - 1)}
                   disabled={item?.quantity <= 1}
-                  className="w-8 h-8"
+                  className="w-9 h-9 sm:w-8 sm:h-8 touch-target"
                 >
-                  <Icon name="Minus" size={14} />
+                  <Icon name="Minus" size={16} className="sm:w-3.5 sm:h-3.5" />
                 </Button>
-                <span className="w-8 text-center text-sm font-medium">
+                <span className="w-10 sm:w-8 text-center text-sm font-medium">
                   {item?.quantity}
                 </span>
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => onUpdateQuantity(item?.id, item?.quantity + 1)}
-                  className="w-8 h-8"
+                  onClick={() => onUpdateQuantity(item?._id, item?.quantity + 1)}
+                  className="w-9 h-9 sm:w-8 sm:h-8 touch-target"
                 >
-                  <Icon name="Plus" size={14} />
+                  <Icon name="Plus" size={16} className="sm:w-3.5 sm:h-3.5" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => onRemoveItem(item?.id)}
-                  className="w-8 h-8 text-error hover:text-error ml-2"
+                  onClick={() => onRemoveItem(item?._id)}
+                  className="w-9 h-9 sm:w-8 sm:h-8 text-error hover:text-error ml-1 touch-target"
                 >
-                  <Icon name="X" size={14} />
+                  <Icon name="X" size={16} className="sm:w-3.5 sm:h-3.5" />
                 </Button>
               </div>
             </div>
@@ -194,9 +207,9 @@ const OrderCart = ({
             <div className="flex items-center justify-between">
               <Input
                 type="text"
-                placeholder="Ghi chú đặc biệt..."
+                placeholder="Ghi chú cho món này..."
                 value={item?.note || ''}
-                onChange={(e) => onUpdateNote(item?.id, e?.target?.value)}
+                onChange={(e) => onUpdateNote(item?._id, e?.target?.value)}
                 className="text-xs"
               />
               <span className="font-semibold text-primary ml-2">

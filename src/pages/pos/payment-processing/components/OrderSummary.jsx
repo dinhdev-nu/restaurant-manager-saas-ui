@@ -19,7 +19,7 @@ const OrderSummary = ({
 
   const mockOrderItems = orderItems?.length > 0 ? orderItems : [
     {
-      id: 1,
+      itemId: "item-1",
       name: "Phở bò tái",
       quantity: 2,
       price: 85000,
@@ -27,7 +27,7 @@ const OrderSummary = ({
       notes: "Ít hành"
     },
     {
-      id: 2,
+      itemId: "item-2",
       name: "Cà phê sữa đá",
       quantity: 1,
       price: 25000,
@@ -35,7 +35,7 @@ const OrderSummary = ({
       notes: ""
     },
     {
-      id: 3,
+      itemId: "item-3",
       name: "Bánh mì thịt nướng",
       quantity: 3,
       price: 30000,
@@ -66,7 +66,7 @@ const OrderSummary = ({
       {/* Order Items */}
       <div className="space-y-3 mb-6 max-h-64 overflow-y-auto">
         {mockOrderItems?.map((item) => (
-          <div key={item?.id} className="flex items-center justify-between py-2 border-b border-border last:border-b-0">
+          <div key={item?.itemId} className="flex items-center justify-between py-2 border-b border-border last:border-b-0">
             <div className="flex-1">
               <div className="flex items-center space-x-2">
                 <span className="font-medium text-foreground">{item?.name}</span>

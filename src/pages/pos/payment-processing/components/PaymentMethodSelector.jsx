@@ -5,7 +5,9 @@ import Icon from '../../../../components/AppIcon';
 const PaymentMethodSelector = ({
   selectedMethod,
   onMethodSelect,
-  availableMethods = []
+  availableMethods = [],
+  isLoading = false,
+  loadingMethod = ''
 }) => {
   const paymentMethods = [
     {
@@ -68,55 +70,69 @@ const PaymentMethodSelector = ({
         Chọn phương thức thanh toán
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {filteredMethods?.map((method) => (
-          <button
-            key={method?.id}
-            onClick={() => onMethodSelect(method?.id)}
-            className={`
+        {filteredMethods?.map((method) => {
+          const isMethodLoading = isLoading && loadingMethod === method?.id;
+
+          return (
+            <button
+              key={method?.id}
+              onClick={() => onMethodSelect(method?.id)}
+              disabled={isLoading}
+              className={`
               relative p-4 rounded-lg border-2 transition-all duration-200 hover-scale
               ${selectedMethod === method?.id
-                ? `${method?.color} border-current shadow-md`
-                : 'bg-surface border-border hover:border-muted-foreground/30'
-              }
+                  ? `${method?.color} border-current shadow-md`
+                  : 'bg-surface border-border hover:border-muted-foreground/30'
+                }
+              ${isLoading ? 'cursor-not-allowed opacity-60' : ''}
             `}
-          >
-            <div className="flex items-center space-x-3">
-              <div className={`
+            >
+              <div className="flex items-center space-x-3">
+                <div className={`
                 w-12 h-12 rounded-lg flex items-center justify-center
                 ${selectedMethod === method?.id
-                  ? 'bg-white/20' : 'bg-muted'
-                }
+                    ? 'bg-white/20' : 'bg-muted'
+                  }
               `}>
-                <Icon
-                  name={method?.icon}
-                  size={24}
-                  className={selectedMethod === method?.id ? method?.iconColor : 'text-muted-foreground'}
-                />
-              </div>
+                  {isMethodLoading ? (
+                    <Icon
+                      name="Loader"
+                      size={24}
+                      className="text-primary animate-spin"
+                    />
+                  ) : (
+                    <Icon
+                      name={method?.icon}
+                      size={24}
+                      className={selectedMethod === method?.id ? method?.iconColor : 'text-muted-foreground'}
+                    />
+                  )}
+                </div>
 
-              <div className="flex-1 text-left">
-                <h4 className={`
+                <div className="flex-1 text-left">
+                  <h4 className={`
                   font-medium text-sm
                   ${selectedMethod === method?.id ? 'text-current' : 'text-foreground'}
                 `}>
-                  {method?.name}
-                </h4>
-                <p className={`
+                    {isMethodLoading ? 'Đang tạo mã QR...' : method?.name}
+                  </h4>
+                  <p className={`
                   text-xs mt-1
                   ${selectedMethod === method?.id ? 'text-current/80' : 'text-muted-foreground'}
                 `}>
-                  {method?.description}
-                </p>
-              </div>
-
-              {selectedMethod === method?.id && (
-                <div className="w-6 h-6 rounded-full bg-current flex items-center justify-center">
-                  <Icon name="Check" size={14} color="white" />
+                    {method?.description}
+                  </p>
                 </div>
-              )}
-            </div>
-          </button>
-        ))}
+
+                {selectedMethod === method?.id && !isMethodLoading && (
+                  <div className="w-6 h-6 rounded-full bg-current flex items-center justify-center">
+                    <Icon name="Check" size={14} color="white" />
+                  </div>
+                )}
+              </div>
+            </button>
+          )
+        })}
       </div>
     </div>
   );

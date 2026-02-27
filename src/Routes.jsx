@@ -79,14 +79,6 @@ const Routes = () => {
               </RestaurantRoute>
             }
           />
-          <Route
-            path="/order"
-            element={
-              <ProtectedRoute>
-                <CustomerOrdering />
-              </ProtectedRoute>
-            }
-          />
 
           {/* Private Customer Ordering - accessible via restaurantId in URL */}
           <Route

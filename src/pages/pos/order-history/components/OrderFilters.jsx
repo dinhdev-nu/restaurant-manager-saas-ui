@@ -27,15 +27,6 @@ const OrderFilters = ({
     { value: 'refunded', label: 'Đã hoàn tiền' }
   ];
 
-  const paymentMethodOptions = [
-    { value: 'all', label: 'Tất cả phương thức' },
-    { value: 'cash', label: 'Tiền mặt' },
-    { value: 'card', label: 'Thẻ tín dụng' },
-    { value: 'momo', label: 'MoMo' },
-    { value: 'zalopay', label: 'ZaloPay' },
-    { value: 'banking', label: 'Chuyển khoản' }
-  ];
-
   const tableOptions = [
     { value: 'all', label: 'Tất cả bàn' },
     { value: 'takeaway', label: 'Mang về' },
@@ -107,29 +98,21 @@ const OrderFilters = ({
         />
 
         <Select
-          label="Phương thức TT"
-          options={paymentMethodOptions}
-          value={filters?.paymentMethod}
-          onChange={(value) => onFilterChange('paymentMethod', value)}
-          className="w-full"
-        />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Input
-          type="search"
-          label="Tìm kiếm khách hàng"
-          placeholder="Tên, số điện thoại, mã đơn..."
-          value={filters?.searchQuery}
-          onChange={(e) => onFilterChange('searchQuery', e?.target?.value)}
-          className="w-full"
-        />
-
-        <Select
           label="Bàn/Khu vực"
           options={tableOptions}
           value={filters?.table}
           onChange={(value) => onFilterChange('table', value)}
           searchable
+          className="w-full"
+        />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          type="search"
+          label="Tìm kiếm"
+          placeholder="Mã đơn hàng..."
+          value={filters?.searchQuery}
+          onChange={(e) => onFilterChange('searchQuery', e?.target?.value)}
           className="w-full"
         />
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/ui/Header';
 import Sidebar from '../../../components/ui/Sidebar';
@@ -7,6 +7,7 @@ import TableControlPanel from './components/TableControlPanel';
 import QuickActionBar from './components/QuickActionBar';
 import { InlineLoading } from '../../../components/ui/Loading';
 import { useLoadTablesData } from '../../../hooks/use-load-tables-data';
+import { useSSESubscription } from '../../../contexts/SSEContext';
 import { useTableStore } from '../../../stores/table.store';
 import { useRestaurantStore } from '../../../stores/restaurant.store';
 import { useToast } from '../../../hooks/use-toast';
@@ -129,6 +130,56 @@ const TableManagement = () => {
   const handleCallWaiter = (tableId) => {
     // TODO: Implement waiter notification
   };
+
+  // SSE Event Handler for real-time table updates
+  const handleSSEEvent = useCallback((data) => {
+    console.log('[TableManagement] Received SSE event:', data);
+
+    switch (data.type) {
+      case 'TABLE_UPDATE':
+      case 'TABLE_STATUS_UPDATE':
+        if (data.tableId && data.updates) {
+          updateTable(data.tableId, data.updates);
+          toast({
+            title: 'Cập nhật bàn',
+            description: `Bàn ${data.tableNumber || data.tableId} đã thay đổi trạng thái`,
+          });
+        } else if (data.tableId && data.status) {
+          updateTable(data.tableId, { status: data.status });
+        }
+        break;
+
+      case 'NEW_ORDER':
+        if (data.order?.table) {
+          // Update table status when new order is created
+          const table = tables.find(t => t._id === data.order.table || t.number === data.order.table);
+          if (table) {
+            updateTable(table._id, {
+              status: 'occupied',
+              orderId: data.order._id
+            });
+          }
+        }
+        break;
+
+      case 'ORDER_COMPLETED':
+      case 'PAYMENT_UPDATE':
+        if (data.tableId && data.paymentStatus === 'paid') {
+          // Mark table as available when payment is completed
+          updateTable(data.tableId, {
+            status: 'cleaning',
+            orderId: null
+          });
+        }
+        break;
+
+      default:
+        console.log('[TableManagement] Unknown event type:', data.type);
+    }
+  }, [updateTable, tables, toast]);
+
+  // Subscribe to SSE events (1 connection duy nhất từ SSEProvider)
+  const { isConnected } = useSSESubscription(handleSSEEvent, 'TableManagement');
 
   // Handle window resize
   useEffect(() => {

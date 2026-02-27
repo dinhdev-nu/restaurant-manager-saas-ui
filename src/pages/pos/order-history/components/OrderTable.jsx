@@ -3,13 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import Button from '../../../../components/ui/Button';
 import Icon from '../../../../components/AppIcon';
 import ConfirmationDialog from '../../../../components/ui/ConfirmationDialog';
+import { getOrderCheckoutDetailsApi } from '../../../../api/restaurant';
+import { useToast } from '../../../../hooks/use-toast';
 
 const OrderTable = ({ orders, onViewDetails, onReprintReceipt, highlightedOrderId }) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [sortConfig, setSortConfig] = useState({ key: 'timestamp', direction: 'desc' });
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [isLoadingCheckout, setIsLoadingCheckout] = useState(false);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -39,7 +43,7 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt, highlightedOrderI
 
     const config = statusConfig?.[status] || statusConfig?.completed;
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${config?.color}`}>
+      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${config?.color}`}>
         {config?.label}
       </span>
     );
@@ -54,22 +58,11 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt, highlightedOrderI
 
     const config = statusConfig?.[paymentStatus] || statusConfig?.unpaid;
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${config?.color} flex items-center gap-1`}>
+      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${config?.color}`}>
         <Icon name={config?.icon} size={12} />
         {config?.label}
       </span>
     );
-  };
-
-  const getPaymentMethodIcon = (method) => {
-    const methodConfig = {
-      cash: 'Banknote',
-      card: 'CreditCard',
-      momo: 'Smartphone',
-      zalopay: 'Smartphone',
-      banking: 'Building'
-    };
-    return methodConfig?.[method] || 'CreditCard';
   };
 
   const toggleRowExpansion = (orderId) => {
@@ -101,14 +94,35 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt, highlightedOrderI
     }
   };
 
-  const handleConfirmPayment = () => {
+  const handleConfirmPayment = async () => {
     if (selectedOrderForPayment) {
-      navigate('/payment-processing', {
-        state: { order: selectedOrderForPayment }
-      });
+      try {
+        setIsLoadingCheckout(true);
+
+        // Fetch latest order details from API
+        const response = await getOrderCheckoutDetailsApi(selectedOrderForPayment._id);
+        const orderDetails = response.metadata;
+
+        navigate('/payment-processing', {
+          state: {
+            order: orderDetails,
+            fromOrderHistory: true
+          }
+        });
+      } catch (error) {
+        console.error('Error fetching order details:', error);
+        toast({
+          title: 'Lỗi',
+          description: 'Không thể tải thông tin đơn hàng. Vui lòng thử lại.',
+          variant: 'destructive'
+        });
+        setIsLoadingCheckout(false);
+        return;
+      }
     }
     setShowPaymentDialog(false);
     setSelectedOrderForPayment(null);
+    setIsLoadingCheckout(false);
   };
 
   const handleCancelPayment = () => {
@@ -164,7 +178,8 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt, highlightedOrderI
                   <SortIcon column="timestamp" />
                 </Button>
               </th>
-              <th className="text-left p-4 font-medium text-muted-foreground">Khách hàng/Bàn</th>
+              <th className="text-left p-4 font-medium text-muted-foreground">Bàn</th>
+              <th className="text-left p-4 font-medium text-muted-foreground">Nhân viên</th>
               <th className="text-left p-4 font-medium text-muted-foreground">Món ăn</th>
               <th className="text-left p-4 font-medium text-muted-foreground">
                 <Button
@@ -177,7 +192,6 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt, highlightedOrderI
                   <SortIcon column="total" />
                 </Button>
               </th>
-              <th className="text-left p-4 font-medium text-muted-foreground">Thanh toán</th>
               <th className="text-left p-4 font-medium text-muted-foreground">Trạng thái</th>
               <th className="text-left p-4 font-medium text-muted-foreground">TT Thanh toán</th>
               <th className="text-left p-4 font-medium text-muted-foreground">Thao tác</th>
@@ -185,22 +199,22 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt, highlightedOrderI
           </thead>
           <tbody>
             {sortedOrders?.map((order) => (
-              <React.Fragment key={order?.id}>
-                <tr className={`border-b border-border hover:bg-muted/30 transition-smooth ${highlightedOrderId === order?.id ? 'bg-primary/10 animate-pulse' : ''}`}>
+              <React.Fragment key={order?._id}>
+                <tr className={`border-b border-border hover:bg-muted/30 transition-smooth ${highlightedOrderId === order?._id ? 'bg-primary/10 animate-pulse' : ''}`}>
                   <td className="p-4">
                     <div className="flex items-center space-x-2">
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => toggleRowExpansion(order?.id)}
+                        onClick={() => toggleRowExpansion(order?._id)}
                         className="w-6 h-6"
                       >
                         <Icon
-                          name={expandedRows?.has(order?.id) ? "ChevronDown" : "ChevronRight"}
+                          name={expandedRows?.has(order?._id) ? "ChevronDown" : "ChevronRight"}
                           size={16}
                         />
                       </Button>
-                      <span className="font-mono text-sm font-medium">#{order?.id}</span>
+                      <span className="font-mono text-sm font-medium">#{order?.orderId || order?._id}</span>
                     </div>
                   </td>
                   <td className="p-4">
@@ -208,19 +222,16 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt, highlightedOrderI
                       <div className="font-medium text-foreground">
                         {formatDateTime(order?.timestamp)}
                       </div>
-                      <div className="text-muted-foreground">
-                        {order?.staff}
-                      </div>
                     </div>
                   </td>
                   <td className="p-4">
-                    <div className="text-sm">
-                      <div className="font-medium text-foreground">
-                        {order?.customer || 'Khách lẻ'}
-                      </div>
-                      <div className="text-muted-foreground">
-                        {order?.table}
-                      </div>
+                    <div className="text-sm font-medium text-foreground">
+                      {order?.table}
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className="text-sm text-muted-foreground">
+                      {order?.staff}
                     </div>
                   </td>
                   <td className="p-4">
@@ -231,22 +242,6 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt, highlightedOrderI
                   <td className="p-4">
                     <div className="font-semibold text-foreground">
                       {formatCurrency(order?.total)}
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center space-x-2">
-                      <Icon
-                        name={getPaymentMethodIcon(order?.paymentMethod)}
-                        size={16}
-                        className="text-muted-foreground"
-                      />
-                      <span className="text-sm text-muted-foreground capitalize">
-                        {order?.paymentMethod === 'cash' ? 'Tiền mặt' :
-                          order?.paymentMethod === 'card' ? 'Thẻ' :
-                            order?.paymentMethod === 'momo' ? 'MoMo' :
-                              order?.paymentMethod === 'zalopay' ? 'ZaloPay' :
-                                order?.paymentMethod === 'banking' ? 'Chuyển khoản' : order?.paymentMethod}
-                      </span>
                     </div>
                   </td>
                   <td className="p-4">
@@ -279,41 +274,125 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt, highlightedOrderI
                 </tr>
 
                 {/* Expanded Row Details */}
-                {expandedRows?.has(order?.id) && (
-                  <tr className="bg-muted/20">
-                    <td colSpan="8" className="p-4">
-                      <div className="space-y-4">
-                        <h4 className="font-medium text-foreground">Chi tiết đơn hàng</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <h5 className="font-medium text-sm text-muted-foreground mb-2">Món ăn đã order</h5>
-                            <div className="space-y-2">
-                              {order?.items?.map((item, index) => (
-                                <div key={index} className="flex justify-between items-center text-sm">
-                                  <span className="text-foreground">
-                                    {item?.quantity}x {item?.name}
-                                  </span>
-                                  <span className="font-medium text-foreground">
-                                    {formatCurrency(item?.price * item?.quantity)}
-                                  </span>
-                                </div>
-                              ))}
+                {expandedRows?.has(order?._id) && (
+                  <tr className="bg-gradient-to-b from-muted/30 to-muted/10">
+                    <td colSpan="7" className="p-0">
+                      <div className="px-4 py-4 space-y-4">
+                        {/* Header */}
+                        <div className="flex items-center justify-between pb-2 border-b border-border">
+                          <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                            <Icon name="FileText" size={16} className="text-primary" />
+                            Chi tiết đơn hàng
+                          </h4>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDateTime(order?.timestamp)}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                          {/* Items List */}
+                          <div className="lg:col-span-2">
+                            <div className="bg-card border border-border rounded-md overflow-hidden">
+                              <div className="bg-muted/50 px-3 py-1.5 border-b border-border">
+                                <h5 className="text-xs font-semibold text-foreground flex items-center gap-2">
+                                  <Icon name="ShoppingBag" size={12} />
+                                  Món ăn ({order?.items?.length})
+                                </h5>
+                              </div>
+                              <div className="divide-y divide-border max-h-[200px] overflow-y-auto">
+                                {order?.items?.map((item, index) => (
+                                  <div key={index} className="px-3 py-2 hover:bg-muted/30 transition-colors">
+                                    <div className="flex justify-between items-start gap-2">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-semibold flex-shrink-0">
+                                            {item?.quantity}
+                                          </span>
+                                          <span className="text-sm font-medium text-foreground truncate">{item?.name}</span>
+                                        </div>
+                                        {item?.note && (
+                                          <p className="text-xs text-muted-foreground mt-0.5 ml-7 italic">
+                                            {item?.note}
+                                          </p>
+                                        )}
+                                      </div>
+                                      <span className="text-sm font-semibold text-foreground whitespace-nowrap">
+                                        {formatCurrency(item?.price * item?.quantity)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           </div>
-                          <div>
-                            <h5 className="font-medium text-sm text-muted-foreground mb-2">Ghi chú đặc biệt</h5>
-                            <p className="text-sm text-foreground">
-                              {order?.specialInstructions || 'Không có ghi chú đặc biệt'}
-                            </p>
-                            {order?.customer && (
-                              <div className="mt-3">
-                                <h5 className="font-medium text-sm text-muted-foreground mb-1">Thông tin khách hàng</h5>
-                                <p className="text-sm text-foreground">{order?.customerPhone}</p>
+
+                          {/* Summary & Info */}
+                          <div className="space-y-3">
+                            {/* Payment Summary */}
+                            <div className="bg-card border border-border rounded-md overflow-hidden">
+                              <div className="bg-muted/50 px-3 py-1.5 border-b border-border">
+                                <h5 className="text-xs font-semibold text-foreground flex items-center gap-2">
+                                  <Icon name="Calculator" size={12} />
+                                  Tổng kết
+                                </h5>
                               </div>
-                            )}
+                              <div className="p-3 space-y-1.5 text-xs">
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Tạm tính:</span>
+                                  <span className="font-medium text-foreground">{formatCurrency(order?.subtotal)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Thuế:</span>
+                                  <span className="font-medium text-foreground">{formatCurrency(order?.tax)}</span>
+                                </div>
+                                {order?.discount > 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Giảm giá:</span>
+                                    <span className="font-medium text-error">-{formatCurrency(order?.discount)}</span>
+                                  </div>
+                                )}
+                                <div className="border-t border-border pt-1.5 mt-1.5">
+                                  <div className="flex justify-between items-center">
+                                    <span className="font-semibold text-foreground">Tổng:</span>
+                                    <span className="text-base font-bold text-primary">{formatCurrency(order?.total)}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Additional Info */}
+                            <div className="bg-card border border-border rounded-md overflow-hidden">
+                              <div className="bg-muted/50 px-3 py-1.5 border-b border-border">
+                                <h5 className="text-xs font-semibold text-foreground flex items-center gap-2">
+                                  <Icon name="Info" size={12} />
+                                  Thông tin
+                                </h5>
+                              </div>
+                              <div className="p-3 space-y-2 text-xs">
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Bàn:</span>
+                                  <span className="font-medium text-foreground">{order?.table}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">NV:</span>
+                                  <span className="font-medium text-foreground truncate ml-2">{order?.staff}</span>
+                                </div>
+                                {order?.specialInstructions && (
+                                  <div className="pt-1.5 border-t border-border">
+                                    <span className="text-muted-foreground block mb-1">Ghi chú:</span>
+                                    <p className="text-foreground bg-muted/30 p-1.5 rounded text-xs italic">
+                                      {order?.specialInstructions}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
+                      {/* Divider giữa expanded row và order tiếp theo */}
+                      <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
+                      <div className="h-2 bg-muted/20"></div>
                     </td>
                   </tr>
                 )}
@@ -325,10 +404,10 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt, highlightedOrderI
       {/* Mobile Card Layout */}
       <div className="lg:hidden space-y-4 p-4">
         {sortedOrders?.map((order) => (
-          <div key={order?.id} className={`border border-border rounded-lg p-4 space-y-3 ${highlightedOrderId === order?.id ? 'bg-primary/10 border-primary animate-pulse' : ''}`}>
+          <div key={order?._id} className={`border border-border rounded-lg p-4 space-y-3 ${highlightedOrderId === order?._id ? 'bg-primary/10 border-primary animate-pulse' : ''}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 flex-wrap gap-2">
-                <span className="font-mono text-sm font-medium">#{order?.id}</span>
+                <span className="font-mono text-sm font-medium">#{order?.orderId || order?._id}</span>
                 {getStatusBadge(order?.status)}
                 {getPaymentStatusBadge(order?.paymentStatus || 'unpaid')}
               </div>
@@ -363,32 +442,18 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt, highlightedOrderI
                 <p className="font-semibold text-foreground">{formatCurrency(order?.total)}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Khách hàng:</span>
-                <p className="font-medium text-foreground">{order?.customer || 'Khách lẻ'}</p>
-              </div>
-              <div>
                 <span className="text-muted-foreground">Bàn:</span>
                 <p className="font-medium text-foreground">{order?.table}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Nhân viên:</span>
+                <p className="font-medium text-foreground">{order?.staff}</p>
               </div>
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t border-border">
-              <div className="flex items-center space-x-2">
-                <Icon
-                  name={getPaymentMethodIcon(order?.paymentMethod)}
-                  size={16}
-                  className="text-muted-foreground"
-                />
-                <span className="text-sm text-muted-foreground">
-                  {order?.paymentMethod === 'cash' ? 'Tiền mặt' :
-                    order?.paymentMethod === 'card' ? 'Thẻ' :
-                      order?.paymentMethod === 'momo' ? 'MoMo' :
-                        order?.paymentMethod === 'zalopay' ? 'ZaloPay' :
-                          order?.paymentMethod === 'banking' ? 'Chuyển khoản' : order?.paymentMethod}
-                </span>
-              </div>
               <span className="text-sm text-muted-foreground">
-                {order?.items?.length} món • {order?.staff}
+                {order?.items?.length} món
               </span>
             </div>
           </div>
@@ -401,11 +466,12 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt, highlightedOrderI
         onClose={handleCancelPayment}
         onConfirm={handleConfirmPayment}
         title="Thanh toán đơn hàng"
-        message={`Bạn có muốn thanh toán đơn hàng ${selectedOrderForPayment?.id}? Tổng tiền: ${selectedOrderForPayment ? formatCurrency(selectedOrderForPayment.total) : ''}`}
-        confirmText="Thanh toán ngay"
+        message={`Bạn có muốn thanh toán đơn hàng ${selectedOrderForPayment?.orderId || selectedOrderForPayment?._id}? Tổng tiền: ${selectedOrderForPayment ? formatCurrency(selectedOrderForPayment.total) : ''}`}
+        confirmText={isLoadingCheckout ? "Đang tải..." : "Thanh toán ngay"}
         cancelText="Hủy"
         variant="success"
-        icon="CreditCard"
+        icon={isLoadingCheckout ? "Loader" : "CreditCard"}
+        disabled={isLoadingCheckout}
       />
     </div>
   );

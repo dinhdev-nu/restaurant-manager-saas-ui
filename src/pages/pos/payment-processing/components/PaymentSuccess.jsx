@@ -4,6 +4,7 @@ import Button from '../../../../components/ui/Button';
 
 const PaymentSuccess = ({
   paymentData = {},
+  orderData = {},
   onPrintReceipt,
   onSendDigitalReceipt,
   onNewOrder,
@@ -16,234 +17,194 @@ const PaymentSuccess = ({
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND'
-    })?.format(amount);
+    })?.format(amount || 0);
   };
 
-  const mockPaymentData = {
-    transactionId: paymentData?.transactionId || 'TXN202509021442001',
-    method: paymentData?.method || 'cash',
-    totalAmount: paymentData?.totalAmount || 285000,
-    amountTendered: paymentData?.amountTendered || 300000,
-    change: paymentData?.change || 15000,
-    timestamp: paymentData?.timestamp || new Date()?.toISOString(),
-    orderNumber: paymentData?.orderNumber || '#001',
-    tableNumber: paymentData?.tableNumber || '5',
-    customerInfo: paymentData?.customerInfo || {
-      name: 'Nguyễn Văn An',
-      phone: '0901 234 567',
-      email: 'an@email.com'
-    }
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    return new Date(dateString)?.toLocaleString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const getPaymentMethodDisplay = (method) => {
     const methods = {
-      cash: { name: 'Tiền mặt', icon: 'Banknote', color: 'text-green-600' },
-      card: { name: 'Thẻ tín dụng', icon: 'CreditCard', color: 'text-blue-600' },
-      momo: { name: 'MoMo', icon: 'Smartphone', color: 'text-pink-600' },
-      zalopay: { name: 'ZaloPay', icon: 'Wallet', color: 'text-purple-600' },
-      banking: { name: 'Chuyển khoản', icon: 'Building2', color: 'text-indigo-600' },
-      qr: { name: 'QR Code', icon: 'QrCode', color: 'text-orange-600' }
+      cash: 'Tiền mặt',
+      CASH: 'Tiền mặt',
+      card: 'Thẻ tín dụng',
+      momo: 'MoMo',
+      zalopay: 'ZaloPay',
+      banking: 'Chuyển khoản',
+      qr: 'QR Code',
+      QR_CODE: 'QR Code'
     };
-    return methods?.[method] || methods?.cash;
+    return methods?.[method] || 'Tiền mặt';
   };
 
   const handlePrintReceipt = async () => {
     setPrinting(true);
-    // Simulate printing delay
     setTimeout(() => {
       setPrinting(false);
-      onPrintReceipt && onPrintReceipt(mockPaymentData);
+      onPrintReceipt && onPrintReceipt({ paymentData, orderData });
     }, 2000);
   };
 
   const handleSendDigitalReceipt = async () => {
     setSending(true);
-    // Simulate sending delay
     setTimeout(() => {
       setSending(false);
-      onSendDigitalReceipt && onSendDigitalReceipt(mockPaymentData);
+      onSendDigitalReceipt && onSendDigitalReceipt({ paymentData, orderData });
     }, 1500);
   };
 
-  const paymentMethod = getPaymentMethodDisplay(mockPaymentData?.method);
+  const items = orderData?.items || [];
+  const hasChange = paymentData?.changeAmount > 0;
+  const tableDisplay = orderData?.tableNumber || orderData?.table;
 
   return (
-    <div className="space-y-6">
-      {/* Success Header */}
-      <div className="text-center">
-        <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Icon name="CheckCircle" size={48} className="text-success" />
-        </div>
-        <h2 className="text-2xl font-bold text-success mb-2">
-          Thanh toán thành công!
-        </h2>
-        <p className="text-muted-foreground">
-          Giao dịch đã được xử lý thành công
-        </p>
-      </div>
-      {/* Transaction Summary */}
-      <div className="bg-surface border border-border rounded-lg p-6">
-        <h3 className="font-semibold text-foreground mb-4">Chi tiết giao dịch</h3>
-
-        <div className="space-y-3">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Mã giao dịch:</span>
-            <span className="font-mono text-foreground">{mockPaymentData?.transactionId}</span>
+    <div className="space-y-4">
+      {/* Receipt Container */}
+      <div className="bg-white dark:bg-surface border border-border rounded-lg overflow-hidden font-mono text-sm">
+        {/* Receipt Header */}
+        <div className="text-center py-4 border-b border-dashed border-border">
+          <div className="flex items-center justify-center gap-2 text-success mb-1">
+            <Icon name="CheckCircle" size={20} />
+            <span className="font-bold text-base">THANH TOÁN THÀNH CÔNG</span>
           </div>
+          <p className="text-muted-foreground text-xs">
+            {formatDate(paymentData?.createdAt || new Date())}
+          </p>
+        </div>
 
+        {/* Order Info */}
+        <div className="px-4 py-3 border-b border-dashed border-border text-xs">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Mã GD:</span>
+            <span>{paymentData?._id || 'N/A'}</span>
+          </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Đơn hàng:</span>
-            <span className="font-medium text-foreground">{mockPaymentData?.orderNumber}</span>
+            <span>{orderData?._id || 'N/A'}</span>
           </div>
-
-          {mockPaymentData?.tableNumber && (
+          {tableDisplay && (
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Bàn số:</span>
-              <span className="font-medium text-foreground">{mockPaymentData?.tableNumber}</span>
+              <span className="text-muted-foreground">Vị trí:</span>
+              <span>{tableDisplay === 'takeaway' ? 'Mang đi' : `Bàn ${tableDisplay}`}</span>
             </div>
           )}
+        </div>
 
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Phương thức:</span>
-            <div className="flex items-center space-x-2">
-              <Icon name={paymentMethod?.icon} size={16} className={paymentMethod?.color} />
-              <span className="font-medium text-foreground">{paymentMethod?.name}</span>
+        {/* Items */}
+        {items.length > 0 && (
+          <div className="px-4 py-3 border-b border-dashed border-border">
+            <div className="text-xs text-muted-foreground mb-2">CHI TIẾT ĐƠN HÀNG</div>
+            <div className="space-y-1">
+              {items.map((item, index) => (
+                <div key={item?.itemId || index} className="flex justify-between text-xs">
+                  <span className="flex-1">{item?.quantity}x {item?.name}</span>
+                  <span className="ml-2">{formatCurrency(item?.price * item?.quantity)}</span>
+                </div>
+              ))}
             </div>
           </div>
-
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Tổng tiền:</span>
-            <span className="font-bold text-primary text-lg">
-              {formatCurrency(mockPaymentData?.totalAmount)}
-            </span>
-          </div>
-
-          {mockPaymentData?.method === 'cash' && (
-            <>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tiền nhận:</span>
-                <span className="font-medium text-foreground">
-                  {formatCurrency(mockPaymentData?.amountTendered)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tiền thối:</span>
-                <span className="font-medium text-success">
-                  {formatCurrency(mockPaymentData?.change)}
-                </span>
-              </div>
-            </>
-          )}
-
-          <div className="flex justify-between pt-2 border-t border-border">
-            <span className="text-muted-foreground">Thời gian:</span>
-            <span className="font-medium text-foreground">
-              {new Date(mockPaymentData.timestamp)?.toLocaleString('vi-VN')}
-            </span>
-          </div>
-        </div>
-      </div>
-      {/* Customer Information */}
-      {mockPaymentData?.customerInfo && (
-        <div className="bg-muted/30 rounded-lg p-4">
-          <h4 className="font-medium text-foreground mb-3">Thông tin khách hàng</h4>
-          <div className="space-y-2">
-            {mockPaymentData?.customerInfo?.name && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tên:</span>
-                <span className="text-foreground">{mockPaymentData?.customerInfo?.name}</span>
-              </div>
-            )}
-            {mockPaymentData?.customerInfo?.phone && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Điện thoại:</span>
-                <span className="text-foreground">{mockPaymentData?.customerInfo?.phone}</span>
-              </div>
-            )}
-            {mockPaymentData?.customerInfo?.email && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Email:</span>
-                <span className="text-foreground">{mockPaymentData?.customerInfo?.email}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      {/* Receipt Actions */}
-      <div className="space-y-3">
-        <h4 className="font-medium text-foreground">Tùy chọn hóa đơn</h4>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Button
-            variant="outline"
-            onClick={handlePrintReceipt}
-            loading={printing}
-            disabled={printing}
-            iconName="Printer"
-            iconPosition="left"
-            className="hover-scale"
-          >
-            {printing ? 'Đang in...' : 'In hóa đơn'}
-          </Button>
-
-          <Button
-            variant="outline"
-            onClick={handleSendDigitalReceipt}
-            loading={sending}
-            disabled={sending || !mockPaymentData?.customerInfo?.email}
-            iconName="Mail"
-            iconPosition="left"
-            className="hover-scale"
-          >
-            {sending ? 'Đang gửi...' : 'Gửi email'}
-          </Button>
-        </div>
-
-        {!mockPaymentData?.customerInfo?.email && (
-          <p className="text-xs text-muted-foreground text-center">
-            Cần có email khách hàng để gửi hóa đơn điện tử
-          </p>
         )}
-      </div>
-      {/* Next Actions */}
-      <div className="space-y-3 pt-4 border-t border-border">
-        <h4 className="font-medium text-foreground">Tiếp theo</h4>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Button
-            variant="default"
-            onClick={onNewOrder}
-            iconName="Plus"
-            iconPosition="left"
-            className="hover-scale"
-          >
-            Đơn hàng mới
-          </Button>
-
-          <Button
-            variant="outline"
-            onClick={onBackToDashboard}
-            iconName="ArrowLeft"
-            iconPosition="left"
-            className="hover-scale"
-          >
-            Về trang chính
-          </Button>
-        </div>
-      </div>
-      {/* Success Tips */}
-      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <div className="flex items-start space-x-3">
-          <Icon name="Lightbulb" size={20} className="text-blue-600 mt-0.5" />
-          <div>
-            <h4 className="font-medium text-blue-800 mb-1">Mẹo sử dụng</h4>
-            <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Hóa đơn được lưu tự động trong lịch sử giao dịch</li>
-              <li>• Có thể in lại hóa đơn từ menu Lịch sử đơn hàng</li>
-              <li>• Thông tin khách hàng được lưu cho lần mua tiếp theo</li>
-            </ul>
+        {/* Summary */}
+        <div className="px-4 py-3 border-b border-dashed border-border text-xs">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Tạm tính</span>
+            <span>{formatCurrency(orderData?.subtotal)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Giảm giá</span>
+            <span>-{formatCurrency(orderData?.discount || 0)}</span>
+          </div>
+          {orderData?.tax > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Thuế (10%)</span>
+              <span>{formatCurrency(orderData?.tax)}</span>
+            </div>
+          )}
+          <div className="flex justify-between font-bold text-base mt-2 pt-2 border-t border-border">
+            <span>TỔNG CỘNG</span>
+            <span>{formatCurrency(paymentData?.orderAmount || orderData?.total)}</span>
           </div>
         </div>
+
+        {/* Payment Info */}
+        <div className="px-4 py-3 border-b border-dashed border-border text-xs">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Thanh toán</span>
+            <span>{getPaymentMethodDisplay(paymentData?.method)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Tiền nhận</span>
+            <span>{formatCurrency(paymentData?.paidAmount || paymentData?.orderAmount || orderData?.total)}</span>
+          </div>
+          {hasChange && (
+            <div className="flex justify-between font-bold">
+              <span>Tiền thối</span>
+              <span className="text-success">{formatCurrency(paymentData?.changeAmount)}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="text-center py-3 text-xs text-muted-foreground">
+          <p>Cảm ơn quý khách!</p>
+          <p>Hẹn gặp lại</p>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handlePrintReceipt}
+          loading={printing}
+          disabled={printing}
+          iconName="Printer"
+          iconPosition="left"
+        >
+          In hóa đơn
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleSendDigitalReceipt}
+          loading={sending}
+          disabled={sending}
+          iconName="Mail"
+          iconPosition="left"
+        >
+          Gửi email
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          variant="default"
+          onClick={onNewOrder}
+          iconName="Plus"
+          iconPosition="left"
+        >
+          Đơn mới
+        </Button>
+
+        <Button
+          variant="outline"
+          onClick={onBackToDashboard}
+          iconName="ArrowLeft"
+          iconPosition="left"
+        >
+          Trang chính
+        </Button>
       </div>
     </div>
   );
