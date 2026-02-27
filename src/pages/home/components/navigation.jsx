@@ -2,6 +2,8 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useLenis } from "lenis/react"
 import { Menu, X } from "lucide-react"
+import { useNavigate } from "react-router-dom"
+import { useAuthStore } from "../../../stores"
 
 const linkVariants = {
     hidden: { opacity: 0, y: -10 },
@@ -40,6 +42,16 @@ export function Navigation() {
     const [scrolled, setScrolled] = useState(false)
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const lenis = useLenis()
+    const navigate = useNavigate()
+    const { token } = useAuthStore()
+
+    const handleStartTrial = () => {
+        if (token) {
+            navigate('/feed')
+        } else {
+            navigate('/auth')
+        }
+    }
 
     useEffect(() => {
         const handleScroll = () => {
@@ -59,10 +71,10 @@ export function Navigation() {
 
     const navLinks = [
         { label: "Home", href: "#hero" },
-        { label: "Flavours", href: "#flavours" },
-        { label: "Creators", href: "#creators" },
-        { label: "Distributors", href: "#distributors" },
-        { label: "Careers", href: "#careers" },
+        { label: "Features", href: "#features" },
+        { label: "Benefits", href: "#benefits" },
+        { label: "Solutions", href: "#solutions" },
+        { label: "Contact", href: "#contact" },
     ]
 
     return (
@@ -80,7 +92,7 @@ export function Navigation() {
                         whileHover={{ scale: 1.05 }}
                         transition={{ type: "spring", stiffness: 400, damping: 17 }}
                     >
-                        <span className={scrolled ? "text-white" : "text-[#121212]"}>Gi</span>
+                        <span className={scrolled ? "text-white" : "text-[#121212]"}>POS</span>
                         <motion.span
                             className="text-[#AFFF00]"
                             animate={{
@@ -90,7 +102,7 @@ export function Navigation() {
                             }}
                             transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
                         >
-                            Gi
+                            Manager
                         </motion.span>
                     </motion.span>
                 </a>
@@ -120,7 +132,8 @@ export function Navigation() {
                 </div>
 
                 <motion.button
-                    className="hidden md:block bg-[#AFFF00] text-[#121212] px-6 py-2.5 rounded-full font-bold text-sm tracking-wide relative overflow-hidden"
+                    onClick={handleStartTrial}
+                    className="hidden md:block bg-[#AFFF00] text-[#121212] px-6 py-2.5 rounded-full font-bold text-sm tracking-wide relative overflow-hidden cursor-pointer"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -141,7 +154,7 @@ export function Navigation() {
                         animate={{ x: ["-100%", "200%"] }}
                         transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, repeatDelay: 3 }}
                     />
-                    <span className="relative z-10">Get 25% Off</span>
+                    <span className="relative z-10">Start Free Trial</span>
                 </motion.button>
 
                 <motion.button
@@ -198,12 +211,13 @@ export function Navigation() {
                                 </motion.button>
                             ))}
                             <motion.button
-                                className="w-full bg-[#AFFF00] text-[#121212] px-6 py-3 rounded-full font-bold text-sm tracking-wide mt-4"
+                                onClick={handleStartTrial}
+                                className="w-full bg-[#AFFF00] text-[#121212] px-6 py-3 rounded-full font-bold text-sm tracking-wide mt-4 cursor-pointer"
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.3 }}
                             >
-                                Get 25% Off
+                                Start Free Trial
                             </motion.button>
                         </div>
                     </motion.div>

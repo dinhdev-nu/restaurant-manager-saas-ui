@@ -3,6 +3,7 @@ import { DndContext, useSensor, useSensors, PointerSensor, DragOverlay } from '@
 import TableCard from './TableCard';
 import DraggableTable from './DraggableTable';
 import Icon from '../../../../components/AppIcon';
+import Button from '../../../../components/ui/Button';
 
 const TableLayout = ({
   tables,
@@ -14,7 +15,12 @@ const TableLayout = ({
   currentFloor = 1,
   onFloorChange,
   onAddFloor,
-  onDeleteFloor
+  onDeleteFloor,
+  isEditingPositions = false,
+  changedTableIds = new Set(),
+  onStartEditingPositions,
+  onSavePositionChanges,
+  onCancelEditingPositions
 }) => {
   const [activeId, setActiveId] = useState(null);
 
@@ -58,7 +64,8 @@ const TableLayout = ({
   };
 
   const handleLayoutClick = (e) => {
-    if (e.target.classList.contains('table-layout')) {
+    // Disable deselection during editing mode
+    if (!isEditingPositions && e.target.classList.contains('table-layout')) {
       onTableSelect(null);
     }
   };
@@ -73,11 +80,70 @@ const TableLayout = ({
       onDragCancel={handleDragCancel}
     >
       <div className="flex-1 bg-muted/30 relative overflow-hidden">
+        {/* Editing Mode Banner */}
+        {isEditingPositions && (
+          <div className="absolute top-0 left-0 right-0 z-20 bg-warning/90 backdrop-blur-sm border-b-2 border-warning px-4 py-3">
+            <div className="flex items-center justify-between max-w-full">
+              <div className="flex items-center space-x-3">
+                <div className="bg-warning text-warning-foreground rounded-full p-2">
+                  <Icon name="Move" size={20} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-warning-foreground">Chế độ chỉnh sửa vị trí bàn</h3>
+                  <p className="text-sm text-warning-foreground/80">
+                    Kéo thả các bàn để thay đổi vị trí. {changedTableIds.size > 0 && `Đã thay đổi: ${changedTableIds.size} bàn`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onCancelEditingPositions}
+                  iconName="X"
+                  iconPosition="left"
+                  className="bg-surface text-foreground border-border hover:bg-muted"
+                >
+                  Hủy
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={onSavePositionChanges}
+                  iconName="Check"
+                  iconPosition="left"
+                  className="bg-success text-success-foreground hover:bg-success/90"
+                >
+                  Lưu thay đổi
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Layout Header */}
-        <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
+        <div className={`absolute ${isEditingPositions ? 'top-20' : 'top-4'} left-4 right-4 z-10 flex items-center justify-between transition-all duration-300`}>
           <div className="bg-surface/90 backdrop-blur-sm rounded-lg px-4 py-2 border border-border">
-            <h2 className="text-lg font-semibold text-foreground">Sơ đồ bàn</h2>
-            <p className="text-sm text-muted-foreground">Kéo thả để sắp xếp bàn</p>
+            <div className="flex items-center space-x-3">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Sơ đồ bàn</h2>
+                <p className="text-sm text-muted-foreground">
+                  {isEditingPositions ? 'Đang chỉnh sửa vị trí' : 'Kéo thả để sắp xếp bàn'}
+                </p>
+              </div>
+              {!isEditingPositions && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onStartEditingPositions}
+                  iconName="Move"
+                  iconPosition="left"
+                  className="ml-2"
+                >
+                  Chỉnh sửa vị trí
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Floor Selector */}
@@ -85,13 +151,15 @@ const TableLayout = ({
             {floors?.map((floor) => (
               <button
                 key={floor.id}
-                onClick={() => onFloorChange(floor.id)}
+                onClick={() => !isEditingPositions && onFloorChange(floor.id)}
+                disabled={isEditingPositions}
                 className={`
                   px-3 py-1.5 rounded-md text-sm font-medium transition-all
                   ${currentFloor === floor.id
                     ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   }
+                  ${isEditingPositions ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
               >
                 {floor.name}
@@ -99,7 +167,11 @@ const TableLayout = ({
             ))}
             <button
               onClick={onAddFloor}
-              className="p-1.5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+              disabled={isEditingPositions}
+              className={`
+                p-1.5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-all
+                ${isEditingPositions ? 'opacity-50 cursor-not-allowed' : ''}
+              `}
               title="Thêm tầng mới"
             >
               <Icon name="Plus" size={16} />
@@ -130,7 +202,7 @@ const TableLayout = ({
 
         {/* Layout Grid */}
         <div
-          className="table-layout absolute inset-0 pt-20 pb-4 px-4"
+          className={`table-layout absolute inset-0 ${isEditingPositions ? 'pt-32' : 'pt-20'} pb-4 px-4 transition-all duration-300`}
           onClick={handleLayoutClick}
           style={{
             backgroundImage: `
@@ -148,6 +220,8 @@ const TableLayout = ({
               isSelected={selectedTable?._id === table._id}
               isActive={activeId === table._id}
               onTableClick={onTableClick}
+              isEditingMode={isEditingPositions}
+              hasChanged={changedTableIds.has(table._id)}
             />
           ))}
 

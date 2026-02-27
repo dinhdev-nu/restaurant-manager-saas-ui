@@ -6,30 +6,30 @@ import { useMotionValue, useSpring, useTransform } from "framer-motion"
 const features = [
     {
         icon: Zap,
-        title: "75mg",
-        subtitle: "Natural Caffeine",
-        description: "Clean energy without the crash",
+        title: "Fast",
+        subtitle: "Order Processing",
+        description: "Thanh toán & xử lý siêu nhanh",
         accent: "#AFFF00",
     },
     {
         icon: Flame,
-        title: "Zero",
-        subtitle: "Sugar Added",
-        description: "All the taste, none of the guilt",
+        title: "100%",
+        subtitle: "Cloud Based",
+        description: "Truy cập mọi lúc, mọi nơi, mọi thiết bị",
         accent: "#FF6B35",
     },
     {
         icon: Brain,
-        title: "100%",
-        subtitle: "Mental Clarity",
-        description: "Enhanced focus & concentration",
+        title: "Smart",
+        subtitle: "Analytics",
+        description: "Thông tin chi tiết & báo cáo thời gian thực",
         accent: "#00D4FF",
     },
     {
         icon: Sparkles,
-        title: "B12",
-        subtitle: "Vitamin Complex",
-        description: "Essential nutrients for energy",
+        title: "Easy",
+        subtitle: "Integration",
+        description: "Đồng bộ thanh toán & kho hàng liền mạch",
         accent: "#AFFF00",
     },
 ]
@@ -159,7 +159,7 @@ export function BentoGrid() {
     const isInView = useInView(ref, { once: true, margin: "-50px" })
 
     return (
-        <section id="formula" className="relative py-16 bg-[#121212] overflow-hidden">
+        <section id="benefits" className="relative py-16 bg-[#121212] overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-[#121212] via-[#0a0a0a] to-[#121212]" />
 
             <div ref={ref} className="max-w-5xl mx-auto px-6 relative z-10">
@@ -175,7 +175,7 @@ export function BentoGrid() {
                         animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                         transition={{ delay: 0.1 }}
                     >
-                        What's Inside
+                        Why Choose Us
                     </motion.span>
 
                     <div className="overflow-hidden mt-2">
@@ -185,7 +185,7 @@ export function BentoGrid() {
                             animate={isInView ? { y: 0 } : { y: 60 }}
                             transition={{ duration: 0.6, ease: [0.25, 0.4, 0.25, 1], delay: 0.15 }}
                         >
-                            Formula & Benefits
+                            Core Features
                         </motion.h2>
                     </div>
 

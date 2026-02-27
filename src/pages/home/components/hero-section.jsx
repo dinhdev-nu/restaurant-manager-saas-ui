@@ -1,5 +1,7 @@
 import { motion, useScroll, useTransform, useSpring } from "framer-motion"
 import { useRef } from "react"
+import { useNavigate } from "react-router-dom"
+import { useAuthStore } from "../../../stores"
 
 const springConfig = { stiffness: 100, damping: 30, restDelta: 0.001 }
 
@@ -33,10 +35,24 @@ const scaleInVariants = {
 
 export function HeroSection() {
     const ref = useRef(null)
+    const navigate = useNavigate()
+    const { token } = useAuthStore()
     const { scrollYProgress } = useScroll({
         target: ref,
         offset: ["start start", "end start"],
     })
+
+    const handleStartTrial = () => {
+        if (token) {
+            navigate('/feed')
+        } else {
+            navigate('/auth')
+        }
+    }
+
+    const handleDiscover = () => {
+        navigate('/feed')
+    }
 
     const rawY = useTransform(scrollYProgress, [0, 1], [0, 200])
     const y = useSpring(rawY, springConfig)
@@ -97,7 +113,7 @@ export function HeroSection() {
                                 animate={{ scale: [1, 1.2, 1], opacity: [1, 0.7, 1] }}
                                 transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
                             />
-                            BETTER-FOR-YOU ENERGY DRINK
+                            COMPLETE RESTAURANT MANAGEMENT SOLUTION
                         </motion.div>
 
                         <div className="space-y-1 overflow-hidden">
@@ -112,7 +128,7 @@ export function HeroSection() {
                                     custom={1}
                                     className="inline-block"
                                 >
-                                    FUEL YOUR
+                                    MANAGE YOUR
                                 </motion.span>
                             </motion.h1>
                             <motion.h1
@@ -126,7 +142,7 @@ export function HeroSection() {
                                     custom={2}
                                     className="inline-block text-[#AFFF00]"
                                 >
-                                    AMBITION
+                                    RESTAURANT
                                 </motion.span>
                             </motion.h1>
                             <motion.p
@@ -136,7 +152,7 @@ export function HeroSection() {
                                 custom={3}
                                 className="text-lg md:text-xl font-mono text-[#121212]/60 tracking-tight pt-2 max-w-md"
                             >
-                                Zero sugar. Natural flavors. Clean energy that hits different.
+                                Hệ thống POS toàn diện. Đơn hàng thời gian thực. Phân tích thông minh.
                             </motion.p>
                         </div>
 
@@ -148,7 +164,8 @@ export function HeroSection() {
                             className="flex flex-wrap gap-3 pt-2"
                         >
                             <motion.button
-                                className="bg-[#AFFF00] text-[#121212] px-6 py-3 rounded-full font-bold text-sm tracking-wide flex items-center gap-2 group relative overflow-hidden"
+                                onClick={handleStartTrial}
+                                className="bg-[#AFFF00] text-[#121212] px-6 py-3 rounded-full font-bold text-sm tracking-wide flex items-center gap-2 group relative overflow-hidden cursor-pointer"
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -158,7 +175,7 @@ export function HeroSection() {
                                     whileHover={{ x: "200%" }}
                                     transition={{ duration: 0.6 }}
                                 />
-                                <span className="relative z-10">Sign Up & Save 25%</span>
+                                <span className="relative z-10">Start Free Trial</span>
                                 <motion.svg
                                     className="w-4 h-4 relative z-10"
                                     fill="none"
@@ -172,12 +189,13 @@ export function HeroSection() {
                                 </motion.svg>
                             </motion.button>
                             <motion.button
-                                className="border-2 border-[#121212] text-[#121212] px-6 py-3 rounded-full font-bold text-sm tracking-wide relative overflow-hidden"
+                                onClick={handleDiscover}
+                                className="border-2 border-[#121212] text-[#121212] px-6 py-3 rounded-full font-bold text-sm tracking-wide relative overflow-hidden cursor-pointer"
                                 whileHover={{ scale: 1.02, backgroundColor: "#121212", color: "#fff" }}
                                 whileTap={{ scale: 0.98 }}
                                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
                             >
-                                Explore Flavours
+                                Discover
                             </motion.button>
                         </motion.div>
 
@@ -188,7 +206,7 @@ export function HeroSection() {
                             custom={5}
                             className="flex flex-wrap gap-4 pt-2"
                         >
-                            {["Zero Sugar", "75mg Caffeine", "Natural Flavours", "Vitamin B Rich"].map((benefit, i) => (
+                            {["Đơn hàng thời gian thực", "Đám mây", "Đa thiết bị", "Hỗ trợ 24/7"].map((benefit, i) => (
                                 <motion.div
                                     key={benefit}
                                     className="flex items-center gap-2 text-xs font-mono text-[#121212]/60"
@@ -227,7 +245,7 @@ export function HeroSection() {
                             >
                                 <img
                                     src="/images/drink2.png"
-                                    alt="GiGi Energy Drink - Lemon Lime Flavour"
+                                    alt="POS Manager Dashboard Preview"
                                     className="relative z-10 drop-shadow-2xl w-[350px] h-[525px] object-contain"
                                 />
                             </motion.div>

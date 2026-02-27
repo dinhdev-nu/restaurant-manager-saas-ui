@@ -8,8 +8,21 @@ const QuickActionBar = ({
   onCreateOrder,
   onViewOrder,
   onPrintBill,
-  onCallWaiter
+  onCallWaiter,
+  disabled = false
 }) => {
+  // Don't show anything when disabled
+  if (disabled) {
+    return (
+      <div className="fixed bottom-0 left-0 right-0 h-16 bg-surface border-t border-border flex items-center justify-center z-50">
+        <div className="flex items-center space-x-2 text-muted-foreground">
+          <Icon name="Lock" size={16} />
+          <p className="text-sm">Đang chỉnh sửa vị trí bàn</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!selectedTable) {
     return (
       <div className="fixed bottom-0 left-0 right-0 h-16 bg-surface border-t border-border flex items-center justify-center z-50">

@@ -12,23 +12,13 @@ import {
 } from '@heroicons/react/24/outline';
 
 const AttentionModal = ({ isOpen, onClose, onOpenCreateModal }) => {
-    const [isClosing, setIsClosing] = useState(false);
-
     const handleClose = () => {
-        setIsClosing(true);
-        // Delay để animation chạy
-        setTimeout(() => {
-            onClose();
-            setIsClosing(false);
-        }, 400);
+        onClose();
     };
 
     const handleCreateRestaurant = () => {
-        handleClose();
-        // Delay một chút để modal close animation hoàn tất
-        setTimeout(() => {
-            onOpenCreateModal();
-        }, 500);
+        onClose();
+        onOpenCreateModal();
     };
 
     const features = [
@@ -71,11 +61,11 @@ const AttentionModal = ({ isOpen, onClose, onOpenCreateModal }) => {
                             enter="ease-out duration-300"
                             enterFrom="opacity-0 scale-95 translate-y-4"
                             enterTo="opacity-100 scale-100 translate-y-0"
-                            leave={`ease-in duration-400 ${isClosing ? 'transition-all' : ''}`}
+                            leave="ease-in duration-200"
                             leaveFrom="opacity-100 scale-100 translate-y-0"
-                            leaveTo={`opacity-0 ${isClosing ? 'scale-75 translate-x-96 translate-y-96' : 'scale-95 translate-y-4'}`}
+                            leaveTo="opacity-0 scale-95 translate-y-4"
                         >
-                            <Dialog.Panel className={`w-full max-w-md transform overflow-hidden rounded-xl bg-white shadow-2xl transition-all border border-gray-200 ${isClosing ? 'modal-slide-out' : ''}`}>
+                            <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-xl bg-white shadow-2xl transition-all border border-gray-200">
                                 {/* Header */}
                                 <div className="relative bg-white px-6 py-6 border-b border-gray-100">
                                     <button

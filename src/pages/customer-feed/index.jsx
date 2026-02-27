@@ -225,13 +225,16 @@ const CustomerFeed = () => {
                                 </div>
                             </div>
 
-                            {/* Suggestions */}
+                            {/* Your Restaurant */}
                             <div className="bg-gray-50 rounded-2xl p-5 border border-gray-200">
-                                <h3 className="font-semibold text-gray-900 mb-3">Gợi ý cho bạn</h3>
+                                <h3 className="font-semibold text-gray-900 mb-3">Nhà hàng của bạn</h3>
                                 <p className="text-sm text-gray-600 mb-4">
-                                    Theo dõi các nhà hàng yêu thích để không bỏ lỡ khuyến mãi mới nhất!
+                                    Quản lý và phát triển nhà hàng của bạn với công cụ chuyên nghiệp!
                                 </p>
-                                <button className="w-full py-2.5 bg-gray-900 text-white rounded-2xl font-medium text-sm hover:bg-gray-800 transition-all duration-200">
+                                <button
+                                    onClick={() => navigate('/restaurant-selector')}
+                                    className="w-full py-2.5 bg-gray-900 text-white rounded-2xl font-medium text-sm hover:bg-gray-800 transition-all duration-200"
+                                >
                                     Khám phá ngay
                                 </button>
                             </div>

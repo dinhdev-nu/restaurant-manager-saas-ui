@@ -41,7 +41,7 @@ export function SocialSection() {
     const isInView = useInView(ref, { once: true, margin: "-50px" })
 
     return (
-        <section id="creators" className="relative py-16 bg-[#121212] overflow-hidden">
+        <section id="community" className="relative py-16 bg-[#121212] overflow-hidden">
             <div className="max-w-7xl mx-auto px-6">
                 <motion.div
                     initial={{ opacity: 0, y: 40 }}
@@ -57,7 +57,7 @@ export function SocialSection() {
                         viewport={{ once: true }}
                         transition={{ delay: 0.1 }}
                     >
-                        FOLLOW THE ENERGY
+                        TRUSTED BY RESTAURANTS
                     </motion.span>
                     <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter mt-2 overflow-hidden">
                         <motion.span
@@ -67,7 +67,7 @@ export function SocialSection() {
                             viewport={{ once: true }}
                             transition={{ duration: 0.6, ease: [0.25, 0.4, 0.25, 1], delay: 0.2 }}
                         >
-                            @GIGIENERGY
+                            JOIN OUR
                         </motion.span>
                         <motion.span
                             className="text-[#AFFF00] inline-block"
@@ -76,7 +76,7 @@ export function SocialSection() {
                             viewport={{ once: true }}
                             transition={{ duration: 0.6, ease: [0.25, 0.4, 0.25, 1], delay: 0.3 }}
                         >
-                            .IN
+                            {" "}COMMUNITY
                         </motion.span>
                     </h2>
                 </motion.div>
@@ -133,7 +133,7 @@ export function SocialSection() {
                     transition={{ delay: 0.5 }}
                 >
                     <motion.a
-                        href="https://instagram.com/gigienergy.in"
+                        href="https://github.com/dinhdev-nu"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 bg-[#AFFF00] text-[#121212] px-6 py-3 rounded-full font-bold text-sm tracking-wide relative overflow-hidden group"
@@ -147,7 +147,7 @@ export function SocialSection() {
                             transition={{ duration: 0.6 }}
                         />
                         <Instagram className="w-4 h-4 relative z-10" />
-                        <span className="relative z-10">Follow @gigienergy.in</span>
+                        <span className="relative z-10">Follow @posmanager</span>
                     </motion.a>
                 </motion.div>
             </div>

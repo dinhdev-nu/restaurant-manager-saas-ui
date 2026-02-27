@@ -6,13 +6,12 @@ import {
     BellIcon,
     ArrowRightOnRectangleIcon,
     UserCircleIcon,
-    BookmarkIcon
+    BuildingStorefrontIcon
 } from '@heroicons/react/24/outline';
 import LocationSelector from './LocationSelector';
-import { useAuthStore } from '../../../stores';
-import { logoutApi } from '../../../api/auth';
 
 const FeedHeader = ({ user, onLocationChange, onLogout }) => {
+    const navigate = useNavigate();
 
     return (
         <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200">
@@ -95,15 +94,18 @@ const FeedHeader = ({ user, onLocationChange, onLogout }) => {
                                                 {({ active }) => (
                                                     <button className={`${active ? 'bg-gray-50' : ''} w-full px-4 py-2.5 text-left text-sm text-gray-700 flex items-center space-x-3`}>
                                                         <UserCircleIcon className="w-5 h-5" />
-                                                        <span>Trang cá nhân</span>
+                                                        <span>Hồ sơ</span>
                                                     </button>
                                                 )}
                                             </Menu.Item>
                                             <Menu.Item>
                                                 {({ active }) => (
-                                                    <button className={`${active ? 'bg-gray-50' : ''} w-full px-4 py-2.5 text-left text-sm text-gray-700 flex items-center space-x-3`}>
-                                                        <BookmarkIcon className="w-5 h-5" />
-                                                        <span>Đã lưu</span>
+                                                    <button
+                                                        onClick={() => navigate('/restaurant-selector')}
+                                                        className={`${active ? 'bg-gray-50' : ''} w-full px-4 py-2.5 text-left text-sm text-gray-700 flex items-center space-x-3`}
+                                                    >
+                                                        <BuildingStorefrontIcon className="w-5 h-5" />
+                                                        <span>Nhà hàng</span>
                                                     </button>
                                                 )}
                                             </Menu.Item>
