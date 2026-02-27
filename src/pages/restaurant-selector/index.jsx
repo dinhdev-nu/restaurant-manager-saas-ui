@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ChevronRight, Users } from 'lucide-react';
+import { Plus, ChevronRight, Users, Loader2 } from 'lucide-react';
 import { useRestaurantStore } from '../../stores';
 import { MOCK_DISTRICTS, MOCK_PROVINCES } from 'mocks/locations';
-import { getMyRestaurantsApi } from '../../api/restaurant';
+import { getMyRestaurantsApi, getRestaurantDetailsApi } from '../../api/restaurant';
 import { toast } from '../../hooks/use-toast';
 
 const RestaurantSelector = () => {
@@ -12,13 +12,14 @@ const RestaurantSelector = () => {
     const setRestaurantsFromMetadata = useRestaurantStore((state) => state.setRestaurantsFromMetadata);
     const [hoveredCard, setHoveredCard] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [selectingId, setSelectingId] = useState(null);
 
     useEffect(() => {
         const fetchMyRestaurants = async () => {
             try {
                 setIsLoading(true);
                 const response = await getMyRestaurantsApi();
-
+                console.log('API response for my restaurants:', response);
                 if (response.metadata) {
                     const restaurants = setRestaurantsFromMetadata(response.metadata);
                     console.log('Processed restaurants:', restaurants);
@@ -38,25 +39,54 @@ const RestaurantSelector = () => {
         fetchMyRestaurants();
     }, []);
 
-    const handleRestaurantSelect = (restaurant) => {
-        const selectRestaurant = useRestaurantStore.getState().selectRestaurant;
-        selectRestaurant(restaurant);
-        navigate('/dashboard');
+    const handleRestaurantSelect = async (restaurant) => {
+        if (selectingId) return;
+        setSelectingId(restaurant._id);
+        try {
+            const response = await getRestaurantDetailsApi(restaurant._id);
+            const details = response.metadata || response;
+            const selectRestaurant = useRestaurantStore.getState().selectRestaurant;
+            selectRestaurant({ ...restaurant, ...details });
+            navigate('/dashboard');
+        } catch (error) {
+            console.error('Error fetching restaurant details:', error);
+            toast({
+                title: 'Lỗi',
+                description: 'Không thể tải thông tin nhà hàng. Vui lòng thử lại!',
+                variant: 'destructive',
+            });
+        } finally {
+            setSelectingId(null);
+        }
     };
 
     const handleCreateRestaurant = () => {
         navigate('/feed');
     };
 
-    const handleGoPOS = (restaurant) => {
-        const selectRestaurant = useRestaurantStore.getState().selectRestaurant;
-        console.log('Selecting restaurant for POS:', restaurant);
-        selectRestaurant({
-            ...restaurant,
-            mode: 'pos'
-        });
-        navigate('/main-pos-dashboard');
-    };
+    const handleGoPOS = async (restaurant) => {
+        const posKey = `${restaurant._id}-pos`;
+        if (selectingId) return;
+        setSelectingId(posKey);
+        try {
+            const response = await getRestaurantDetailsApi(restaurant._id);
+            const details = response.metadata || response;
+            const selectRestaurant = useRestaurantStore.getState().selectRestaurant;
+            console.log('Selecting restaurant for POS:', restaurant);
+            selectRestaurant({ ...restaurant, ...details, mode: 'pos' });
+            navigate('/main-pos-dashboard');
+        } catch (error) {
+            console.error('Error fetching restaurant details:', error);
+            toast({
+                title: 'Lỗi',
+                description: 'Không thể tải thông tin nhà hàng. Vui lòng thử lại!',
+                variant: 'destructive',
+            });
+        } finally {
+            setSelectingId(null);
+        }
+        ;
+    }
 
     const getRoleBadgeColor = (role) => {
         const roleKey = role?.toLowerCase() || '';
@@ -175,8 +205,14 @@ const RestaurantSelector = () => {
                                 onClick={() => handleRestaurantSelect(restaurant)}
                                 onMouseEnter={() => setHoveredCard(restaurant._id)}
                                 onMouseLeave={() => setHoveredCard(null)}
-                                className="group relative bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg hover:border-gray-300 transition-all duration-200 text-left"
+                                disabled={!!selectingId}
+                                className="group relative bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg hover:border-gray-300 transition-all duration-200 text-left disabled:opacity-70 disabled:cursor-wait"
                             >
+                                {selectingId === restaurant._id && (
+                                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 rounded-xl">
+                                        <Loader2 className="w-6 h-6 text-gray-700 animate-spin" />
+                                    </div>
+                                )}
                                 <div className="relative h-24 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
                                     {restaurant.logo ? (
                                         <img
@@ -226,8 +262,14 @@ const RestaurantSelector = () => {
                                 onClick={() => handleGoPOS(restaurant)}
                                 onMouseEnter={() => setHoveredCard(`${restaurant._id}-pos`)}
                                 onMouseLeave={() => setHoveredCard(null)}
-                                className="group relative bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg hover:border-gray-300 transition-all duration-200 text-left"
+                                disabled={!!selectingId}
+                                className="group relative bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg hover:border-gray-300 transition-all duration-200 text-left disabled:opacity-70 disabled:cursor-wait"
                             >
+                                {selectingId === `${restaurant._id}-pos` && (
+                                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 rounded-xl">
+                                        <Loader2 className="w-6 h-6 text-gray-700 animate-spin" />
+                                    </div>
+                                )}
                                 <div className="relative h-24 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
                                     {restaurant.logo ? (
                                         <img

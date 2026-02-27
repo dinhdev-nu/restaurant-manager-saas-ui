@@ -117,15 +117,15 @@ const CustomerFeed = () => {
             // Call API logout
             await logoutApi();
 
-            // Clear Zustand store
-            logout(false); // Keep saved credentials
+            // Clear all localStorage and Zustand store
+            logout();
 
             // Navigate to auth page
             navigate('/auth');
         } catch (error) {
             console.error('Logout error:', error);
             // Even if API fails, still logout locally
-            logout(false);
+            logout();
             navigate('/auth');
         }
     };

@@ -47,9 +47,9 @@ const AuthPage = () => {
           // Redirect based on user role
           setTimeout(() => {
             if (session.user.roles?.includes("customer")) {
-              navigate("/select-restaurant", { replace: true })
+              navigate("/restaurant-selector", { replace: true })
             } else {
-              navigate("/feed", { replace: true })
+              navigate("/restaurant-selector", { replace: true })
             }
           }, 1000)
         } catch (error) {

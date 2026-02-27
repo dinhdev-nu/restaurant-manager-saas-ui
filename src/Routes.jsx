@@ -15,6 +15,7 @@ import RestaurantSelector from './pages/restaurant-selector';
 import { useAuthStore, useRestaurantStore } from './stores';
 import Dashboard from "pages/analysis-reporting";
 import CustomerOrdering from "pages/customer-ordering";
+import Home from "pages/home";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -95,7 +96,7 @@ const Routes = () => {
             path="/"
             element={
               <RestaurantRoute>
-                <MainPOSDashboard />
+                <Home />
               </RestaurantRoute>
             }
           />

@@ -156,6 +156,8 @@ export const SSEProvider = ({ children }) => {
             eventSource.addEventListener('order-update', handleNamedEvent('order-update'));
             eventSource.addEventListener('table-update', handleNamedEvent('table-update'));
             eventSource.addEventListener('payment-update', handleNamedEvent('payment-update'));
+            eventSource.addEventListener('new_order_confirmed', handleNamedEvent('new_order_confirmed'));
+            eventSource.addEventListener('payment_success', handleNamedEvent('payment_success'));
 
             // eventsource v4 expose err.code — có thể check 401 chính xác,
             // không cần heuristic connectionOpenedRef nữa.
