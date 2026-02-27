@@ -1,36 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import OrdersDropdown from './OrdersDropdown';
 import { useAuthStore, useRestaurantStore } from '../../../stores';
-import { useCustomerOrderStore } from '../../../stores/customer-order.store';
 import { logoutApi } from '../../../api/auth';
 
 const Header = ({
   isOperational = true,
-  onToggleOperational,
   ordersCount = 0,
-  user = null
+  draftOrders = [],
+  confirmedOrders = [],
+  notifications = [],
+  user = null,
+  restaurantName: restaurantNameProp = null,
+  restaurantLogo: restaurantLogoProp = null,
 }) => {
   const navigate = useNavigate();
   const { logout } = useAuthStore();
   const selectedRestaurant = useRestaurantStore((state) => state.selectedRestaurant);
-  const customerOrders = useCustomerOrderStore((state) => state.customerOrders);
-  const getCustomerOrdersByUser = useCustomerOrderStore((state) => state.getCustomerOrdersByUser);
 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showOrders, setShowOrders] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  const displayStoreName = selectedRestaurant?.restaurantName;
-  const restaurantLogo = selectedRestaurant?.logo || '/assets/images/restaurant_logo.png';
+  const displayStoreName = restaurantNameProp || selectedRestaurant?.restaurantName;
+  const restaurantLogo = restaurantLogoProp || selectedRestaurant?.logo || '/assets/images/restaurant_logo.png';
 
   // User info with fallback - Map API data correctly
-  const isGuest = !user;
-  const userAvatar = user?.avatar || '/assets/images/user_avatar.jpg';
-  const userName = user?.user_name || 'Khách lạ';
+  const { isGuest, avatar: userAvatar, name: userName } = useMemo(() => ({
+    isGuest: !user,
+    avatar: user?.avatar || '/assets/images/user_avatar.jpg',
+    name: user?.user_name || 'Khách lạ'
+  }), [user]);
 
   // Real-time clock update
   useEffect(() => {
@@ -40,11 +43,19 @@ const Header = ({
     return () => clearInterval(timer);
   }, []);
 
-  const notifications = [
-    { id: 1, type: 'warning', message: 'Món gà rán sắp hết hàng', time: '5 phút trước' },
-    { id: 2, type: 'success', message: 'Đơn hàng #1234 đã thanh toán', time: '10 phút trước' },
-    { id: 3, type: 'info', message: 'Ca làm việc mới bắt đầu', time: '15 phút trước' }
-  ];
+  const formatNotificationTime = (isoString) => {
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 1) return 'Vừa xong';
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} ngày trước`;
+  };
 
   const handleLogout = async () => {
     try {
@@ -57,7 +68,6 @@ const Header = ({
       // Navigate to auth page
       navigate('/auth');
     } catch (error) {
-      console.error('Logout error:', error);
       // Even if API fails, still logout locally
       logout();
       navigate('/auth');
@@ -100,8 +110,6 @@ const Header = ({
     })}`;
   };
 
-  // Get user's orders
-  const userOrders = user ? getCustomerOrdersByUser(user._id) : customerOrders;
 
   return (
     <header className="fixed top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-sm border-b border-border z-[1100]">
@@ -148,10 +156,10 @@ const Header = ({
             <Button
               variant={isOperational ? "success" : "secondary"}
               size="sm"
-              onClick={onToggleOperational}
               iconName={isOperational ? "Play" : "Pause"}
               iconPosition="left"
               className="hover-scale"
+              disabled
             >
               <span className="hidden sm:inline">{isOperational ? "Mở cửa" : "Đóng cửa"}</span>
               <span className="sm:hidden">{isOperational ? "Mở" : "Đóng"}</span>
@@ -175,7 +183,11 @@ const Header = ({
 
             {/* Orders History Dropdown */}
             {showOrders && (
-              <OrdersDropdown orders={userOrders} user={user} />
+              <OrdersDropdown
+                draftOrders={draftOrders}
+                confirmedOrders={confirmedOrders}
+                user={user}
+              />
             )}
           </div>
 
@@ -186,9 +198,10 @@ const Header = ({
               className="relative w-9 h-9 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
             >
               <Icon name="Bell" size={20} />
-              {notifications?.length > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full animate-pulse"
-                  style={{ background: 'var(--accent)' }} />
+              {notifications.length > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-accent text-white text-xs font-semibold flex items-center justify-center">
+                  {notifications.length > 99 ? '99+' : notifications.length}
+                </span>
               )}
             </button>
 
@@ -197,29 +210,45 @@ const Header = ({
               <div className="fixed sm:absolute left-2 right-2 sm:left-auto sm:right-0 top-20 sm:top-full sm:mt-2 w-auto sm:w-80 bg-popover border border-border rounded-lg shadow-modal z-1150">
                 <div className="p-4 border-b border-border">
                   <h3 className="font-medium text-popover-foreground">Thông báo</h3>
+                  {notifications.length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {notifications.length} thông báo mới
+                    </p>
+                  )}
                 </div>
                 <div className="max-h-[60vh] sm:max-h-64 overflow-y-auto">
-                  {notifications?.map((notification) => (
-                    <div key={notification?.id} className="p-4 border-b border-border last:border-b-0 hover:bg-muted/50 transition-smooth">
-                      <div className="flex items-start space-x-3">
-                        <Icon
-                          name={getNotificationIcon(notification?.type)}
-                          size={16}
-                          className={getNotificationColor(notification?.type)}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-popover-foreground">{notification?.message}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{notification?.time}</p>
+                  {notifications.length === 0 ? (
+                    <div className="p-8 text-center">
+                      <Icon name="Bell" size={32} className="text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">Không có thông báo mới</p>
+                    </div>
+                  ) : (
+                    notifications.map((notification) => (
+                      <div key={notification?.id} className="p-4 border-b border-border last:border-b-0 hover:bg-muted/50 transition-smooth">
+                        <div className="flex items-start space-x-3">
+                          <Icon
+                            name={getNotificationIcon(notification?.type)}
+                            size={16}
+                            className={getNotificationColor(notification?.type)}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-popover-foreground">{notification?.message}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {formatNotificationTime(notification?.time)}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
-                <div className="p-3 border-t border-border">
-                  <Button variant="ghost" size="sm" fullWidth>
-                    Xem tất cả thông báo
-                  </Button>
-                </div>
+                {notifications?.length > 0 && (
+                  <div className="p-3 border-t border-border">
+                    <Button variant="ghost" size="sm" fullWidth>
+                      Đánh dấu tất cả đã đọc
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>

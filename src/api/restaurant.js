@@ -13,6 +13,21 @@ export const createRestaurantApi = async (restaurantData) => {
     return res.data;
 }
 
+export const openRestaurantApi = async (restaurantId) => {
+    const res = await CallApiWithAuth.post(`/restaurants/${restaurantId}/open`);
+    return res.data;
+}
+
+export const closeRestaurantApi = async (restaurantId) => {
+    const res = await CallApiWithAuth.post(`/restaurants/${restaurantId}/close`);
+    return res.data;
+}
+
+export const getRestaurantDetailsApi = async (restaurantId) => {
+    const res = await CallApiWithAuth.get(`/restaurants/detail/${restaurantId}`);
+    return res.data;
+}
+
 export const updateRestaurantApi = async (restaurantId, restaurantData) => {
     const payload = {
         ...restaurantData,
@@ -118,6 +133,27 @@ export const getOrdersApi = async (restaurantId, page = 1, status, limit = 20) =
     queryParams.append('limit', limit);
     
     const res = await CallApiWithAuth.get(`/orders/${restaurantId}?${queryParams.toString()}`);
+    return res.data.metadata;
+}
+
+/**
+ * Get orders for the current user (staff or customer)
+ * @param {string} restaurantId 
+ * @returns {
+ *  orders: []
+ *  draftOrders: []
+ * }
+ * 
+ */
+export const getOrdersForUserApi = async (restaurantId) => {
+    const res = await CallApiWithAuth.get(`/orders/user/${restaurantId}`);
+    console.log('getOrdersForUserApi response:', res.data);
+    return res.data.metadata;
+} 
+
+export const getDraftOrders = async (restaurantId, isMyDraft = false) => {
+    const url = `/orders/drafts/${restaurantId}` + (isMyDraft ? '?myDraft=true' : '');
+    const res = await CallApiWithAuth.get(url);
     return res.data.metadata;
 }
 

@@ -19,12 +19,12 @@ const OrderCart = ({
   customerName = '',
   onCustomerNameChange,
   customerContact = '',
-  onCustomerContactChange
+  onCustomerContactChange,
 }) => {
   const [discountType, setDiscountType] = useState('percent'); // 'percent' or 'amount'
   const [discountValue, setDiscountValue] = useState(0);
 
-  // Get table options from store
+  // Get table options from store (fallback when tables prop not provided)
   const getTableOptions = useTableStore((state) => state.getTableOptions);
   const tableOptions = getTableOptions();
 
