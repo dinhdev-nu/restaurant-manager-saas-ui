@@ -39,16 +39,16 @@ export function Footer() {
 
     const footerLinks = [
         {
-            title: "Products",
-            links: ["Lemon Lime", "Pineapple Coconut", "Mystery", "Bundles"],
+            title: "Product",
+            links: ["POS Dashboard", "Table Management", "Menu Management", "Analytics"],
         },
         {
             title: "Quick Links",
-            links: ["Home", "Flavours", "Creators", "Distributors"],
+            links: ["Home", "Features", "Solutions", "Pricing"],
         },
         {
             title: "Company",
-            links: ["About", "Careers", "Press", "Contact"],
+            links: ["About", "Careers", "Blog", "Contact"],
         },
         {
             title: "Legal",
@@ -57,7 +57,7 @@ export function Footer() {
     ]
 
     return (
-        <footer ref={footerRef} id="careers" className="relative bg-[#121212] pt-16 pb-6 overflow-hidden">
+        <footer ref={footerRef} id="contact" className="relative bg-[#121212] pt-16 pb-6 overflow-hidden">
             <div className="max-w-7xl mx-auto px-6">
                 <motion.div
                     initial={{ opacity: 0, y: 60 }}
@@ -83,7 +83,7 @@ export function Footer() {
                             viewport={{ once: true }}
                             transition={{ duration: 0.6, ease: [0.25, 0.4, 0.25, 1], delay: 0.1 }}
                         >
-                            LEVEL UP?
+                            GET STARTED?
                         </motion.span>
                     </h2>
                 </motion.div>
@@ -128,7 +128,7 @@ export function Footer() {
                                 animate={isSubmitting ? { opacity: [1, 0.5, 1] } : {}}
                                 transition={{ duration: 0.5, repeat: isSubmitting ? Number.POSITIVE_INFINITY : 0 }}
                             >
-                                {isSubmitting ? "Joining..." : "Get 25% Off"}
+                                {isSubmitting ? "Joining..." : "Start Free Trial"}
                             </motion.span>
                         </motion.button>
                     </div>
@@ -139,7 +139,7 @@ export function Footer() {
                         viewport={{ once: true }}
                         transition={{ delay: 0.4 }}
                     >
-                        Join 50k+ dreamers. No spam, just energy.
+                        Tham gia cùng 10,000+ nhà hàng. Bắt đầu dùng thử miễn phí ngay hôm nay.
                     </motion.p>
                 </motion.div>
 
@@ -151,8 +151,8 @@ export function Footer() {
                     transition={{ delay: 0.3 }}
                 >
                     <p className="text-white/60 font-mono text-xs max-w-xl mx-auto leading-relaxed">
-                        GiGi Energy is a better-for-you energy drink crafted with natural flavors, zero sugar, and a clean energy
-                        formula. Fuel your ambition without the crash.
+                        POS Manager is a modern restaurant management system that helps you streamline operations,
+                        increase efficiency, and grow your business with real-time insights.
                     </p>
                 </motion.div>
 
@@ -196,12 +196,12 @@ export function Footer() {
                         transition={{ type: "spring", stiffness: 400, damping: 17 }}
                     >
                         <span className="text-xl font-black">
-                            <span className="text-white">Gi</span>
-                            <span className="text-[#AFFF00]">Gi</span>
+                            <span className="text-white">POS</span>
+                            <span className="text-[#AFFF00]">Manager</span>
                         </span>
                     </motion.div>
 
-                    <p className="text-white/40 font-mono text-xs">© 2026 GiGi Energy. All rights reserved.</p>
+                    <p className="text-white/40 font-mono text-xs">© 2026 POS Manager. All rights reserved.</p>
 
                     <motion.p
                         className="text-white/30 font-mono text-xs cursor-pointer"
@@ -222,7 +222,7 @@ export function Footer() {
                         }
                         transition={{ duration: 0.5 }}
                     >
-                        made with energy
+                        made with passion
                     </motion.p>
                 </motion.div>
             </div>
@@ -234,7 +234,7 @@ export function Footer() {
                 viewport={{ once: true }}
                 transition={{ duration: 1, ease: "easeOut" }}
             >
-                GiGi
+                POS
             </motion.div>
         </footer>
     )

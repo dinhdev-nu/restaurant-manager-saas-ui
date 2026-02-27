@@ -7,7 +7,9 @@ const DraggableTable = ({
     table,
     isSelected,
     isActive,
-    onTableClick
+    onTableClick,
+    isEditingMode = false,
+    hasChanged = false
 }) => {
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
         id: table._id,
@@ -24,21 +26,31 @@ const DraggableTable = ({
         transition: isDragging ? 'none' : 'none', // Remove transition to avoid jump
     };
 
+    const handleClick = (e) => {
+        // Disable table selection during editing mode
+        if (!isEditingMode) {
+            onTableClick(table);
+        }
+    };
+
     return (
         <div
             ref={setNodeRef}
             style={style}
             className={`
         select-none !cursor-grab active:!cursor-grabbing
-        ${isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}
+        ${isSelected && !isEditingMode ? 'ring-2 ring-primary ring-offset-2' : ''}
+        ${hasChanged && isEditingMode ? 'ring-2 ring-warning ring-offset-2' : ''}
       `}
             {...listeners}
             {...attributes}
         >
             <TableCard
                 table={table}
-                onTableClick={onTableClick}
+                onTableClick={handleClick}
                 isDragging={isDragging || isActive}
+                isEditingMode={isEditingMode}
+                hasChanged={hasChanged}
             />
         </div>
     );

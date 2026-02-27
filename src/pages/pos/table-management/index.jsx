@@ -42,6 +42,11 @@ const TableManagement = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isOperational, setIsOperational] = useState(true);
 
+  // Position editing mode state
+  const [isEditingPositions, setIsEditingPositions] = useState(false);
+  const [originalPositions, setOriginalPositions] = useState({});
+  const [changedTableIds, setChangedTableIds] = useState(new Set());
+
   // Get tables for current floor
   const currentFloorTables = getCurrentFloorTables();
 
@@ -75,6 +80,99 @@ const TableManagement = () => {
 
   const handleTableMove = (tableId, newPosition) => {
     updateTablePosition(tableId, newPosition);
+
+    // Track changed tables during edit mode
+    if (isEditingPositions) {
+      const original = originalPositions[tableId];
+      if (original) {
+        // Check if position actually changed from original
+        if (original.x !== newPosition.x || original.y !== newPosition.y) {
+          setChangedTableIds(prev => new Set([...prev, tableId]));
+        } else {
+          // If moved back to original position, remove from changed list
+          setChangedTableIds(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(tableId);
+            return newSet;
+          });
+        }
+      }
+    }
+  };
+
+  // Handle start editing positions
+  const handleStartEditingPositions = () => {
+    // Save original positions of all current floor tables
+    const positions = {};
+    currentFloorTables.forEach(table => {
+      positions[table._id] = { x: table.x, y: table.y };
+    });
+    setOriginalPositions(positions);
+    setChangedTableIds(new Set());
+    setIsEditingPositions(true);
+    setSelectedTable(null); // Deselect any selected table
+
+    toast({
+      title: "Chế độ chỉnh sửa vị trí",
+      description: "Kéo thả các bàn để thay đổi vị trí. Nhấn Lưu khi hoàn tất.",
+      variant: "default"
+    });
+  };
+
+  // Handle save position changes
+  const handleSavePositionChanges = () => {
+    if (changedTableIds.size === 0) {
+      toast({
+        title: "Không có thay đổi",
+        description: "Không có bàn nào được di chuyển.",
+        variant: "default"
+      });
+      setIsEditingPositions(false);
+      setOriginalPositions({});
+      return;
+    }
+
+    // Get all changed tables with their new positions
+    const changedTables = currentFloorTables
+      .filter(table => changedTableIds.has(table._id))
+      .map(table => ({
+        _id: table._id,
+        number: table.number,
+        oldPosition: originalPositions[table._id],
+        newPosition: { x: table.x, y: table.y }
+      }));
+
+    // Console log the changed tables
+    console.log('Chi tiết đầy đủ:', changedTables);
+
+    // Reset editing mode
+    setIsEditingPositions(false);
+    setOriginalPositions({});
+    setChangedTableIds(new Set());
+
+    toast({
+      title: "Đã lưu vị trí",
+      description: `${changedTables.length} bàn đã được cập nhật vị trí.`,
+      variant: "success"
+    });
+  };
+
+  // Handle cancel editing
+  const handleCancelEditingPositions = () => {
+    // Restore original positions
+    Object.entries(originalPositions).forEach(([tableId, position]) => {
+      updateTablePosition(tableId, position);
+    });
+
+    setIsEditingPositions(false);
+    setOriginalPositions({});
+    setChangedTableIds(new Set());
+
+    toast({
+      title: "Đã hủy",
+      description: "Các thay đổi vị trí đã được hoàn tác.",
+      variant: "default"
+    });
   };
 
   const handleTableUpdate = (tableId, updates) => {
@@ -235,6 +333,11 @@ const TableManagement = () => {
               onFloorChange={handleFloorChange}
               onAddFloor={handleAddFloor}
               onDeleteFloor={handleDeleteFloor}
+              isEditingPositions={isEditingPositions}
+              changedTableIds={changedTableIds}
+              onStartEditingPositions={handleStartEditingPositions}
+              onSavePositionChanges={handleSavePositionChanges}
+              onCancelEditingPositions={handleCancelEditingPositions}
             />
 
             {/* Control Panel */}
@@ -244,6 +347,7 @@ const TableManagement = () => {
               onAddTable={handleAddTable}
               onDeleteTable={handleDeleteTable}
               tables={currentFloorTables}
+              disabled={isEditingPositions}
             />
           </div>
         )}
@@ -256,6 +360,7 @@ const TableManagement = () => {
           onViewOrder={handleViewOrder}
           onPrintBill={handlePrintBill}
           onCallWaiter={handleCallWaiter}
+          disabled={isEditingPositions}
         />
       </main>
     </div>

@@ -5,31 +5,31 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 const flavors = [
     {
         id: 1,
-        name: "Lemon Lime",
-        tagline: "Citrus Shock",
-        description: "A zesty explosion of natural lemon and lime that wakes you up instantly.",
+        name: "POS Dashboard",
+        tagline: "Sales Made Easy",
+        description: "Giao diện trực quan cho xử lý đơn hàng nhanh chóng, quản lý thực đơn và cập nhật giỏ hàng theo thời gian thực.",
         image: "/images/drink2.png",
         bgColor: "from-[#84cc16]/20 via-[#84cc16]/10 to-transparent",
         accentColor: "#84cc16",
     },
     {
         id: 2,
-        name: "Pineapple Coconut",
-        tagline: "Tropical Rush",
-        description: "Island vibes with every sip. Transport yourself to paradise.",
+        name: "Customer Feed",
+        tagline: "Social Discovery",
+        description: "Khám phá nhà hàng, xem khuyến mãi và đặt món ngay trên nền tảng social feed hiện đại.",
         image: "/images/drink1.png",
         bgColor: "from-[#f59e0b]/20 via-[#f59e0b]/10 to-transparent",
         accentColor: "#f59e0b",
     },
     {
         id: 3,
-        name: "Mystery",
-        tagline: "Coming Soon",
-        description: "Something epic is brewing... Stay tuned.",
+        name: "Analytics & Reports",
+        tagline: "Data Driven",
+        description: "Thông tin chi tiết toàn diện về hiệu suất kinh doanh của bạn với các báo cáo tùy chỉnh.",
         image: "/mystery-energy-drink-can-silhouette.jpg",
         bgColor: "from-[#AFFF00]/20 via-[#AFFF00]/5 to-transparent",
         accentColor: "#AFFF00",
-        mystery: true,
+        mystery: false,
     },
 ]
 
@@ -97,7 +97,7 @@ export function FlavorCarousel() {
     const prevFlavor = () => paginate(-1)
 
     return (
-        <section id="flavours" className="relative py-16 bg-white overflow-hidden">
+        <section id="features" className="relative py-16 bg-white overflow-hidden">
             <motion.div
                 className={`absolute inset-0 bg-gradient-to-br ${currentFlavor.bgColor}`}
                 initial={{ opacity: 0 }}
@@ -121,7 +121,7 @@ export function FlavorCarousel() {
                         viewport={{ once: true }}
                         transition={{ delay: 0.2 }}
                     >
-                        OUR FLAVOURS
+                        OUR MODULES
                     </motion.span>
                     <h2 className="text-3xl md:text-5xl font-black text-[#121212] tracking-tighter mt-2 overflow-hidden">
                         <motion.span
@@ -131,7 +131,7 @@ export function FlavorCarousel() {
                             viewport={{ once: true }}
                             transition={{ duration: 0.6, ease: [0.25, 0.4, 0.25, 1] }}
                         >
-                            CHOOSE YOUR{" "}
+                            EXPLORE OUR{" "}
                         </motion.span>
                         <motion.span
                             className="inline-block"
@@ -141,7 +141,7 @@ export function FlavorCarousel() {
                             viewport={{ once: true }}
                             transition={{ duration: 0.6, ease: [0.25, 0.4, 0.25, 1], delay: 0.1 }}
                         >
-                            FUEL
+                            FEATURES
                         </motion.span>
                     </h2>
                 </motion.div>
@@ -243,7 +243,7 @@ export function FlavorCarousel() {
                                                     animate={{ opacity: 1 }}
                                                     transition={{ delay: 0.5 }}
                                                 >
-                                                    {["Zero Sugar", "Metabolism Boost", "Natural Flavours", "Vitamin Rich"].map((badge) => (
+                                                    {["Đám mây", "Đa thiết bị", "Đồng bộ thời gian thực", "Dữ liệu an toàn"].map((badge) => (
                                                         <span
                                                             key={badge}
                                                             className="px-2 py-1 bg-[#121212]/5 rounded-full text-xs font-mono text-[#121212]/60"
@@ -270,7 +270,7 @@ export function FlavorCarousel() {
                                                         whileHover={{ x: "100%" }}
                                                         transition={{ duration: 0.5 }}
                                                     />
-                                                    <span className="relative z-10">Add to Cart</span>
+                                                    <span className="relative z-10">Learn More</span>
                                                 </motion.button>
                                             )}
 

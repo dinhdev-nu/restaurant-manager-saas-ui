@@ -4,7 +4,9 @@ import Icon from '../../../../components/AppIcon';
 const TableCard = ({
   table,
   onTableClick,
-  isDragging = false
+  isDragging = false,
+  isEditingMode = false,
+  hasChanged = false
 }) => {
   const getStatusColor = (status) => {
     switch (status) {
@@ -33,15 +35,23 @@ const TableCard = ({
   return (
     <div
       className={`
-        relative bg-surface border-2 border-border p-4
+        relative bg-surface border-2 p-4
         transition-all duration-200 hover:shadow-interactive
         ${getTableShape(table?.shape)}
         ${isDragging ? 'opacity-50 scale-95' : 'hover:scale-105'}
         ${table?.shape === 'circular' ? 'w-24 h-24' : 'w-28 h-20'}
+        ${hasChanged && isEditingMode ? 'border-warning' : 'border-border'}
         flex flex-col items-center justify-center
       `}
       onClick={() => onTableClick(table)}
     >
+      {/* Changed Indicator */}
+      {hasChanged && isEditingMode && (
+        <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-warning text-warning-foreground flex items-center justify-center shadow-md">
+          <Icon name="Move" size={12} />
+        </div>
+      )}
+
       {/* Table Number */}
       <div className="text-lg font-bold text-foreground mb-1">
         {table?.number}

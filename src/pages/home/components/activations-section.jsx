@@ -5,27 +5,27 @@ import { Sparkles, Dumbbell, Building2, Calendar } from "lucide-react"
 const activations = [
     {
         icon: Sparkles,
-        title: "Free Tasting Events",
-        description: "Experience GiGi at exclusive tasting events near you.",
-        cta: "Find Events",
+        title: "Small Restaurants",
+        description: "Hoàn hảo cho quán cà phê và nhà hàng nhỏ bắt đầu hành trình số hóa.",
+        cta: "Tìm hiểu thêm",
     },
     {
         icon: Dumbbell,
-        title: "Gyms & Studios",
-        description: "Partner with us to fuel your fitness community.",
-        cta: "Partner With Us",
+        title: "Multi-Location",
+        description: "Quản lý nhiều chi nhánh nhà hàng từ một bảng điều khiển.",
+        cta: "Xem tính năng",
     },
     {
         icon: Building2,
-        title: "Corporate Offices",
-        description: "Power up your workplace. Bulk orders available.",
-        cta: "Get Quote",
+        title: "Food Courts",
+        description: "Quản lý tập trung cho các nhà cung cấp và vận hành khu ẩm thực.",
+        cta: "Bắt đầu",
     },
     {
         icon: Calendar,
-        title: "Event Organizers",
-        description: "Sponsor your next event with GiGi energy.",
-        cta: "Sponsor Event",
+        title: "Catering Services",
+        description: "Tối ưu hóa tiệc cưới, sự kiện và quản lý đơn hàng số lượng lớn.",
+        cta: "Liên hệ",
     },
 ]
 
@@ -59,7 +59,7 @@ export function ActivationsSection() {
     const isInView = useInView(ref, { once: true, margin: "-100px" })
 
     return (
-        <section id="distributors" className="relative py-16 bg-white overflow-hidden">
+        <section id="solutions" className="relative py-16 bg-white overflow-hidden">
             <div className="max-w-7xl mx-auto px-6">
                 <motion.div
                     initial={{ opacity: 0, y: 40 }}
@@ -75,7 +75,7 @@ export function ActivationsSection() {
                         viewport={{ once: true }}
                         transition={{ delay: 0.1 }}
                     >
-                        ACTIVATIONS
+                        SOLUTIONS
                     </motion.span>
                     <h2 className="text-3xl md:text-5xl font-black text-[#121212] tracking-tighter mt-2 overflow-hidden">
                         <motion.span
@@ -85,7 +85,7 @@ export function ActivationsSection() {
                             viewport={{ once: true }}
                             transition={{ duration: 0.6, ease: [0.25, 0.4, 0.25, 1], delay: 0.2 }}
                         >
-                            EXPERIENCE{" "}
+                            BUILT FOR{" "}
                         </motion.span>
                         <motion.span
                             className="text-[#AFFF00] inline-block"
@@ -94,7 +94,7 @@ export function ActivationsSection() {
                             viewport={{ once: true }}
                             transition={{ duration: 0.6, ease: [0.25, 0.4, 0.25, 1], delay: 0.3 }}
                         >
-                            GIGI
+                            EVERY RESTAURANT
                         </motion.span>
                     </h2>
                     <motion.p
@@ -104,7 +104,7 @@ export function ActivationsSection() {
                         viewport={{ once: true }}
                         transition={{ delay: 0.4 }}
                     >
-                        From tasting events to corporate partnerships, bring GiGi into your world.
+                        Từ một địa điểm đến chuỗi nhiều chi nhánh, giải pháp của chúng tôi mở rộng cùng doanh nghiệp bạn.
                     </motion.p>
                 </motion.div>
 

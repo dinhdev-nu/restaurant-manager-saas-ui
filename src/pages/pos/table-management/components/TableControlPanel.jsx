@@ -9,7 +9,8 @@ const TableControlPanel = ({
   onTableUpdate,
   onAddTable,
   onDeleteTable,
-  tables = []
+  tables = [],
+  disabled = false
 }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newTableForm, setNewTableForm] = useState({
@@ -84,6 +85,16 @@ const TableControlPanel = ({
 
   return (
     <div className="w-80 bg-surface border-l border-border h-full flex flex-col relative">
+      {/* Disabled Overlay */}
+      {disabled && (
+        <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-muted rounded-lg p-4 text-center">
+            <Icon name="Lock" size={32} className="mx-auto mb-2 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Đang chỉnh sửa vị trí bàn</p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="p-4 border-b border-border flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
