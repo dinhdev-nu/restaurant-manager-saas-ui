@@ -94,6 +94,14 @@ export const useRestaurantStore = create(
         set({ selectedRestaurant: restaurant });
       },
 
+      updateSelectedRestaurant: (updates) => {
+        set((state) => ({
+          selectedRestaurant: state.selectedRestaurant
+            ? { ...state.selectedRestaurant, ...updates }
+            : state.selectedRestaurant,
+        }));
+      },
+
       clearRestaurant: () => {
         set({ selectedRestaurant: null });
       },

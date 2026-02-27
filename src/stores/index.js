@@ -10,8 +10,9 @@ export { useStaffStore } from './staff.store'
 export { useOrderStore } from './order.store'
 export { useRestaurantStore } from './restaurant.store'
 export { useCustomerOrderStore } from './customer-order.store'
+export { useNotificationStore } from './notification.store'
 
 /**
  * USAGE:
- * import { useAuthStore, useTableStore, useMenuStore, useStaffStore, useOrderStore, useRestaurantStore, useCustomerOrderStore } from '@/stores'
+ * import { useAuthStore, useTableStore, useMenuStore, useStaffStore, useOrderStore, useRestaurantStore, useCustomerOrderStore, useNotificationStore } from '@/stores'
  */

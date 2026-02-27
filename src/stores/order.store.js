@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { generateOrderId } from "../utils/orderHelpers";
 
 export const useOrderStore = create(
   persist(
@@ -10,10 +11,12 @@ export const useOrderStore = create(
 
       // Actions
       addOrder: (order) => {
+        const timestamp = order.timestamp || order.createdAt || new Date();
         const newOrder = {
           ...order,
           _id: order._id || `ORD${Date.now()}`,
-          timestamp: order.timestamp || order.createdAt || new Date(),
+          timestamp: timestamp,
+          orderId: order.orderId || generateOrderId(timestamp), // Auto-generate orderId
           status: order.status || 'pending', // pending, processing, completed, cancelled
           paymentMethod: order.paymentMethod || null,
           paymentStatus: order.paymentStatus || 'unpaid', // unpaid, paid, refunded
@@ -75,6 +78,33 @@ export const useOrderStore = create(
 
       clearCurrentOrder: () => {
         set({ currentOrder: null });
+      },
+
+      // Set orders from API
+      setOrders: (orders) => {
+        const mappedOrders = orders?.map(order => {
+          const timestamp = order.timestamp || order.createdAt || order.updatedAt;
+          return {
+            ...order,
+            timestamp: timestamp,
+            orderId: order.orderId || generateOrderId(timestamp), // Auto-generate orderId
+          };
+        }) || [];
+        set({ orders: mappedOrders });
+      },
+
+      // Append orders from API (for load more)
+      appendOrders: (newOrders) => {
+        const currentOrders = get().orders;
+        const mappedOrders = newOrders?.map(order => {
+          const timestamp = order.timestamp || order.createdAt || order.updatedAt;
+          return {
+            ...order,
+            timestamp: timestamp,
+            orderId: order.orderId || generateOrderId(timestamp),
+          };
+        }) || [];
+        set({ orders: [...currentOrders, ...mappedOrders] });
       },
 
       // Getters
