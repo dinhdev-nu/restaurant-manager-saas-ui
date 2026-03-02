@@ -1,100 +1,91 @@
 import { useState } from "react"
-import { Button } from '../../../components/ui/Button';
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Eye, EyeOff, Mail, Lock } from "lucide-react"
+import Input from "../../../components/ui/Input"
+import { Mail, Eye, EyeOff } from "lucide-react"
 
+export function SignInForm({ hook }) {
+    const {
+        form,
+        isLoading,
+        rememberMe, setRememberMe,
+        handleIdentifierChange,
+        handlePasswordChange,
+        handleForgotPassword,
+        handleSubmit,
+    } = hook
 
-export function SignInForm({
-  onSubmit,
-  isLoading,
-  email,
-  setEmail,
-  rememberMe,
-  setRememberMe,
-  onForgotPassword,
-}) {
-  const [showPassword, setShowPassword] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
 
-  return (
-    <form onSubmit={onSubmit} className="space-y-6">
-      <div className="space-y-3">
-        <Label htmlFor="email" className="text-white font-medium flex items-center gap-2 text-base font-sans">
-          <Mail className="w-4 h-4 text-[#8e8e93]" />
-          Email
-        </Label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="Enter your email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="bg-[#2c2c2e] border border-[#3a3a3c] text-white placeholder:text-[#8e8e93] focus:border-[#007aff] focus:ring-2 focus:ring-[#007aff]/20 transition-all duration-200 rounded-2xl h-14 text-base font-sans"
-        />
-      </div>
-      <div className="space-y-3">
-        <Label htmlFor="password" className="text-white font-medium flex items-center gap-2 text-base font-sans">
-          <Lock className="w-4 h-4 text-[#8e8e93]" />
-          Password
-        </Label>
-        <div className="relative">
-          <Input
-            id="password"
-            type={showPassword ? "text" : "password"}
-            placeholder="Enter your password"
-            required
-            className="bg-[#2c2c2e] border border-[#3a3a3c] text-white placeholder:text-[#8e8e93] focus:border-[#007aff] focus:ring-2 focus:ring-[#007aff]/20 transition-all duration-200 rounded-2xl h-14 pr-14 text-base font-sans"
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-0 h-full px-4 text-[#8e8e93] hover:text-white hover:bg-transparent"
-            onClick={() => setShowPassword(!showPassword)}
-          >
-            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-          </Button>
-        </div>
-      </div>
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
+            <div>
+                <h2 className="text-xl font-semibold text-gray-900">Welcome back</h2>
+                <p className="text-sm text-gray-500 mt-1">Sign in to your account</p>
+            </div>
 
-      <div className="flex items-center justify-between pt-2">
-        <div className="flex items-center space-x-3">
-          <Checkbox
-            id="remember"
-            checked={rememberMe}
-            onCheckedChange={setRememberMe}
-            className="border-[#3a3a3c] data-[state=checked]:bg-[#007aff] data-[state=checked]:border-[#007aff] rounded-lg"
-          />
-          <Label htmlFor="remember" className="text-base text-[#8e8e93] font-medium font-sans">
-            Remember me
-          </Label>
-        </div>
-        <Button
-          type="button"
-          variant="link"
-          className="text-base text-[#007aff] hover:text-[#0056cc] p-0 font-medium font-sans"
-          onClick={onForgotPassword}
-        >
-          Forgot password?
-        </Button>
-      </div>
+            {/* Identifier */}
+            <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                <Input
+                    type="text"
+                    value={form.email || form.phoneNumber}
+                    onChange={(e) => handleIdentifierChange(e.target.value)}
+                    className="bg-white border border-gray-300 rounded-lg h-11 text-sm placeholder:text-gray-400 focus:border-black focus-visible:ring-1 focus-visible:ring-black/20 focus-visible:ring-offset-0 pl-10 pr-16 transition-all"
+                    placeholder="Email or phone number"
+                    autoComplete="username"
+                />
+                {(form.email || form.phoneNumber) && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded pointer-events-none">
+                        {form.email ? "Email" : "Phone"}
+                    </span>
+                )}
+            </div>
 
-      <Button
-        type="submit"
-        className="w-full bg-[#007aff] hover:bg-[#0056cc] text-white font-medium transition-all duration-200 transform hover:scale-[1.01] shadow-lg rounded-2xl h-14 mt-8 text-base font-sans"
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            Signing in...
-          </div>
-        ) : (
-          "Sign In"
-        )}
-      </Button>
-    </form>
-  )
+            {/* Password */}
+            <div className="relative">
+                <Input
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={(e) => handlePasswordChange(e.target.value)}
+                    className="bg-white border border-gray-300 rounded-lg h-11 text-sm placeholder:text-gray-400 focus:border-black focus-visible:ring-1 focus-visible:ring-black/20 focus-visible:ring-offset-0 pr-10 transition-all"
+                    placeholder="Password"
+                    autoComplete="current-password"
+                />
+                <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+            </div>
+
+            {/* Remember me + forgot */}
+            <div className="flex items-center justify-between text-sm">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black focus:ring-offset-0"
+                    />
+                    <span className="text-gray-600">Remember me</span>
+                </label>
+                <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    className="text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                    Forgot password?
+                </button>
+            </div>
+
+            <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-11 rounded-lg bg-black text-white text-sm font-medium hover:bg-gray-800 active:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                {isLoading ? "Signing in..." : "Sign in"}
+            </button>
+        </form>
+    )
 }

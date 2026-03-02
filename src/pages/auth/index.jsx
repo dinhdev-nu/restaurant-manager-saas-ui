@@ -44,13 +44,9 @@ const AuthPage = () => {
             duration: 3000,
           })
 
-          // Redirect based on user role
+          // Redirect to restaurant selector
           setTimeout(() => {
-            if (session.user.roles?.includes("customer")) {
-              navigate("/restaurant-selector", { replace: true })
-            } else {
-              navigate("/restaurant-selector", { replace: true })
-            }
+            navigate("/restaurant-selector", { replace: true })
           }, 1000)
         } catch (error) {
           console.error("❌ Error:", error)
