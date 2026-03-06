@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { QRCodeSVG } from 'qrcode.react';
 import Icon from '../AppIcon';
 import Button from './Button';
 import { useAuthStore, useRestaurantStore } from '../../stores';
@@ -20,6 +21,7 @@ const Header = ({
   const getRelativeTime = useNotificationStore((state) => state.getRelativeTime);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showQRDialog, setShowQRDialog] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [, forceUpdate] = useState(0);
   const location = useLocation();
@@ -29,7 +31,7 @@ const Header = ({
     console.log('[Header] Notifications updated:', notifications.length, notifications);
   }, [notifications]);
 
-  const posRoutes = ['/', '/main-pos-dashboard', '/payment-processing', '/order-history', '/menu-management', '/staff-management', '/table-management'];
+  const posRoutes = ['/main-pos-dashboard', '/payment-processing', '/order-history', '/menu-management', '/staff-management', '/table-management'];
   const isPOSPage = posRoutes.some(route => location.pathname.includes(route));
   const displayStoreName = selectedRestaurant?.restaurantName || storeName;
   const restaurantLogo = selectedRestaurant?.logo || '/assets/images/restaurant_logo.png';
@@ -154,11 +156,12 @@ const Header = ({
             <Button
               variant="outline"
               size="sm"
-              iconName="UserPlus"
+              iconName="QrCode"
               iconPosition="left"
               className="hover-scale"
+              onClick={() => setShowQRDialog(true)}
             >
-              Khách hàng
+              QR nhà hàng
             </Button>
 
             <Button
@@ -365,10 +368,11 @@ const Header = ({
             <Button
               variant="outline"
               size="sm"
-              iconName="UserPlus"
+              iconName="QrCode"
               className="flex-1 touch-target text-xs sm:text-sm"
+              onClick={() => setShowQRDialog(true)}
             >
-              <span className="hidden xs:inline">Khách</span>
+              <span className="hidden xs:inline">QR</span>
             </Button>
             <Button
               variant="default"
@@ -390,6 +394,82 @@ const Header = ({
           </div>
         </div>
       )}
+      {/* QR Code Dialog */}
+      {showQRDialog && selectedRestaurant && (
+        <div className="fixed inset-0 bg-black/50 z-[1300] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowQRDialog(false)}>
+          <div className="bg-card rounded-lg shadow-modal max-w-md w-full animate-in slide-in-from-bottom-4" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="p-6 border-b border-border flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0 text-primary">
+                  <Icon name="QrCode" size={24} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    QR Code Đặt Món
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {displayStoreName}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowQRDialog(false)}
+                className="hover-scale"
+              >
+                <Icon name="X" size={20} />
+              </Button>
+            </div>
+
+            {/* QR Code */}
+            <div className="p-8 flex flex-col items-center justify-center">
+              <div className="bg-white p-4 rounded-lg">
+                <QRCodeSVG
+                  value={`${window.location.origin}/order/${selectedRestaurant._id}`}
+                  size={256}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground mt-4 text-center">
+                Quét mã QR để đặt món trực tuyến
+              </p>
+              <div className="mt-4 p-3 bg-muted/50 rounded-lg w-full">
+                <p className="text-xs text-muted-foreground text-center break-all">
+                  {window.location.origin}/order/{selectedRestaurant._id}
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-border flex items-center justify-between">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/order/${selectedRestaurant._id}`);
+                  // You could add a toast notification here if you have a toast system
+                  alert('Đã sao chép link vào clipboard!');
+                }}
+                iconName="Copy"
+                iconPosition="left"
+                size="sm"
+              >
+                Sao chép link
+              </Button>
+              <Button
+                variant="default"
+                onClick={() => setShowQRDialog(false)}
+                size="sm"
+              >
+                Đóng
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Click outside handlers */}
       {(showUserMenu || showNotifications) && (
         <div

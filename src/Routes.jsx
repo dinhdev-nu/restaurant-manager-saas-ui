@@ -91,15 +91,8 @@ const Routes = () => {
             }
           />
 
-          {/* POS Routes - Protected (requires authentication & restaurant selection) */}
-          <Route
-            path="/"
-            element={
-              <RestaurantRoute>
-                <Home />
-              </RestaurantRoute>
-            }
-          />
+          {/* Landing Page - Public */}
+          <Route path="/" element={<Home />} />
           <Route
             path="/main-pos-dashboard"
             element={

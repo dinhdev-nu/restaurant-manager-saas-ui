@@ -97,10 +97,11 @@ const CustomerOrdering = () => {
           });
         }
 
-        // Step 4: Fetch menu and tables in parallel
-        const [menuRes, tablesRes] = await Promise.allSettled([
+        // Step 4: Fetch menu, tables và orders trong parallel
+        const [menuRes, tablesRes, ordersRes] = await Promise.allSettled([
           getMenuItemsApi(urlRestaurantId),
           getTablesApi(urlRestaurantId),
+          getOrdersForUserApi(urlRestaurantId),
         ]);
 
         if (menuRes.status === 'fulfilled') {
@@ -118,6 +119,12 @@ const CustomerOrdering = () => {
 
         if (tablesRes.status === 'fulfilled') {
           setUrlTables(tablesRes.value || []);
+        }
+
+        if (ordersRes.status === 'fulfilled') {
+          const { orders = [], draftOrders = [] } = ordersRes.value || {};
+          setCustomerOrders(draftOrders);
+          setConfirmedOrders(orders);
         }
 
       } catch (err) {
@@ -172,17 +179,15 @@ const CustomerOrdering = () => {
     }
   }, [isUrlRoute, selectedRestaurant?.isOpen]);
 
-  // Fetch draft orders and confirmed orders from API if localStorage is empty
+  // Fetch draft orders và confirmed orders cho store-based route (URL route đã fetch trong useEffect trên)
   useEffect(() => {
+    if (isUrlRoute) return;
     if (!effectiveRestaurantId) return;
 
     const fetchOrders = async () => {
       try {
         const response = await getOrdersForUserApi(effectiveRestaurantId);
-
         const { orders = [], draftOrders = [] } = response || {};
-
-        // Lưu riêng 2 loại orders
         setCustomerOrders(draftOrders);
         setConfirmedOrders(orders);
       } catch (error) {
@@ -191,7 +196,7 @@ const CustomerOrdering = () => {
     };
 
     fetchOrders();
-  }, [effectiveRestaurantId]);
+  }, [effectiveRestaurantId, isUrlRoute]);
 
   // Build categories from urlMenuItems for URL-based route
   // const urlCategories = useMemo(() => {
@@ -210,7 +215,7 @@ const CustomerOrdering = () => {
   const categories = storeCategories;
   const menuItems = isUrlRoute ? urlMenuItems : storeMenuItems;
 
-  const [isOperational, setIsOperational] = useState(true);
+  const [isOperational, setIsOperational] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
   const [cartItems, setCartItems] = useState([]);
   const [showMobileCart, setShowMobileCart] = useState(false);
