@@ -14,6 +14,7 @@ const OrderCart = ({
   orderNumber = null,
   selectedTable = null,
   onTableChange,
+  tableOptions,
   onSummaryChange,
   user = null,
   customerName = '',
@@ -24,9 +25,12 @@ const OrderCart = ({
   const [discountType, setDiscountType] = useState('percent'); // 'percent' or 'amount'
   const [discountValue, setDiscountValue] = useState(0);
 
-  // Get table options from store (fallback when tables prop not provided)
+  // Get table options from store (fallback when tableOptions prop not provided)
   const getTableOptions = useTableStore((state) => state.getTableOptions);
-  const tableOptions = getTableOptions();
+  const storeTableOptions = getTableOptions();
+  const resolvedTableOptions = Array.isArray(tableOptions) && tableOptions.length > 0
+    ? tableOptions
+    : storeTableOptions;
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -118,7 +122,7 @@ const OrderCart = ({
             options={[
               { value: 'takeaway', label: '🥡 Mang đi' },
               { value: 'delivery', label: '🚚 Giao hàng' },
-              ...tableOptions
+              ...resolvedTableOptions
             ]}
             placeholder="Chọn bàn..."
           />
@@ -197,10 +201,10 @@ const OrderCart = ({
           // Logged in user - Display info
           <div className="bg-muted/30 rounded-lg p-3 border border-border">
             <div className="flex items-center space-x-3">
-              {user?.avatar ? (
+              {user?.avatar_url || user?.avatar ? (
                 <img
-                  src={user.avatar}
-                  alt={user.user_name}
+                  src={user?.avatar_url || user?.avatar}
+                  alt={user?.full_name || user?.user_name || 'User'}
                   className="w-10 h-10 rounded-full object-cover border-2 border-border"
                   onError={(e) => {
                     e.target.onerror = null;
@@ -213,7 +217,7 @@ const OrderCart = ({
                 </div>
               )}
               <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">{user.user_name}</p>
+                <p className="text-sm font-medium text-foreground">{user?.full_name || user?.user_name || 'User'}</p>
                 <p className="text-xs text-muted-foreground">{user.email}</p>
               </div>
               <Icon name="CheckCircle" size={16} className="text-success" />

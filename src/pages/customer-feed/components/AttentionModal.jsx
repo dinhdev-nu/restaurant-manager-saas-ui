@@ -11,14 +11,14 @@ import {
     UsersIcon
 } from '@heroicons/react/24/outline';
 
-const AttentionModal = ({ isOpen, onClose, onOpenCreateModal }) => {
+const AttentionModal = ({ isOpen, onClose, onOpenCreatePage }) => {
     const handleClose = () => {
         onClose();
     };
 
     const handleCreateRestaurant = () => {
         onClose();
-        onOpenCreateModal();
+        onOpenCreatePage();
     };
 
     const features = [
@@ -76,9 +76,6 @@ const AttentionModal = ({ isOpen, onClose, onOpenCreateModal }) => {
                                     </button>
 
                                     <div className="text-center">
-                                        <div className="mx-auto w-12 h-12 rounded-full bg-black flex items-center justify-center mb-4">
-                                            <BuildingStorefrontIcon className="h-6 w-6 text-white" />
-                                        </div>
 
                                         <Dialog.Title className="text-lg font-semibold text-gray-900 mb-2">
                                             Bạn có nhà hàng riêng?
@@ -110,19 +107,7 @@ const AttentionModal = ({ isOpen, onClose, onOpenCreateModal }) => {
                                         ))}
                                     </div>
 
-                                    {/* CTA Section */}
-                                    <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <SparklesIcon className="h-4 w-4 text-gray-600" />
-                                            <span className="text-xs font-medium text-gray-700">Ưu đãi đặc biệt</span>
-                                        </div>
-                                        <p className="text-sm text-gray-900 font-medium mb-1">
-                                            Miễn phí 30 ngày đầu tiên
-                                        </p>
-                                        <p className="text-xs text-gray-600">
-                                            Không phí setup, không ràng buộc hợp đồng
-                                        </p>
-                                    </div>
+
                                 </div>
 
                                 {/* Footer */}

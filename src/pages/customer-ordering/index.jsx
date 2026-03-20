@@ -72,7 +72,7 @@ const CustomerOrdering = () => {
 
         // Step 2: Fetch restaurant details first
         const detailsResponse = await getRestaurantDetailsApi(urlRestaurantId);
-        const restaurant = detailsResponse.metadata || detailsResponse;
+        const restaurant = detailsResponse.data;
 
         if (!restaurant || !restaurant._id) {
           toast({
@@ -103,7 +103,6 @@ const CustomerOrdering = () => {
           getTablesApi(urlRestaurantId),
           getOrdersForUserApi(urlRestaurantId),
         ]);
-
         if (menuRes.status === 'fulfilled') {
           const data = menuRes.value;
           // Menu API returns {active: [], inactive: [], totalItems}
@@ -214,6 +213,17 @@ const CustomerOrdering = () => {
 
   const categories = storeCategories;
   const menuItems = isUrlRoute ? urlMenuItems : storeMenuItems;
+
+  const urlTableOptions = useMemo(() => {
+    if (!isUrlRoute) return [];
+
+    return (urlTables || [])
+      .filter((table) => table?.status === 'available')
+      .map((table) => ({
+        value: table?._id,
+        label: `${table?.floor ? `Tầng ${table.floor} - ` : ''}Bàn ${table?.number ?? table?._id}`,
+      }));
+  }, [isUrlRoute, urlTables]);
 
   const [isOperational, setIsOperational] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
@@ -534,7 +544,9 @@ const CustomerOrdering = () => {
     }
 
     // Get table label from value
-    const tableLabel = getTableLabel(selectedTable);
+    const tableLabel = isUrlRoute
+      ? (urlTableOptions.find((option) => option.value === selectedTable)?.label || selectedTable)
+      : getTableLabel(selectedTable);
 
     // Get staff info from store (optional)
     let staffName = 'Chưa phân công';
@@ -553,8 +565,8 @@ const CustomerOrdering = () => {
       status: 'pending',
       customer: {
         customerId: user?._id || undefined,
-        name: user ? user.user_name : customerName.trim(),
-        contact: user ? user.email : customerContact.trim() || undefined,
+        name: user ? (user.full_name || user.user_name) : customerName.trim(),
+        contact: user ? (user.email || user.phone) : customerContact.trim() || undefined,
       },
       items: cartItems.map(item => ({
         itemId: item._id,
@@ -569,14 +581,16 @@ const CustomerOrdering = () => {
       total: orderSummary.total
     };
 
+    console.log('Creating order with data:', orderData);
+
     try {
       setIsCreatingOrder(true);
       const response = await createDraftOrderApi(effectiveRestaurantId, orderData);
 
       // Lưu order vào customer order store (tách biệt với POS)
       const createdOrder = {
-        ...response.metadata,
-        timestamp: response.metadata.createdAt,
+        ...response.data,
+        timestamp: response.data.createdAt,
       };
       addCustomerOrder(createdOrder);
 
@@ -758,6 +772,7 @@ const CustomerOrdering = () => {
                 orderNumber={orderNumber}
                 selectedTable={selectedTable}
                 onTableChange={setSelectedTable}
+                tableOptions={isUrlRoute ? urlTableOptions : undefined}
                 onSummaryChange={setOrderSummary}
                 user={user}
                 customerName={customerName}

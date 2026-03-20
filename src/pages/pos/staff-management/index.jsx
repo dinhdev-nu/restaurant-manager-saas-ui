@@ -151,8 +151,8 @@ const StaffManagement = () => {
         const response = await createStaffApi(selectedRestaurant._id, payload);
 
         // Add to local store (no need to refetch)
-        if (response.metadata) {
-          addStaff(response.metadata);
+        if (response.data) {
+          addStaff(response.data);
         }
 
         toast({

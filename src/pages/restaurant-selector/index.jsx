@@ -20,8 +20,8 @@ const RestaurantSelector = () => {
                 setIsLoading(true);
                 const response = await getMyRestaurantsApi();
                 console.log('API response for my restaurants:', response);
-                if (response.metadata) {
-                    const restaurants = setRestaurantsFromMetadata(response.metadata);
+                if (response.data) {
+                    const restaurants = setRestaurantsFromMetadata(response.data);
                     console.log('Processed restaurants:', restaurants);
                 }
             } catch (error) {
@@ -44,10 +44,10 @@ const RestaurantSelector = () => {
         setSelectingId(restaurant._id);
         try {
             const response = await getRestaurantDetailsApi(restaurant._id);
-            const details = response.metadata || response;
+            const details = response.data;
             const selectRestaurant = useRestaurantStore.getState().selectRestaurant;
             selectRestaurant({ ...restaurant, ...details });
-            navigate('/dashboard');
+            navigate('/main-pos-dashboard');
         } catch (error) {
             console.error('Error fetching restaurant details:', error);
             toast({
@@ -61,7 +61,7 @@ const RestaurantSelector = () => {
     };
 
     const handleCreateRestaurant = () => {
-        navigate('/feed');
+        navigate('/new');
     };
 
     const handleGoPOS = async (restaurant) => {
@@ -70,9 +70,9 @@ const RestaurantSelector = () => {
         setSelectingId(posKey);
         try {
             const response = await getRestaurantDetailsApi(restaurant._id);
-            const details = response.metadata || response;
+            const details = response.data;
+            console.log('Fetched restaurant details for POS:', details);
             const selectRestaurant = useRestaurantStore.getState().selectRestaurant;
-            console.log('Selecting restaurant for POS:', restaurant);
             selectRestaurant({ ...restaurant, ...details, mode: 'pos' });
             navigate('/main-pos-dashboard');
         } catch (error) {

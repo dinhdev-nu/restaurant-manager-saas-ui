@@ -153,7 +153,7 @@ const MenuManagement = () => {
         const response = await createMenuItemApi(selectedRestaurant._id, itemData);
 
         // Add to store with _id from server (no need to refetch)
-        addMenuItem(response.metadata);
+        addMenuItem(response.data);
 
         toast({
           title: "Thêm món thành công",

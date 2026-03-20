@@ -5,7 +5,7 @@ import {
     ArrowRightIcon
 } from '@heroicons/react/24/outline';
 
-const CreateRestaurantBanner = ({ onOpenModal, onOpenAttentionModal }) => {
+const CreateRestaurantBanner = ({ onOpenCreatePage }) => {
     return (
         <div className="bg-gray-50 rounded-2xl border border-gray-200 p-5 hover:border-gray-300 transition-all duration-200">
             {/* Header with Icon and Title */}
@@ -31,7 +31,7 @@ const CreateRestaurantBanner = ({ onOpenModal, onOpenAttentionModal }) => {
             {/* CTA Buttons */}
             <div className="space-y-2">
                 <button
-                    onClick={onOpenModal}
+                    onClick={onOpenCreatePage}
                     className="w-full group py-2.5 bg-gray-900 text-white rounded-2xl font-medium text-sm hover:bg-gray-800 transition-all duration-200 flex items-center justify-center space-x-2"
                 >
                     <span>Tạo nhà hàng</span>

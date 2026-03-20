@@ -253,7 +253,7 @@ export const RestaurantProfile = forwardRef((props, ref) => {
                 const response = await updateRestaurantApi(selectedRestaurant._id, updateData);
 
                 // Update store with new data
-                const updatedRestaurant = response.metadata || response;
+                const updatedRestaurant = response.data;
                 updateRestaurant(selectedRestaurant._id, updatedRestaurant);
                 selectRestaurant(updatedRestaurant);
 

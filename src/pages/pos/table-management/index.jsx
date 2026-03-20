@@ -192,7 +192,7 @@ const TableManagement = () => {
       const response = await createTableApi(selectedRestaurant._id, tableWithFloor);
 
       // Add to store with _id from server (no need to refetch)
-      addTable(response.metadata);
+      addTable(response.data);
 
       toast({
         title: "Thêm bàn thành công",

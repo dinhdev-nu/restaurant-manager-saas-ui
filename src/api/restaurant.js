@@ -56,7 +56,7 @@ export const createMenuItemApi = async (restaurantId, menuItemData) => {
 
 export const getMenuItemsApi = async (restaurantId) => {
     const res = await CallApiWithAuth.get(`/restaurants/${restaurantId}/items`);
-    return res.data.metadata;
+    return res.data.data;
 }
 
 /** 
@@ -89,7 +89,7 @@ export const createTableApi = async (restaurantId, tableData) => {
 
 export const getTablesApi = async (restaurantId) => {
     const res = await CallApiWithAuth.get(`/restaurants/${restaurantId}/tables`);
-    return res.data.metadata;
+    return res.data.data;
 }
 
 export const createStaffApi = async (restaurantId, staffData) => {
@@ -103,7 +103,7 @@ export const createStaffApi = async (restaurantId, staffData) => {
 
 export const getStaffApi = async (restaurantId) => {
     const res = await CallApiWithAuth.get(`/restaurants/${restaurantId}/staffs`);
-    return res.data.metadata;
+    return res.data.data;
 }
 
 
@@ -121,7 +121,7 @@ export const createDraftOrderApi = async (restaurantId, orderData) => {
         ...orderData,
         restaurantId,
     }
-    const res = await CallApi.post(`/orders/draft`, payload)
+    const res = await CallApiWithAuth.post(`/orders/draft`, payload)
     return res.data;
 }
 
@@ -133,7 +133,8 @@ export const getOrdersApi = async (restaurantId, page = 1, status, limit = 20) =
     queryParams.append('limit', limit);
     
     const res = await CallApiWithAuth.get(`/orders/${restaurantId}?${queryParams.toString()}`);
-    return res.data.metadata;
+    console.log('getOrdersApi response:', res.data);
+    return res.data.data;
 }
 
 /**
@@ -148,13 +149,13 @@ export const getOrdersApi = async (restaurantId, page = 1, status, limit = 20) =
 export const getOrdersForUserApi = async (restaurantId) => {
     const res = await CallApiWithAuth.get(`/orders/user/${restaurantId}`);
     console.log('getOrdersForUserApi response:', res.data);
-    return res.data.metadata;
+    return res.data.data;
 } 
 
 export const getDraftOrders = async (restaurantId, isMyDraft = false) => {
     const url = `/orders/drafts/${restaurantId}` + (isMyDraft ? '?myDraft=true' : '');
     const res = await CallApiWithAuth.get(url);
-    return res.data.metadata;
+    return res.data.data;
 }
 
 export const getOrderCheckoutDetailsApi = async (orderId) => {

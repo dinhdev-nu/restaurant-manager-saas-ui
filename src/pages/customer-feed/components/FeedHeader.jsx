@@ -18,12 +18,18 @@ const FeedHeader = ({ user, onLocationChange, onLogout }) => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     {/* Logo */}
-                    <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center">
-                            <span className="text-white font-bold text-xl">F</span>
+                    <button
+                        type="button"
+                        onClick={() => navigate('/')}
+                        className="flex items-center space-x-3 cursor-pointer"
+                    >
+                        <div className="px-3 py-1.5 bg-gray-900 rounded-xl">
+                            <span className="text-xl font-black tracking-tight text-white">
+                                GI<span className="text-[#AFFF00]">GI</span>
+                            </span>
                         </div>
-                        <h1 className="text-xl font-bold text-gray-900 hidden sm:block">Food Feed</h1>
-                    </div>
+                        <h1 className="text-xl font-bold text-gray-900 hidden sm:block">Feed</h1>
+                    </button>
 
                     {/* Search Bar - Desktop */}
                     <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
@@ -58,20 +64,20 @@ const FeedHeader = ({ user, onLocationChange, onLogout }) => {
                             <Menu as="div" className="relative">
                                 <Menu.Button className="flex items-center space-x-2 px-3 py-1.5 rounded-full hover:bg-gray-50 transition-colors">
                                     <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center overflow-hidden">
-                                        {user?.avatar || user?.profileImage ? (
+                                        {user?.avatar_url || user?.avatar || user?.profileImage ? (
                                             <img
-                                                src={user?.avatar || user?.profileImage}
-                                                alt={user?.user_name || 'User'}
+                                                src={user?.avatar_url || user?.avatar || user?.profileImage}
+                                                alt={user?.full_name || user?.user_name || 'User'}
                                                 className="w-full h-full object-cover"
                                             />
                                         ) : (
                                             <span className="text-white text-sm font-medium">
-                                                {user?.email?.[0]?.toUpperCase() || user?.user_name?.[0]?.toUpperCase() || 'U'}
+                                                {user?.email?.[0]?.toUpperCase() || user?.full_name?.[0]?.toUpperCase() || user?.user_name?.[0]?.toUpperCase() || 'U'}
                                             </span>
                                         )}
                                     </div>
                                     <span className="hidden md:block text-sm font-medium text-gray-900 max-w-[100px] truncate">
-                                        {user?.user_name || 'User'}
+                                        {user?.full_name || user?.user_name || 'User'}
                                     </span>
                                 </Menu.Button>
 
@@ -86,7 +92,7 @@ const FeedHeader = ({ user, onLocationChange, onLogout }) => {
                                 >
                                     <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right bg-white rounded-2xl shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none overflow-hidden">
                                         <div className="p-4 border-b border-gray-100">
-                                            <p className="text-sm font-semibold text-gray-900">{user?.user_name || 'User'}</p>
+                                            <p className="text-sm font-semibold text-gray-900">{user?.full_name || user?.user_name || 'User'}</p>
                                             <p className="text-xs text-gray-500 truncate">{user?.email || 'No email'}</p>
                                         </div>
                                         <div className="py-2">

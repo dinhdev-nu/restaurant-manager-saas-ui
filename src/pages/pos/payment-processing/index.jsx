@@ -77,7 +77,7 @@ const PaymentProcessing = () => {
           try {
             setIsLoadingOrderDetails(true);
             const response = await getOrderCheckoutDetailsApi(order._id);
-            const freshOrder = response.metadata;
+            const freshOrder = response.data;
 
             setOrderData({
               _id: freshOrder._id,
@@ -168,9 +168,9 @@ const PaymentProcessing = () => {
         );
 
         // Save QR code URL if available
-        if (response.metadata?.qr_url) {
-          console.log('Received QR code URL:', response.metadata.qr_url);
-          setQrCodeUrl(response.metadata.qr_url);
+        if (response.data?.qr_url) {
+          console.log('Received QR code URL:', response.data.qr_url);
+          setQrCodeUrl(response.data.qr_url);
         } else {
           // API success but no QR code URL returned
           console.error('API response missing qr_url:', response);
@@ -216,7 +216,7 @@ const PaymentProcessing = () => {
         // QR code payment - API already called in handleMethodSelect
         // Just use the existing QR code URL
         response = {
-          metadata: {
+          data: {
             qr_url: qrCodeUrl,
             paymentId: `PAY${Date.now()}`, // Temporary ID, should be from API
             method: paymentData.method,
@@ -230,8 +230,8 @@ const PaymentProcessing = () => {
       if (orderData?._id && response) {
         updateOrderPayment(orderData._id, {
           ...paymentData,
-          transactionId: response.metadata?.paymentId || response.metadata?._id,
-          qrCodeUrl: response.metadata?.qr_url
+          transactionId: response.data?.paymentId || response.data?._id,
+          qrCodeUrl: response.data?.qr_url
         });
         updateOrderStatus(orderData._id, 'completed');
 
@@ -242,7 +242,7 @@ const PaymentProcessing = () => {
         }
       }
 
-      setPaymentResult(response?.metadata || {});
+      setPaymentResult(response?.data || {});
       setCurrentStep('success');
 
       toast({

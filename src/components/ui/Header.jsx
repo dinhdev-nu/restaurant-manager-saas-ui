@@ -122,7 +122,16 @@ const Header = ({
           </Button>
 
           {/* Logo and Store Name */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="flex items-center space-x-2 sm:space-x-3 cursor-pointer"
+          >
+            <div className="hidden sm:flex items-center pr-3 mr-1 border-r border-border/70">
+              <span className="text-base sm:text-lg font-black tracking-tight text-foreground">
+                GI<span className="text-[#AFFF00]">GI</span>
+              </span>
+            </div>
             {isPOSPage && selectedRestaurant ? (
               <img
                 src={restaurantLogo}
@@ -137,7 +146,7 @@ const Header = ({
             <div className="hidden sm:block">
               <h1 className="text-base sm:text-lg font-semibold text-foreground truncate max-w-[120px] sm:max-w-[200px] lg:max-w-none">{displayStoreName}</h1>
             </div>
-          </div>
+          </button>
         </div>
 
         {/* Center Section - Quick Actions */}

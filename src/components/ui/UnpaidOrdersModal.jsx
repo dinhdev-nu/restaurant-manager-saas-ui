@@ -29,7 +29,7 @@ const UnpaidOrdersModal = ({ isOpen, onClose }) => {
 
             // Fetch latest order details from API
             const response = await getOrderCheckoutDetailsApi(order._id);
-            const orderDetails = response.metadata;
+            const orderDetails = response.data;
 
             // Navigate with fresh data from API
             navigate('/payment-processing', {

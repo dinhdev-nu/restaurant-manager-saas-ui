@@ -67,7 +67,7 @@ const OrderHistory = () => {
             1,
             filters.status !== 'all' ? filters.status : null
           );
-
+          console.log('Fetched orders from API:', ordersData);
           // Map API data to component format and let store handle orderId generation
           const mappedOrders = ordersData?.map(order => ({
             ...order,

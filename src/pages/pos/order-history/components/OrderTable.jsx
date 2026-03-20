@@ -101,7 +101,7 @@ const OrderTable = ({ orders, onViewDetails, onReprintReceipt, highlightedOrderI
 
         // Fetch latest order details from API
         const response = await getOrderCheckoutDetailsApi(selectedOrderForPayment._id);
-        const orderDetails = response.metadata;
+        const orderDetails = response.data;
 
         navigate('/payment-processing', {
           state: {

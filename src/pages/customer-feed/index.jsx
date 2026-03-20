@@ -7,11 +7,6 @@ import {
     HomeIcon,
     UserCircleIcon,
     MapPinIcon,
-    TagIcon,
-    StarIcon,
-    CalendarIcon,
-    FireIcon,
-    SparklesIcon,
     BuildingStorefrontIcon,
     PlusIcon
 } from '@heroicons/react/24/outline';
@@ -24,7 +19,6 @@ import Image from '../../components/AppImage';
 import FeedHeader from './components/FeedHeader';
 import FilterTabs from './components/FilterTabs';
 import CreateRestaurantBanner from './components/CreateRestaurantBanner';
-import CreateRestaurantModal from './components/CreateRestaurantModal';
 import AttentionModal from './components/AttentionModal';
 import PostCard from './components/PostCard';
 import { MOCK_NEARBY_RESTAURANTS, MOCK_POSTS } from '../../mocks/feedData';
@@ -39,7 +33,6 @@ const CustomerFeed = () => {
     const [posts, setPosts] = useState([]);
     const [nearbyRestaurants, setNearbyRestaurants] = useState([]);
     const [selectedLocation, setSelectedLocation] = useState(null);
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [displayCount, setDisplayCount] = useState(3); // Pagination: số posts hiển thị ban đầu
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const loadMoreRef = useRef(null); // Ref cho intersection observer
@@ -322,8 +315,7 @@ const CustomerFeed = () => {
 
                             {/* Create Restaurant Card */}
                             <CreateRestaurantBanner
-                                onOpenModal={() => setIsCreateModalOpen(true)}
-                                onOpenAttentionModal={() => setIsAttentionModalOpen(true)}
+                                onOpenCreatePage={() => navigate('/new')}
                             />
                         </div>
                     </aside>
@@ -391,13 +383,7 @@ const CustomerFeed = () => {
             <AttentionModal
                 isOpen={isAttentionModalOpen}
                 onClose={() => setIsAttentionModalOpen(false)}
-                onOpenCreateModal={() => setIsCreateModalOpen(true)}
-            />
-
-            {/* Create Restaurant Modal */}
-            <CreateRestaurantModal
-                isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
+                onOpenCreatePage={() => navigate('/new')}
             />
         </div>
     );

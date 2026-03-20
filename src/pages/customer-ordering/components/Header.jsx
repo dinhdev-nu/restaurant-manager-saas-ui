@@ -31,8 +31,8 @@ const Header = ({
   // User info with fallback - Map API data correctly
   const { isGuest, avatar: userAvatar, name: userName } = useMemo(() => ({
     isGuest: !user,
-    avatar: user?.avatar || '/assets/images/user_avatar.jpg',
-    name: user?.user_name || 'Khách lạ'
+    avatar: user?.avatar_url || user?.avatar || '/assets/images/user_avatar.jpg',
+    name: user?.full_name || user?.user_name || 'Khách lạ'
   }), [user]);
 
   // Real-time clock update
@@ -117,7 +117,16 @@ const Header = ({
         {/* Left Section - Logo and Store Name */}
         <div className="flex items-center space-x-2 sm:space-x-4">
           {/* Logo and Store Name */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="flex items-center space-x-2 sm:space-x-3 cursor-pointer"
+          >
+            <div className="hidden sm:flex items-center pr-3 mr-1 border-r border-border/70">
+              <span className="text-base sm:text-lg font-black tracking-tight text-foreground">
+                GI<span className="text-[#AFFF00]">GI</span>
+              </span>
+            </div>
             <img
               src={restaurantLogo}
               alt={displayStoreName}
@@ -131,7 +140,7 @@ const Header = ({
             <div>
               <h1 className="text-sm sm:text-base lg:text-lg font-semibold text-foreground truncate max-w-[100px] sm:max-w-[200px] lg:max-w-none">{displayStoreName}</h1>
             </div>
-          </div>
+          </button>
         </div>
 
         {/* Right Section - Status, Notifications, User */}

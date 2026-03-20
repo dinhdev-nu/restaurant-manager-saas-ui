@@ -83,7 +83,7 @@ const MainPOSDashboard = () => {
     if (!selectedRestaurant?._id) return;
     getRestaurantDetailsApi(selectedRestaurant._id)
       .then((response) => {
-        const details = response.metadata || response;
+        const details = response.data;
         if (details && typeof details === 'object') {
           updateSelectedRestaurant(details);
         }
@@ -512,8 +512,8 @@ const MainPOSDashboard = () => {
 
       // Save order to store - server returns order with _id, createdAt, updatedAt
       const createdOrder = {
-        ...response.metadata,
-        timestamp: response.metadata.createdAt,
+        ...response.data,
+        timestamp: response.data.createdAt,
       };
       addOrder(createdOrder);
 
@@ -646,8 +646,8 @@ const MainPOSDashboard = () => {
 
       // Save confirmed order to order store
       const confirmedOrder = {
-        ...response.metadata,
-        timestamp: response.metadata.createdAt,
+        ...response.data,
+        timestamp: response.data.createdAt,
       };
       addOrder(confirmedOrder);
 

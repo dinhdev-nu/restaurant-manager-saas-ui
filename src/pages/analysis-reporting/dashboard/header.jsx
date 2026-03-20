@@ -1,6 +1,7 @@
 import { cn } from "../../../utils/cn";
 import { Bell, Search, Calendar } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const sectionTitles = {
     overview: "Tổng quan",
@@ -15,10 +16,20 @@ const sectionTitles = {
 
 export function Header({ activeSection }) {
     const [searchFocused, setSearchFocused] = useState(false);
+    const navigate = useNavigate();
 
     return (
         <header className="h-16 border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-30 flex items-center justify-between px-6">
             <div className="flex items-center gap-6">
+                <div className="hidden sm:flex items-center pr-4 border-r border-border/70">
+                    <button
+                        type="button"
+                        onClick={() => navigate("/")}
+                        className="text-lg font-black tracking-tight text-foreground cursor-pointer"
+                    >
+                        GI<span className="text-[#AFFF00]">GI</span>
+                    </button>
+                </div>
                 <h1 className="text-xl font-semibold text-foreground">
                     {sectionTitles[activeSection]}
                 </h1>
