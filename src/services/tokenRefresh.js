@@ -60,19 +60,23 @@ class TokenRefreshService {
         try {
             // Import động để tránh circular dependency
             const { CallApi } = await import('../api/axios');
-            
-            const response = await CallApi.post('/auths/refresh');
-            const newToken = response.data?.metadata?.accessToken;
-            
+
+            const response = await CallApi.post('/auths/refresh-token', {}, {
+                withCredentials: true
+            });
+
+            // API returns { data: { access_token: string } }
+            const newToken = response.data?.data?.access_token;
+
             if (newToken) {
                 useAuthStore.getState().setToken(newToken);
                 return newToken;
             }
-            
+
             throw new Error('No access token in refresh response');
         } catch (error) {
             console.error('[TokenRefresh] Failed to refresh token:', error);
-            
+
             // Clear auth và logout
             useAuthStore.getState().logout();
             throw error;

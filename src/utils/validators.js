@@ -50,6 +50,24 @@ export const validateEmailOrPhone = (value) => {
 }
 
 /**
+ * Validate mật khẩu theo quy tắc API (6-32 ký tự)
+ * @param {string} password - Mật khẩu cần kiểm tra
+ * @returns {string|null} - Thông báo lỗi hoặc null nếu hợp lệ
+ */
+export const validatePassword = (password) => {
+    if (!password) {
+        return "Password is required"
+    }
+    if (password.length < 6) {
+        return "Password must be at least 6 characters"
+    }
+    if (password.length > 32) {
+        return "Password must be at most 32 characters"
+    }
+    return null
+}
+
+/**
  * Validate độ mạnh của mật khẩu
  * @param {string} password - Mật khẩu cần kiểm tra
  * @returns {object} - { isValid: boolean, strength: string, message: string }

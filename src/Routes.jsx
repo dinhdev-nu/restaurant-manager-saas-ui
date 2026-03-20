@@ -10,12 +10,15 @@ import StaffManagement from './pages/pos/staff-management';
 import MainPOSDashboard from './pages/pos/main-pos-dashboard';
 import PaymentProcessing from './pages/pos/payment-processing';
 import AuthPage from "./pages/auth/index";
+import OAuthCallback from "./pages/oauth/callback";
 import CustomerFeed from './pages/customer-feed';
+import CreateRestaurantPage from './pages/restaurant-creation/index';
 import RestaurantSelector from './pages/restaurant-selector';
 import { useAuthStore, useRestaurantStore } from './stores';
 import Dashboard from "pages/analysis-reporting";
 import CustomerOrdering from "pages/customer-ordering";
 import Home from "pages/home";
+import ProfilePage from "pages/profile";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -51,6 +54,9 @@ const Routes = () => {
           {/* Auth */}
           <Route path="/auth" element={<AuthPage />} />
 
+          {/* OAuth Callback */}
+          <Route path="/oauth/callback" element={<OAuthCallback />} />
+
           {/* Restaurant Selector - After Login */}
           <Route
             path="/restaurant-selector"
@@ -67,6 +73,25 @@ const Routes = () => {
             element={
               <ProtectedRoute>
                 <CustomerFeed />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/new"
+            element={
+              <ProtectedRoute>
+                <CreateRestaurantPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Profile */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
               </ProtectedRoute>
             }
           />

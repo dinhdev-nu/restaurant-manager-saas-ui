@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
-import { registerApi, sendOtpApi, signup, verifyOtpApi } from "../../../api/auth"
+import { checkEmailApi, registerApi, verifyOtpApi, resendOtpApi } from "../../../api/auth"
 import { useToast } from "hooks/use-toast"
-import { isPhoneNumber, validateEmailOrPhone } from "../../../utils/validators"
+import { isPhoneNumber, validateEmailOrPhone, validatePassword } from "../../../utils/validators"
 
 // Steps: "info" -> "otp" -> "password"
 export function useSignUp({ onSuccess }) {
@@ -54,7 +54,7 @@ export function useSignUp({ onSuccess }) {
         return () => clearTimeout(timer)
     }, [otpCountdown])
 
-    // ── Step 1 → Step 2 ─────────────────────────────────────────────
+    // ── Step 1 → Password Step (check email first) ───────────────────
     const handleContinue = async () => {
         const { firstName, lastName, email, phoneNumber } = form
         const identifier = email || phoneNumber
@@ -70,23 +70,45 @@ export function useSignUp({ onSuccess }) {
             return toast({ variant: "destructive", title: "Invalid input", description: identifierError, duration: 3000 })
         }
 
+        // Currently only support email registration
+        if (!email) {
+            return toast({ variant: "destructive", title: "Email required", description: "Phone registration is coming soon. Please use email.", duration: 3000 })
+        }
+
         setIsLoading(true)
         try {
-            const identifierType = email ? "email" : "phoneNumber"
-            await registerApi({ [identifierType]: identifier }) // check not already registered
+            // Check if email is available
+            const checkResult = await checkEmailApi(email)
+            const payload = checkResult?.data ?? checkResult
 
-            if (email) {
-                // Auto-send OTP for email
-                await sendOtpApi({ email })
-                setOtpCountdown(60)
-                toast({ title: "Code sent", description: `A 6-digit code was sent to ${email}.`, duration: 3000 })
-                setStep("otp")
-            } else {
-                // Show method picker for phone
-                setShowMethodModal(true)
+            if (!payload?.available) {
+                if (payload?.acction === "resend_otp") {
+                    const targetEmail = payload?.hint || email
+                    await resendOtpApi(targetEmail)
+                    setForm((prev) => ({ ...prev, email: targetEmail, otp: "" }))
+                    setOtpCountdown(60)
+                    setStep("otp")
+
+                    return toast({
+                        title: "Pending account detected",
+                        description: `We resent a verification code to ${targetEmail}. Please verify your account.`,
+                        duration: 4000
+                    })
+                }
+
+                return toast({
+                    variant: "destructive",
+                    title: "Email already registered",
+                    description: "This email is already in use. Please sign in instead.",
+                    duration: 4000
+                })
             }
+
+            // Email is available, go to password step
+            setStep("password")
         } catch (error) {
-            toast({ variant: "destructive", title: "Error", description: error.response?.data?.message || error.message || "Please try again.", duration: 4000 })
+            const message = error.response?.data?.message || error.message || "Please try again."
+            toast({ variant: "destructive", title: "Error", description: message, duration: 4000 })
         } finally {
             setIsLoading(false)
         }
@@ -105,28 +127,24 @@ export function useSignUp({ onSuccess }) {
         setIsSendingOtp(true)
         try {
             if (method === "sms" || method === "telegram") {
-                // TODO: implement SMS / Telegram OTP
                 toast({ title: "Coming soon", description: `${method === "sms" ? "SMS" : "Telegram"} OTP is coming soon.`, duration: 3000 })
             }
         } finally {
             setIsSendingOtp(false)
             setShowMethodModal(false)
-            setStep("otp")
         }
     }
 
     const handleResendOtp = async () => {
         if (otpCountdown > 0 || isSendingOtp) return
-        const { email, phoneNumber } = form
-        if (!email && !phoneNumber) return
+        const { email } = form
+        if (!email) return
 
         setIsSendingOtp(true)
         try {
-            if (email) {
-                await sendOtpApi({ email })
-                setOtpCountdown(60)
-                toast({ title: "Code resent", description: `A new code was sent to ${email}.`, duration: 3000 })
-            }
+            await resendOtpApi(email)
+            setOtpCountdown(60)
+            toast({ title: "Code resent", description: `A new code was sent to ${email}.`, duration: 3000 })
         } catch (error) {
             toast({ variant: "destructive", title: "Failed to resend", description: error.response?.data?.message || error.message || "Please try again.", duration: 4000 })
         } finally {
@@ -134,18 +152,22 @@ export function useSignUp({ onSuccess }) {
         }
     }
 
-    // ── Step 2 → Step 3 ─────────────────────────────────────────────
+    // ── Verify OTP → Done ─────────────────────────────────────────────
     const handleVerifyOtp = async () => {
         if (form.otp.length !== 6) {
             return toast({ variant: "destructive", title: "Invalid OTP", description: "Please enter the 6-digit code.", duration: 3000 })
         }
-        const identifier = form.email || form.phoneNumber
-        const identifierType = form.email ? "email" : "phoneNumber"
 
         setIsLoading(true)
         try {
-            await verifyOtpApi({ [identifierType]: identifier, otp: form.otp })
-            setStep("password")
+            await verifyOtpApi({ email: form.email, otp: form.otp })
+            toast({
+                title: "Email verified 🎉",
+                description: "Your account is now active. You can sign in.",
+                duration: 3000
+            })
+            reset()
+            onSuccess?.()
         } catch (error) {
             toast({ variant: "destructive", title: "Invalid code", description: error.response?.data?.message || error.message || "Please try again.", duration: 4000 })
         } finally {
@@ -153,23 +175,46 @@ export function useSignUp({ onSuccess }) {
         }
     }
 
-    // ── Step 3 → Done ────────────────────────────────────────────────
+    // ── Password Step → Register & go to OTP ─────────────────────────
     const handleCreateAccount = async () => {
-        const { password, confirmPassword, email, phoneNumber } = form
-        if (!password) return toast({ variant: "destructive", title: "Missing password", description: "Please enter a password.", duration: 3000 })
-        if (password !== confirmPassword) return toast({ variant: "destructive", title: "Passwords don't match", description: "Please confirm your password.", duration: 3000 })
+        const { password, confirmPassword, email, firstName, lastName, phoneNumber } = form
 
-        const identifier = email || phoneNumber
-        const identifierType = email ? "email" : "phoneNumber"
+        if (!password) {
+            return toast({ variant: "destructive", title: "Missing password", description: "Please enter a password.", duration: 3000 })
+        }
+
+        const passwordError = validatePassword(password)
+        if (passwordError) {
+            return toast({ variant: "destructive", title: "Weak password", description: passwordError, duration: 3000 })
+        }
+
+        if (password !== confirmPassword) {
+            return toast({ variant: "destructive", title: "Passwords don't match", description: "Please confirm your password.", duration: 3000 })
+        }
+
+        const full_name = `${firstName.trim()} ${lastName.trim()}`
 
         setIsLoading(true)
         try {
-            await signup({ [identifierType]: identifier, password, firstName: form.firstName, lastName: form.lastName })
-            toast({ title: "Account created 🎉", description: "You can now sign in with your credentials.", duration: 3000 })
-            reset()
-            onSuccess?.()
+            await registerApi({
+                email,
+                password,
+                full_name,
+                phone: phoneNumber || undefined
+            })
+
+            // Registration successful - OTP was sent to email
+            toast({
+                title: "Account created!",
+                description: "Please check your email for the verification code.",
+                duration: 4000
+            })
+
+            setOtpCountdown(60)
+            setStep("otp")
         } catch (error) {
-            toast({ variant: "destructive", title: "Sign up failed", description: error.response?.data?.message || error.message || "Please try again.", duration: 4000 })
+            const message = error.response?.data?.message || error.message || "Please try again."
+            toast({ variant: "destructive", title: "Registration failed", description: message, duration: 4000 })
         } finally {
             setIsLoading(false)
         }
