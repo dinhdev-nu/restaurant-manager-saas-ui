@@ -3,12 +3,12 @@ import { useRef } from "react"
 import { Instagram } from "lucide-react"
 
 const instagramPosts = [
-    { image: "/energy-drink-lifestyle-gym-workout.jpg", likes: "2.4k" },
-    { image: "/content-creator-streaming-setup-neon.jpg", likes: "1.8k" },
-    { image: "/skateboarder-urban-street-sunset.jpg", likes: "3.2k" },
-    { image: "/student-studying-library-late-night.jpg", likes: "956" },
-    { image: "/entrepreneur-startup-office-meeting.jpg", likes: "1.5k" },
-    { image: "/athlete-fitness-morning-routine.jpg", likes: "2.1k" },
+    { image: "/images/community-1.png", likes: "2.4k" },
+    { image: "/images/community-2.png", likes: "1.8k" },
+    { image: "/images/community-3.png", likes: "3.2k" },
+    { image: "/images/community-1.png", likes: "956" },
+    { image: "/images/community-2.png", likes: "1.5k" },
+    { image: "/images/community-3.png", likes: "2.1k" },
 ]
 
 const containerVariants = {

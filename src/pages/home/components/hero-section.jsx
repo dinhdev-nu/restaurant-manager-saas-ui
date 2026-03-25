@@ -244,7 +244,7 @@ export function HeroSection() {
                                 }}
                             >
                                 <img
-                                    src="/images/drink2.png"
+                                    src="/images/pos-dashboard.png"
                                     alt="POS Manager Dashboard Preview"
                                     className="relative z-10 drop-shadow-2xl w-[350px] h-[525px] object-contain"
                                 />
